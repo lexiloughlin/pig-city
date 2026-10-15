@@ -1,0 +1,629 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pig City</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chewy&family=Nunito:wght@400;700;800&display=swap">
+<style>
+:root {
+  --fleece: #f7dfe2;
+  --fleece-deep: #efc9cf;
+  --wood: #dcb98a;
+  --wood-dark: #a77c4c;
+  --ink: #3b2a1a;
+  --muted: #8a6a52;
+  --hay: #9cc65a;
+  --hay-deep: #5f8f2e;
+  --alert: #d9455a;
+  --card: #fff8f4;
+  --font-display: "Chewy", "Comic Sans MS", system-ui, sans-serif;
+  --font-body: "Nunito", system-ui, -apple-system, sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { min-height: 100%; }
+body {
+  margin: 0;
+  background-color: var(--fleece);
+  background-image: radial-gradient(var(--fleece-deep) 18%, transparent 19%), radial-gradient(var(--fleece-deep) 18%, transparent 19%);
+  background-size: 34px 34px; background-position: 0 0, 17px 17px;
+  color: var(--ink); font-family: var(--font-body);
+  padding: 12px max(16px, env(safe-area-inset-left, 0px)) 24px;
+}
+[hidden] { display: none !important; }
+.wrap { max-width: 1060px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+header { display: flex; align-items: end; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 8vw, 56px); line-height: .95; margin: 0; color: var(--wood-dark); text-shadow: 3px 3px 0 var(--ink); }
+.title { font-family: var(--font-display); font-size: 20px; color: var(--hay-deep); }
+.panel { background: var(--card); border: 3px solid var(--ink); border-radius: 18px; box-shadow: 0 5px 0 var(--ink); padding: 12px 14px; }
+.panel h2 { font-family: var(--font-display); font-weight: 400; font-size: 22px; margin: 0 0 8px; }
+.res { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip { display: flex; align-items: center; gap: 6px; background: #fff; border: 2px solid var(--fleece-deep); border-radius: 999px; padding: 4px 12px; font-weight: 800; font-variant-numeric: tabular-nums; font-size: 15px; }
+.chip.warn { border-color: var(--alert); color: var(--alert); }
+.main { display: grid; grid-template-columns: minmax(0, 1fr) 290px; gap: 12px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+.stage { position: relative; border: 3px solid var(--ink); border-radius: 16px; box-shadow: 0 5px 0 var(--ink); overflow: hidden; background: #b9dc8a; aspect-ratio: 16 / 11; touch-action: manipulation; }
+.stage canvas { display: block; width: 100%; height: 100%; cursor: pointer; }
+.toast { position: absolute; left: 50%; top: 10px; transform: translateX(-50%); background: var(--card); border: 2px solid var(--ink); border-radius: 999px; padding: 6px 14px; font-weight: 800; font-size: 14px; box-shadow: 0 3px 0 var(--ink); pointer-events: none; white-space: nowrap; max-width: 92%; overflow: hidden; text-overflow: ellipsis; transition: opacity .3s; }
+.tools { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 8px; }
+.tool { font: inherit; text-align: left; background: #fff; border: 2px solid var(--fleece-deep); border-radius: 12px; padding: 6px 8px; cursor: pointer; display: flex; flex-direction: column; gap: 2px; color: var(--ink); }
+.tool:hover { border-color: var(--wood); }
+.tool[aria-pressed="true"] { border-color: var(--ink); background: #fff3e2; box-shadow: 0 3px 0 var(--ink); }
+.tool:disabled { opacity: .45; cursor: not-allowed; }
+.tool b { font-family: var(--font-display); font-weight: 400; font-size: 17px; }
+.tool span { font-size: 12px; color: var(--muted); line-height: 1.25; }
+.tool .cost { font-weight: 800; color: var(--ink); }
+.side { display: flex; flex-direction: column; gap: 12px; }
+.bar { display: grid; grid-template-columns: 58px 1fr 34px; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; margin: 4px 0; }
+.bar .track { height: 12px; background: #f1e3dc; border-radius: 999px; overflow: hidden; border: 1.5px solid var(--ink); }
+.bar .fill { height: 100%; border-radius: 999px; transition: width .3s; }
+.bar .num { text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
+.btns { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.btn { font-family: var(--font-display); font-size: 17px; color: #fff; background: var(--hay-deep); border: 2px solid var(--ink); border-radius: 999px; padding: 5px 14px; cursor: pointer; box-shadow: 0 3px 0 var(--ink); }
+.btn.alt { background: var(--wood-dark); }
+.btn.ghost { background: #fff; color: var(--ink); }
+.btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--ink); }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.piglist { display: flex; flex-direction: column; gap: 4px; max-height: 260px; overflow-y: auto; }
+.pigrow { display: flex; justify-content: space-between; align-items: center; gap: 8px; font: inherit; background: #fff; border: 2px solid transparent; border-radius: 10px; padding: 4px 8px; cursor: pointer; text-align: left; color: var(--ink); }
+.pigrow:hover, .pigrow.on { border-color: var(--ink); }
+.pigrow .mood { font-size: 13px; }
+.small { font-size: 13px; color: var(--muted); margin: 6px 0 0; line-height: 1.45; }
+.pigname { font-family: var(--font-display); font-size: 26px; margin: 0; }
+.tag { font-size: 12px; font-weight: 800; color: var(--muted); }
+.sick { color: var(--alert); }
+#pigcanvas { width: 120px; height: 80px; display: block; margin: 0 auto; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Pig City</h1>
+      <div class="title" id="townTitle">Pig Hamlet</div>
+    </div>
+    <div class="res" id="res" aria-live="polite"></div>
+  </header>
+
+  <div class="main">
+    <div style="display:flex; flex-direction:column; gap:12px; min-width:0">
+      <div class="stage" id="stage">
+        <canvas id="c" aria-label="Your guinea pig town. Click pigs to see them, click poop to scoop it, or pick a building and click grass to build."></canvas>
+        <div class="toast" id="toast" style="opacity:0"></div>
+      </div>
+      <div class="panel">
+        <h2>Build</h2>
+        <div class="tools" id="tools"></div>
+        <p class="small" id="toolHint">Pick something to build, then click an empty patch of grass. Click a pig to see how it's doing. Click poop to scoop it for a coin.</p>
+      </div>
+    </div>
+
+    <div class="side">
+      <div class="panel" id="pigPanel">
+        <h2>Your pig</h2>
+        <div id="pigEmpty" class="small">Click a pig in town (or in the list below) to check on it.</div>
+        <div id="pigInfo" hidden>
+          <canvas id="pigcanvas" width="240" height="160"></canvas>
+          <p class="pigname" id="pName"></p>
+          <div class="tag" id="pTag"></div>
+          <div id="pBars"></div>
+          <div class="btns">
+            <button class="btn" id="petBtn">Pet</button>
+            <button class="btn alt" id="treatBtn">Treat 🫑</button>
+            <button class="btn ghost" id="renameBtn">Rename</button>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <h2>Market</h2>
+        <div class="btns" style="margin-top:0">
+          <button class="btn ghost" id="buyHay">5 🌾 for 10🪙</button>
+          <button class="btn ghost" id="buyWater">5 💧 for 6🪙</button>
+          <button class="btn ghost" id="buyVeg">3 🫑 for 12🪙</button>
+        </div>
+      </div>
+      <div class="panel">
+        <h2>Residents <span class="tag" id="popTag"></span></h2>
+        <div class="piglist" id="piglist"></div>
+      </div>
+      <div class="panel">
+        <h2>How it works</h2>
+        <p class="small" style="margin-top:0">Pigs eat 🌾 and drink 💧 on their own, so keep the fields and water towers going. Happy pigs earn 🪙. When everyone's happy and there's room in the hutches, babies are born and your town grows. Hungry, thirsty or lonely pigs get sick, and a Vet helps them recover. Your town saves automatically.</p>
+        <div class="btns"><button class="btn ghost" id="resetBtn">Start a new town</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const WHITE = '#fbf6ee', INK = '#3b2a1a';
+  function ell(c, x, y, rx, ry, rot = 0) { c.beginPath(); c.ellipse(x, y, rx, ry, rot, 0, Math.PI * 2); }
+
+  // Side-view pig, origin at body centre, facing right. ~72 x 46 units.
+  function drawPig(c, skin, o = {}) {
+    const chew = o.chew || 0;
+    c.lineJoin = 'round';
+    c.fillStyle = '#f0b3a6';
+    for (const fx of [-20, 18]) { ell(c, fx, 19, 6, 3.5); c.fill(); c.lineWidth = 1.5; c.strokeStyle = INK; c.stroke(); }
+    const body = new Path2D(); body.ellipse(0, 0, 36, 22, 0, 0, Math.PI * 2);
+    if (skin.fluffy) {
+      const fur = new Path2D();
+      for (let i = 0; i <= 44; i++) {
+        const a = i / 44 * Math.PI * 2, k = i % 2 ? 1.0 : 1.12;
+        const px = Math.cos(a) * 36 * k, py = Math.sin(a) * 22 * k;
+        i ? fur.lineTo(px, py) : fur.moveTo(px, py);
+      }
+      fur.closePath();
+      c.fillStyle = skin.base; c.fill(fur); c.lineWidth = 2.2; c.strokeStyle = INK; c.stroke(fur);
+    }
+    c.fillStyle = skin.base; c.fill(body);
+    c.save(); c.clip(body);
+    if (skin.rear) { c.fillStyle = skin.rear; ell(c, -26, 0, 26, 28); c.fill(); }
+    if (skin.band) { c.fillStyle = skin.band; c.fillRect(-3, -30, 15, 60); }
+    if (skin.head) { c.fillStyle = skin.head; ell(c, 27, -2, 17, 26); c.fill(); }
+    if (skin.suit) {
+      // pinstripes
+      c.strokeStyle = 'rgba(255,255,255,.13)'; c.lineWidth = 1;
+      for (let x = -36; x < 12; x += 6) { c.beginPath(); c.moveTo(x, -24); c.lineTo(x, 24); c.stroke(); }
+      // shirt V + lapels + red tie at the collar
+      c.fillStyle = '#fff'; c.beginPath(); c.moveTo(7, -18); c.lineTo(13, 10); c.lineTo(17, -18); c.closePath(); c.fill();
+      c.fillStyle = '#1d2540'; c.beginPath(); c.moveTo(4, -18); c.lineTo(11, 4); c.lineTo(7, -18); c.closePath(); c.fill();
+      c.fillStyle = '#c8343c'; c.beginPath(); c.moveTo(11, -16); c.lineTo(14, -16); c.lineTo(15, 2); c.lineTo(12.5, 6); c.lineTo(10, 2); c.closePath(); c.fill();
+    }
+    if (skin.cheek) { c.fillStyle = skin.cheek; ell(c, 31, 4, 10, 9); c.fill(); }
+    if (skin.eyePatch) { c.fillStyle = skin.eyePatch; ell(c, 23, -6, 9, 9.5); c.fill(); }
+    if (skin.blaze) { c.fillStyle = skin.blaze; ell(c, 29, -12, 13, 4.5, 0.55); c.fill(); }
+    if (skin.chin) { c.fillStyle = skin.chin; ell(c, 33, 9, 7.5, 6.5); c.fill(); }
+    c.restore();
+    if (!skin.fluffy) { c.lineWidth = 2.5; c.strokeStyle = INK; c.stroke(body); }
+    c.fillStyle = skin.ear; ell(c, 17, -18, 7, 5, -0.5); c.fill(); c.lineWidth = 2; c.strokeStyle = INK; c.stroke();
+    if (o.sad) {
+      c.beginPath(); c.moveTo(21, -10); c.lineTo(28, -4); c.moveTo(21, -4); c.lineTo(28, -10);
+      c.lineWidth = 2; c.strokeStyle = skin.dark ? '#fff' : INK; c.stroke();
+    } else {
+      c.fillStyle = '#0b0809'; ell(c, 24.5, -7, 3.6, 3.6); c.fill();
+      if (skin.dark) { c.lineWidth = 1; c.strokeStyle = '#6b5a5f'; c.stroke(); }
+      c.fillStyle = '#fff'; ell(c, 25.8, -8.3, 1.3, 1.3); c.fill();
+    }
+    if (skin.glasses && !o.sad) {
+      c.lineWidth = 1.4; c.strokeStyle = INK;
+      ell(c, 24.5, -7, 5.2, 5.2); c.stroke();
+      c.beginPath(); c.moveTo(19.3, -7); c.lineTo(13, -9); c.stroke();
+    }
+    c.fillStyle = skin.nose || '#e07a7a'; ell(c, 35.5, 1, 2.8, 2.2); c.fill();
+    c.beginPath(); c.moveTo(33.5, 4.5); c.quadraticCurveTo(31.5, 8 + chew, 28.5, 7);
+    c.lineWidth = 1.5; c.strokeStyle = skin.dark ? '#9a8a8f' : INK; c.stroke();
+    c.beginPath(); c.moveTo(33, 0); c.lineTo(45, -3); c.moveTo(33, 2); c.lineTo(45, 4);
+    c.lineWidth = 1; c.strokeStyle = skin.dark ? '#cfc6c8' : INK; c.stroke();
+    if (!skin.dark) { c.fillStyle = 'rgba(240,130,130,.4)'; ell(c, 22, 4, 5, 3); c.fill(); }
+  }
+
+  function drawPoop(c, x, y, a, s = 1) {
+    c.save(); c.translate(x, y); c.rotate(a); c.scale(s, s);
+    c.fillStyle = '#4a3020'; ell(c, 0, 0, 3, 1.7); c.fill();
+    c.fillStyle = 'rgba(255,255,255,.35)'; ell(c, -0.8, -0.6, 1, .45); c.fill();
+    c.restore();
+  }
+
+  // ---------- coats ----------
+  const FOUNDERS = [
+    { name: 'Toki', skin: { base: '#c96d2c', rear: '#3d271b', eyePatch: '#3d271b', blaze: WHITE, chin: WHITE, ear: '#e0a08a' } },
+    { name: 'Mochi', skin: { base: '#1e1b20', fluffy: true, ear: '#3c3438', dark: true, nose: '#5a4048' } },
+    { name: 'Poke', skin: { base: '#d27b2f', band: WHITE, head: '#221915', chin: WHITE, ear: '#7b5236', dark: true } },
+    { name: 'Miso Soup', skin: { base: '#201b1c', band: WHITE, cheek: '#c9752f', ear: '#3a2f2c', dark: true } },
+    { name: 'Masaki', skin: { base: '#2b3552', head: '#e6b866', suit: true, ear: '#d48f72', nose: '#d97b7b', glasses: true }, banker: true }
+  ];
+  const COATS = [
+    { c: '#c96d2c', dark: false }, { c: '#1e1b20', dark: true }, { c: '#d27b2f', dark: false }, { c: '#e6b866', dark: false },
+    { c: '#f3ece0', dark: false }, { c: '#8a6a52', dark: true }, { c: '#b9a39a', dark: false }, { c: '#3d271b', dark: true }
+  ];
+  const pick = a => a[Math.floor(Math.random() * a.length)];
+  function babySkin(a, b) {
+    const base = Math.random() < .7 ? pick([a.base, b.base]) : pick(COATS).c;
+    const dark = COATS.find(k => k.c === base)?.dark ?? (a.base === base ? !!a.dark : !!b.dark);
+    const s = { base, ear: dark ? '#3c3438' : '#e0a08a', dark };
+    if (dark) s.nose = '#5a4048';
+    const accent = pick(COATS.filter(k => k.c !== base)).c;
+    const r = Math.random();
+    if (r < .2) s.band = WHITE;
+    else if (r < .35) { s.rear = accent; }
+    else if (r < .5) { s.head = accent; }
+    else if (r < .62) { s.eyePatch = accent; s.blaze = WHITE; }
+    if (Math.random() < .3) s.chin = WHITE;
+    if (Math.random() < .18 || (a.fluffy && b.fluffy)) s.fluffy = true;
+    return s;
+  }
+  const NAMES = ['Biscuit', 'Nugget', 'Pudding', 'Dumpling', 'Tofu', 'Boba', 'Peanut', 'Clover', 'Waffles', 'Pepper', 'Ginger', 'Sesame', 'Maple', 'Pickle', 'Daisy', 'Cocoa', 'Mango', 'Bean', 'Noodle', 'Taro', 'Matcha', 'Onigiri', 'Udon', 'Pumpkin', 'Hazel', 'Oreo', 'Fig', 'Kiwi', 'Pancake', 'Sprout', 'Bao', 'Latte', 'Marshmallow', 'Truffle', 'Juniper', 'Nori', 'Yuzu', 'Ramen', 'Gnocchi', 'Pistachio'];
+
+  // ---------- buildings ----------
+  const B = {
+    hutch:  { name: 'Hutch', cost: 40, desc: 'Room for 2 more pigs' },
+    hay:    { name: 'Hay Field', cost: 30, desc: '+1 🌾 every 6s' },
+    water:  { name: 'Water Tower', cost: 25, desc: '+1 💧 every 5s' },
+    garden: { name: 'Veggie Garden', cost: 55, desc: '+1 🫑 every 10s' },
+    park:   { name: 'Play Park', cost: 80, desc: 'Pigs stay happy longer' },
+    vet:    { name: 'Vet', cost: 120, desc: 'Sick pigs heal faster' },
+    bank:   { name: 'Masaki Capital', cost: 150, desc: '+2 🪙 every 4s' },
+    bulldoze: { name: 'Bulldoze', cost: 0, desc: 'Remove a building, refunds half' }
+  };
+  const RATE = { hay: 6, water: 5, garden: 10, bank: 4 };
+
+  // ---------- map ----------
+  const COLS = 16, ROWS = 11, T = 40, W = COLS * T, H = ROWS * T;
+  const canvas = document.getElementById('c');
+  let ctx = canvas.getContext('2d');
+  function resize() {
+    const r = canvas.getBoundingClientRect(); if (!r.width) return;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.round(r.width * dpr); canvas.height = Math.round(r.height * dpr);
+    ctx.setTransform(canvas.width / W, 0, 0, canvas.height / H, 0, 0);
+  }
+  window.addEventListener('resize', resize);
+  const flowers = [];
+  for (let i = 0; i < 90; i++) flowers.push({ x: Math.random() * W, y: Math.random() * H, c: ['#fff', '#ffd6e0', '#fff1a8', '#d8c9f5'][i % 4], k: Math.random() < .5 });
+
+  // ---------- state ----------
+  let G, nextId = 1;
+  function newTown() {
+    const g = { coins: 80, hay: 12, water: 12, veg: 6, buildings: [], pigs: [], poops: [], time: 0, breedT: 20, born: 0, best: 5, prod: {} };
+    const place = (type, x, y) => g.buildings.push({ type, x, y, t: Math.random() * 3 });
+    place('hutch', 2, 2); place('hutch', 4, 2); place('hutch', 6, 2);
+    place('hay', 2, 7); place('water', 12, 2); place('garden', 4, 7);
+    FOUNDERS.forEach((f, i) => g.pigs.push(makePig(f.name, f.skin, 260 + i * 34, 210 + (i % 2) * 30, true)));
+    return g;
+  }
+  function makePig(name, skin, x, y, adult) {
+    return { id: nextId++, name, skin, x, y, tx: x, ty: y, wait: Math.random() * 2, face: 1, food: 85, water: 85, joy: 80, health: 100, age: adult ? 999 : 0, petCd: 0, poopT: 6 + Math.random() * 10, coinT: 3 + Math.random() * 6, hop: 0 };
+  }
+  function load() {
+    try {
+      const s = JSON.parse(localStorage.getItem('pigcity-v1') || 'null');
+      if (s && Array.isArray(s.pigs)) { G = s; nextId = Math.max(0, ...G.pigs.map(p => p.id)) + 1; return; }
+    } catch (e) {}
+    G = newTown();
+  }
+  function save() { try { localStorage.setItem('pigcity-v1', JSON.stringify(G)); } catch (e) {} }
+  load();
+  G.prod = G.prod || {};
+
+  const capacity = () => G.buildings.filter(b => b.type === 'hutch').length * 2;
+  const count = t => G.buildings.filter(b => b.type === t).length;
+  const at = (x, y) => G.buildings.find(b => b.x === x && b.y === y);
+
+  // ---------- ui ----------
+  const $ = id => document.getElementById(id);
+  let tool = null, selected = null, hover = null;
+  const toolsEl = $('tools');
+  Object.entries(B).forEach(([k, b]) => {
+    const el = document.createElement('button');
+    el.className = 'tool'; el.dataset.k = k; el.setAttribute('aria-pressed', 'false');
+    el.innerHTML = `<b>${b.name}</b><span>${b.desc}</span>${b.cost ? `<span class="cost">${b.cost} 🪙</span>` : ''}`;
+    el.addEventListener('click', () => { tool = tool === k ? null : k; syncTools(); });
+    toolsEl.appendChild(el);
+  });
+  function syncTools() {
+    [...toolsEl.children].forEach(el => {
+      const k = el.dataset.k;
+      el.setAttribute('aria-pressed', tool === k ? 'true' : 'false');
+      el.disabled = B[k].cost > G.coins && tool !== k;
+    });
+    $('toolHint').textContent = tool === 'bulldoze' ? 'Click a building to remove it (you get half the cost back).'
+      : tool ? `Click empty grass to build a ${B[tool].name}. Click the button again to stop building.`
+      : "Pick something to build, then click an empty patch of grass. Click a pig to see how it's doing. Click poop to scoop it for a coin.";
+  }
+
+  let toastT = 0;
+  function toast(msg) { const t = $('toast'); t.textContent = msg; t.style.opacity = 1; toastT = 3.2; }
+
+  const popups = [];
+  function popup(x, y, text, color = INK) { popups.push({ x, y, text, color, life: 1.2 }); }
+
+  function townTitle(n) { return n >= 36 ? 'Pig Metropolis' : n >= 21 ? 'Pig City' : n >= 11 ? 'Pig Town' : n >= 6 ? 'Pig Village' : 'Pig Hamlet'; }
+
+  function hudRes() {
+    const low = v => v < 4 ? ' warn' : '';
+    const cap = capacity();
+    $('res').innerHTML =
+      `<div class="chip">🪙 ${Math.floor(G.coins)}</div>` +
+      `<div class="chip${low(G.hay)}">🌾 ${Math.floor(G.hay)}</div>` +
+      `<div class="chip${low(G.water)}">💧 ${Math.floor(G.water)}</div>` +
+      `<div class="chip">🫑 ${Math.floor(G.veg)}</div>` +
+      `<div class="chip${G.pigs.length >= cap ? ' warn' : ''}">🐹 ${G.pigs.length}/${cap}</div>` +
+      `<div class="chip${G.poops.length > 25 ? ' warn' : ''}">💩 ${G.poops.length}</div>`;
+    $('townTitle').textContent = townTitle(G.pigs.length) + ` · ${G.pigs.length} pig${G.pigs.length === 1 ? '' : 's'}`;
+    $('popTag').textContent = `(${G.pigs.length})`;
+    $('buyHay').disabled = G.coins < 10; $('buyWater').disabled = G.coins < 6; $('buyVeg').disabled = G.coins < 12;
+  }
+  function moodOf(p) {
+    if (p.health < 50) return '🤒';
+    const m = Math.min(p.food, p.water, p.joy);
+    return m > 60 ? '😊' : m > 30 ? '😐' : '😟';
+  }
+  let listSig = '';
+  function hudList() {
+    const sig = G.pigs.map(p => p.id + p.name + moodOf(p)).join('|') + selected;
+    if (sig === listSig) return; listSig = sig;
+    const el = $('piglist'); el.innerHTML = '';
+    G.pigs.forEach(p => {
+      const b = document.createElement('button'); b.className = 'pigrow' + (p.id === selected ? ' on' : '');
+      b.innerHTML = `<span>${p.name}${p.age < 90 ? ' 🍼' : ''}</span><span class="mood">${moodOf(p)}</span>`;
+      b.addEventListener('click', () => { selected = p.id; renderPig(true); });
+      el.appendChild(b);
+    });
+  }
+  const BAR = [['food', 'Food', '#e0a43a'], ['water', 'Water', '#5aa9e0'], ['joy', 'Joy', '#e07a9a'], ['health', 'Health', '#5f8f2e']];
+  function renderPig(redraw) {
+    const p = G.pigs.find(q => q.id === selected);
+    $('pigEmpty').hidden = !!p; $('pigInfo').hidden = !p;
+    if (!p) return;
+    if (redraw || $('pName').dataset.id != p.id) {
+      $('pName').dataset.id = p.id; $('pName').textContent = p.name;
+      const c = $('pigcanvas').getContext('2d'); c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, 240, 160);
+      c.translate(118, 86); c.scale(2.6, 2.6); drawPig(c, p.skin);
+    }
+    const age = p.age < 90 ? 'Baby 🍼' : p.age >= 999 ? 'Founder' : 'Grown up';
+    $('pTag').innerHTML = age + (p.health < 50 ? ' · <span class="sick">Feeling sick</span>' : '') + (p.joy < 30 ? ' · Lonely' : '');
+    $('pBars').innerHTML = BAR.map(([k, l, col]) => `<div class="bar"><span>${l}</span><div class="track"><div class="fill" style="width:${Math.max(0, p[k])}%;background:${col}"></div></div><span class="num">${Math.round(p[k])}</span></div>`).join('');
+    $('petBtn').disabled = p.petCd > 0; $('treatBtn').disabled = G.veg < 1;
+  }
+
+  $('petBtn').addEventListener('click', () => {
+    const p = G.pigs.find(q => q.id === selected); if (!p || p.petCd > 0) return;
+    p.joy = Math.min(100, p.joy + 20); p.petCd = 4; p.hop = .6; popup(p.x, p.y - 22, '♥', '#e07a9a'); renderPig();
+  });
+  $('treatBtn').addEventListener('click', () => {
+    const p = G.pigs.find(q => q.id === selected); if (!p || G.veg < 1) return;
+    G.veg--; p.joy = Math.min(100, p.joy + 25); p.food = Math.min(100, p.food + 15); p.hop = .6;
+    popup(p.x, p.y - 22, 'Wheek! 🫑', '#5f8f2e'); renderPig(); hudRes();
+  });
+  $('renameBtn').addEventListener('click', () => {
+    const p = G.pigs.find(q => q.id === selected); if (!p) return;
+    const n = prompt('New name for ' + p.name + '?', p.name);
+    if (n && n.trim()) { p.name = n.trim().slice(0, 16); renderPig(true); listSig = ''; save(); }
+  });
+  const buy = (cost, k, n) => () => { if (G.coins < cost) return; G.coins -= cost; G[k] += n; hudRes(); syncTools(); };
+  $('buyHay').addEventListener('click', buy(10, 'hay', 5));
+  $('buyWater').addEventListener('click', buy(6, 'water', 5));
+  $('buyVeg').addEventListener('click', buy(12, 'veg', 3));
+  $('resetBtn').addEventListener('click', () => {
+    if (!confirm('Start a brand new town? Your current town will be gone.')) return;
+    G = newTown(); selected = null; listSig = ''; save(); hudRes(); renderPig(); syncTools(); toast('A fresh start! Welcome to your new town.');
+  });
+
+  // ---------- input ----------
+  function toWorld(e) {
+    const r = canvas.getBoundingClientRect();
+    return { x: (e.clientX - r.left) / r.width * W, y: (e.clientY - r.top) / r.height * H };
+  }
+  canvas.addEventListener('pointermove', e => { const w = toWorld(e); hover = { x: Math.floor(w.x / T), y: Math.floor(w.y / T) }; });
+  canvas.addEventListener('pointerleave', () => { hover = null; });
+  canvas.addEventListener('click', e => {
+    const w = toWorld(e), tx = Math.floor(w.x / T), ty = Math.floor(w.y / T);
+    if (tool === 'bulldoze') {
+      const b = at(tx, ty); if (!b) return;
+      if (b.type === 'hutch' && (capacity() - 2) < G.pigs.length) { toast("Can't remove that hutch, your pigs need the room!"); return; }
+      G.buildings.splice(G.buildings.indexOf(b), 1); const refund = Math.floor(B[b.type].cost / 2); G.coins += refund;
+      popup(tx * T + T / 2, ty * T + 10, '+' + refund + ' 🪙'); hudRes(); syncTools(); save(); return;
+    }
+    if (tool) {
+      if (at(tx, ty)) { toast('Something is already built there.'); return; }
+      if (G.coins < B[tool].cost) { toast(`You need ${B[tool].cost} 🪙 for a ${B[tool].name}.`); return; }
+      G.coins -= B[tool].cost; G.buildings.push({ type: tool, x: tx, y: ty, t: 0 });
+      popup(tx * T + T / 2, ty * T + 8, 'Built!', '#5f8f2e');
+      if (G.coins < B[tool].cost) tool = null;
+      hudRes(); syncTools(); save(); return;
+    }
+    // poop?
+    for (let i = G.poops.length - 1; i >= 0; i--) {
+      const q = G.poops[i];
+      if (Math.hypot(q.x - w.x, q.y - w.y) < 11) { G.poops.splice(i, 1); G.coins += 1; popup(q.x, q.y - 8, '+1 🪙'); hudRes(); return; }
+    }
+    // pig?
+    let best = null, bd = 22;
+    for (const p of G.pigs) { const d = Math.hypot(p.x - w.x, p.y - 4 - w.y); if (d < bd) { bd = d; best = p; } }
+    if (best) { selected = best.id; best.hop = .4; renderPig(true); listSig = ''; return; }
+    const b = at(tx, ty);
+    if (b) toast(B[b.type].name + ': ' + B[b.type].desc);
+  });
+  window.addEventListener('keydown', e => { if (e.key === 'Escape') { tool = null; syncTools(); } });
+
+  // ---------- simulation ----------
+  function tick(dt) {
+    G.time += dt;
+    const parks = count('park'), vets = count('vet');
+    // production
+    for (const b of G.buildings) {
+      if (!RATE[b.type]) continue;
+      b.t += dt;
+      while (b.t >= RATE[b.type]) {
+        b.t -= RATE[b.type];
+        const cx = b.x * T + T / 2, cy = b.y * T + 6;
+        if (b.type === 'hay') { G.hay++; popup(cx, cy, '+1 🌾', '#5f8f2e'); }
+        if (b.type === 'water') { G.water++; popup(cx, cy, '+1 💧', '#3c7ab8'); }
+        if (b.type === 'garden') { G.veg++; popup(cx, cy, '+1 🫑', '#5f8f2e'); }
+        if (b.type === 'bank') { G.coins += 2; popup(cx, cy, '+2 🪙', '#1f2f5c'); }
+      }
+    }
+    const dirt = Math.min(1, G.poops.length / 30);
+    for (let i = G.pigs.length - 1; i >= 0; i--) {
+      const p = G.pigs[i];
+      p.age += dt; p.petCd = Math.max(0, p.petCd - dt); p.hop = Math.max(0, p.hop - dt);
+      p.food -= .7 * dt; p.water -= .9 * dt;
+      p.joy -= (.45 / (1 + .5 * parks) + .5 * dirt) * dt;
+      // company keeps pigs happy
+      if (G.pigs.length > 1) p.joy += .08 * dt;
+      if (p.food < 70) {
+        if (G.veg >= 1 && (p.joy < 50 || G.hay < 1)) { G.veg--; p.food += 25; p.joy += 10; p.hop = .3; }
+        else if (G.hay >= 1) { G.hay--; p.food += 30; }
+      }
+      if (p.water < 70 && G.water >= 1) { G.water--; p.water += 35; }
+      for (const k of ['food', 'water', 'joy']) p[k] = Math.max(0, Math.min(100, p[k]));
+      const bad = p.food < 15 || p.water < 15 || p.joy < 10;
+      p.health += (bad ? -1.6 : .5 + vets * 1.5) * dt;
+      p.health = Math.max(0, Math.min(100, p.health));
+      if (p.health <= 0) {
+        G.pigs.splice(i, 1);
+        toast(`${p.name} moved to Grandma's farm to get better 🥲 Keep the food and water up!`);
+        if (selected === p.id) selected = null;
+        renderPig(); continue;
+      }
+      // coins & poop
+      p.coinT -= dt;
+      if (p.coinT <= 0) { p.coinT = 6; if (p.joy > 40 && p.health > 50) { G.coins += 1; popup(p.x, p.y - 20, '+1 🪙', '#a77c4c'); } }
+      p.poopT -= dt;
+      if (p.poopT <= 0) { p.poopT = 10 + Math.random() * 10; if (G.poops.length < 80) G.poops.push({ x: p.x - p.face * 14 + (Math.random() - .5) * 6, y: p.y + 8 + (Math.random() - .5) * 4, a: Math.random() * 3 }); }
+      // wander
+      if (p.wait > 0) p.wait -= dt;
+      else {
+        const dx = p.tx - p.x, dy = p.ty - p.y, d = Math.hypot(dx, dy);
+        const sp = (p.age < 90 ? 26 : 20) * (p.health < 50 ? .5 : 1);
+        if (d < 2) { p.wait = 1 + Math.random() * 3; p.tx = 24 + Math.random() * (W - 48); p.ty = 30 + Math.random() * (H - 50); }
+        else { p.x += dx / d * sp * dt; p.y += dy / d * sp * dt; if (Math.abs(dx) > 1) p.face = dx > 0 ? 1 : -1; }
+      }
+    }
+    // babies
+    G.breedT -= dt;
+    if (G.breedT <= 0) {
+      G.breedT = 22;
+      const adults = G.pigs.filter(p => p.age >= 90 && p.health > 60);
+      const avgJoy = G.pigs.reduce((s, p) => s + p.joy, 0) / Math.max(1, G.pigs.length);
+      if (adults.length < 2) {}
+      else if (G.pigs.length >= capacity()) { if (avgJoy > 55) toast('Your pigs want babies, but the hutches are full! Build another Hutch.'); }
+      else if (avgJoy > 55) {
+        const a = pick(adults), b = pick(adults.filter(p => p !== a));
+        const used = new Set(G.pigs.map(p => p.name));
+        const name = NAMES.find(n => !used.has(n) && Math.random() < .5) || NAMES.find(n => !used.has(n)) || 'Pig ' + nextId;
+        const baby = makePig(name, babySkin(a.skin, b.skin), (a.x + b.x) / 2, (a.y + b.y) / 2, false);
+        baby.food = baby.water = 90; baby.joy = 90;
+        G.pigs.push(baby); G.born++;
+        popup(baby.x, baby.y - 24, 'New baby! 🍼', '#e07a9a');
+        toast(`${a.name} and ${b.name} had a baby: ${name}! 🍼`);
+        const t = townTitle(G.pigs.length);
+        if (G.pigs.length > G.best) { if (townTitle(G.best) !== t) setTimeout(() => toast(`🎉 Your town grew into a ${t}!`), 3300); G.best = G.pigs.length; }
+      }
+    }
+    for (let i = popups.length - 1; i >= 0; i--) { const q = popups[i]; q.y -= 18 * dt; q.life -= dt; if (q.life <= 0) popups.splice(i, 1); }
+    if (toastT > 0) { toastT -= dt; if (toastT <= 0) $('toast').style.opacity = 0; }
+  }
+
+  // ---------- drawing ----------
+  function rr(c, x, y, w, h, r) { c.beginPath(); c.roundRect(x, y, w, h, r); }
+  function drawBuilding(c, b) {
+    const x = b.x * T, y = b.y * T, cx = x + T / 2;
+    c.save(); c.lineJoin = 'round'; c.lineWidth = 2; c.strokeStyle = INK;
+    switch (b.type) {
+      case 'hutch':
+        c.fillStyle = '#dcb98a'; rr(c, x + 6, y + 15, 28, 21, 3); c.fill(); c.stroke();
+        c.fillStyle = '#e88fa5'; c.beginPath(); c.moveTo(x + 2, y + 17); c.lineTo(cx, y + 3); c.lineTo(x + 38, y + 17); c.closePath(); c.fill(); c.stroke();
+        c.fillStyle = '#5a3d24'; rr(c, cx - 6, y + 23, 12, 13, [6, 6, 0, 0]); c.fill();
+        break;
+      case 'hay':
+        c.fillStyle = '#c99a5b'; rr(c, x + 3, y + 5, 34, 31, 5); c.fill(); c.stroke();
+        for (let i = 0; i < 4; i++) { c.fillStyle = i % 2 ? '#ecc55a' : '#d9ad3c'; c.fillRect(x + 6, y + 9 + i * 6.5, 28, 4); }
+        c.fillStyle = '#f2d36b'; ell(c, x + 30, y + 31, 5, 4); c.fill(); c.lineWidth = 1.5; c.stroke();
+        break;
+      case 'water': {
+        c.fillStyle = '#a77c4c'; c.fillRect(x + 11, y + 22, 3, 14); c.fillRect(x + 26, y + 22, 3, 14);
+        c.fillStyle = '#7fc1ea'; rr(c, x + 7, y + 5, 26, 20, 8); c.fill(); c.stroke();
+        c.fillStyle = 'rgba(255,255,255,.6)'; rr(c, x + 11, y + 9, 5, 10, 3); c.fill();
+        const wob = Math.sin(G.time * 3 + b.x) * 1.5;
+        c.fillStyle = '#5aa9e0'; ell(c, cx, y + 33 + wob * .3, 3, 3.5); c.fill();
+        break;
+      }
+      case 'garden':
+        c.fillStyle = '#8a5a34'; rr(c, x + 3, y + 5, 34, 31, 5); c.fill(); c.stroke();
+        for (let i = 0; i < 3; i++) for (let j = 0; j < 2; j++) {
+          const px = x + 10 + i * 10, py = y + 15 + j * 12;
+          c.fillStyle = '#6fae3e'; ell(c, px - 2, py - 3, 3, 1.6, -.6); c.fill(); ell(c, px + 2, py - 3, 3, 1.6, .6); c.fill();
+          c.fillStyle = ['#e0483f', '#f2b134', '#5fb04a'][(i + j) % 3]; ell(c, px, py + 2, 3.2, 3.6); c.fill();
+        }
+        break;
+      case 'park':
+        c.fillStyle = '#8fcf6a'; rr(c, x + 2, y + 4, 36, 33, 8); c.fill();
+        c.fillStyle = '#7b5236'; c.fillRect(x + 9, y + 20, 4, 12);
+        c.fillStyle = '#4f9a3a'; ell(c, x + 11, y + 15, 9, 9); c.fill(); c.stroke();
+        c.fillStyle = '#f4a3b8'; c.beginPath(); c.moveTo(x + 22, y + 34); c.quadraticCurveTo(x + 30, y + 30, x + 34, y + 14); c.lineTo(x + 37, y + 15); c.quadraticCurveTo(x + 33, y + 33, x + 24, y + 36); c.closePath(); c.fill(); c.stroke();
+        c.fillStyle = '#ffd36b'; ell(c, x + 30, y + 30, 3, 3); c.fill();
+        break;
+      case 'vet':
+        c.fillStyle = '#fff'; rr(c, x + 5, y + 10, 30, 26, 3); c.fill(); c.stroke();
+        c.fillStyle = '#9fd3c7'; c.fillRect(x + 5, y + 8, 30, 6); c.strokeRect(x + 5, y + 8, 30, 6);
+        c.fillStyle = '#e07a9a'; c.beginPath(); c.moveTo(cx, y + 31); c.bezierCurveTo(cx - 10, y + 24, cx - 6, y + 15, cx, y + 20); c.bezierCurveTo(cx + 6, y + 15, cx + 10, y + 24, cx, y + 31); c.fill();
+        break;
+      case 'bank':
+        c.fillStyle = '#1f2f5c'; c.beginPath(); c.moveTo(x + 3, y + 14); c.lineTo(cx, y + 3); c.lineTo(x + 37, y + 14); c.closePath(); c.fill(); c.stroke();
+        c.fillStyle = '#f4ede0'; c.fillRect(x + 5, y + 14, 30, 19); c.strokeRect(x + 5, y + 14, 30, 19);
+        c.fillStyle = '#1f2f5c'; for (let i = 0; i < 4; i++) c.fillRect(x + 8 + i * 7, y + 16, 3, 15);
+        c.fillStyle = '#c9a23a'; c.fillRect(x + 3, y + 33, 34, 4); c.strokeRect(x + 3, y + 33, 34, 4);
+        c.fillStyle = '#e9b93b'; c.save(); c.translate(cx, y + 10); c.beginPath();
+        for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, k = i % 2 ? 1.6 : 3.6; c.lineTo(Math.cos(a) * k, Math.sin(a) * k); }
+        c.fill(); c.restore();
+        break;
+    }
+    c.restore();
+  }
+
+  function draw() {
+    const c = ctx;
+    c.fillStyle = '#b9dc8a'; c.fillRect(0, 0, W, H);
+    c.fillStyle = 'rgba(255,255,255,.12)';
+    for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) if ((x + y) % 2) c.fillRect(x * T, y * T, T, T);
+    for (const f of flowers) {
+      if (f.k) { c.strokeStyle = '#8fc26a'; c.lineWidth = 1.2; c.beginPath(); c.moveTo(f.x, f.y); c.lineTo(f.x - 2, f.y - 5); c.moveTo(f.x, f.y); c.lineTo(f.x + 2, f.y - 5); c.stroke(); }
+      else { c.fillStyle = f.c; ell(c, f.x, f.y, 1.8, 1.8); c.fill(); }
+    }
+    // build preview
+    if (hover && tool && hover.x >= 0 && hover.y >= 0 && hover.x < COLS && hover.y < ROWS) {
+      const occ = at(hover.x, hover.y);
+      const ok = tool === 'bulldoze' ? !!occ : !occ && G.coins >= B[tool].cost;
+      c.fillStyle = ok ? (tool === 'bulldoze' ? 'rgba(217,69,90,.35)' : 'rgba(255,255,255,.55)') : 'rgba(217,69,90,.25)';
+      rr(c, hover.x * T + 2, hover.y * T + 2, T - 4, T - 4, 6); c.fill();
+      if (ok && tool !== 'bulldoze') { c.globalAlpha = .55; drawBuilding(c, { type: tool, x: hover.x, y: hover.y }); c.globalAlpha = 1; }
+    }
+    // depth-sorted scene
+    const items = [];
+    for (const b of G.buildings) items.push({ y: b.y * T + T, f: () => drawBuilding(c, b) });
+    for (const q of G.poops) items.push({ y: q.y, f: () => drawPoop(c, q.x, q.y, q.a, 1.5) });
+    for (const p of G.pigs) items.push({ y: p.y + 8, f: () => {
+      const baby = p.age < 90, sc = baby ? .2 + .14 * Math.min(1, p.age / 90) : .36;
+      const hop = p.hop > 0 ? Math.abs(Math.sin(p.hop * 16)) * 5 : 0;
+      c.save(); c.translate(p.x, p.y - hop);
+      c.fillStyle = 'rgba(0,0,0,.12)'; ell(c, 0, 9 + hop, 13 * sc / .36, 3); c.fill();
+      if (p.id === selected) { c.strokeStyle = '#fff'; c.lineWidth = 2.5; ell(c, 0, 9 + hop, 17 * sc / .36, 5); c.stroke(); }
+      c.scale(p.face * sc, sc); drawPig(c, p.skin, { sad: p.health < 35 });
+      c.restore();
+      if (p.health < 50) { c.font = '12px sans-serif'; c.textAlign = 'center'; c.fillText('🤒', p.x, p.y - 16); }
+      else if (Math.min(p.food, p.water) < 25) { c.font = '12px sans-serif'; c.textAlign = 'center'; c.fillText(p.food < p.water ? '🌾?' : '💧?', p.x, p.y - 16); }
+    } });
+    items.sort((a, b) => a.y - b.y).forEach(i => i.f());
+    // popups
+    c.textAlign = 'center'; c.font = '13px Chewy, "Comic Sans MS", sans-serif';
+    for (const q of popups) {
+      c.globalAlpha = Math.min(1, q.life / .4);
+      c.lineWidth = 3.5; c.strokeStyle = '#fff'; c.strokeText(q.text, q.x, q.y);
+      c.fillStyle = q.color; c.fillText(q.text, q.x, q.y);
+    }
+    c.globalAlpha = 1;
+  }
+
+  // ---------- loop ----------
+  let last = 0, uiT = 0, saveT = 0;
+  function loop(t) {
+    const dt = Math.min(.1, (t - last) / 1000 || 0); last = t;
+    tick(dt); draw();
+    uiT -= dt; if (uiT <= 0) { uiT = .25; hudRes(); hudList(); renderPig(); syncTools(); }
+    saveT -= dt; if (saveT <= 0) { saveT = 5; save(); }
+    requestAnimationFrame(loop);
+  }
+  document.addEventListener('visibilitychange', () => { if (document.hidden) save(); });
+  resize(); hudRes(); syncTools(); renderPig();
+  let seen = false; try { seen = !!localStorage.getItem('pigcity-seen'); localStorage.setItem('pigcity-seen', '1'); } catch (e) {}
+  if (!seen) { setTimeout(() => toast('Welcome to Pig City! Toki, Mochi, Poke, Miso Soup and Masaki just moved in.'), 400); }
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
