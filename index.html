@@ -248,6 +248,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     hospital: { name: 'Pig Hospital', cost: 150, desc: 'Sick pigs check in and come out healthy (3 beds)' },
     vet:    { name: 'Vet', cost: 120, desc: 'Sick pigs heal faster' },
     bank:   { name: 'Masaki Capital', cost: 150, desc: '+2 🪙 every 4s' },
+    sitter: { name: 'Pig Sitter', cost: 90, desc: 'Hires a sitter who pets, feeds & restocks' },
     roomba: { name: 'Poop Roomba', cost: 60, desc: 'Drives around scooping poop for you' },
     bulldoze: { name: 'Bulldoze', cost: 0, desc: 'Remove a building, refunds half' }
   };
@@ -312,7 +313,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     if (!done) G.buildings.splice(G.buildings.indexOf(b), 1);
   }
 
-  const roombas = [];
+  const roombas = [], sitters = [];
 
   // ---------- ui ----------
   const $ = id => document.getElementById(id);
@@ -544,6 +545,63 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
         else { p.x += dx / d * sp * dt; p.y += dy / d * sp * dt; if (Math.abs(dx) > 1) p.face = dx > 0 ? 1 : -1; }
       }
     }
+    // pig sitters
+    const homes = G.buildings.filter(b => b.type === 'sitter');
+    while (sitters.length < homes.length) { const h = homes[sitters.length]; sitters.push({ x: h.x * T + T / 2, y: h.y * T + T, target: null, act: 0, face: 1, step: 0, idleT: 0 }); }
+    sitters.length = Math.min(sitters.length, homes.length);
+    sitters.forEach((st, i) => {
+      const home = homes[i];
+      let pig = st.target && G.pigs.find(q => q.id === st.target);
+      if (pig && pig.state) pig = null;
+      if (!pig) {
+        st.target = null;
+        const taken = new Set(sitters.map(o => o.target));
+        let best = null, bs = 72;
+        for (const q of G.pigs) {
+          if (q.state || taken.has(q.id) || (q.sitCd || 0) > G.time) continue;
+          const sc = Math.min(q.joy, q.food + 10, q.water + 10);
+          if (sc < bs) { bs = sc; best = q; }
+        }
+        if (best) { st.target = best.id; pig = best; }
+      }
+      let tx, ty;
+      if (pig) { tx = pig.x - pig.face * 4; ty = pig.y + 2; }
+      else {
+        st.idleT -= dt;
+        if (st.idleT <= 0 || st.tx === undefined) { st.idleT = 3 + Math.random() * 3; st.tx = home.x * T + T / 2 + (Math.random() - .5) * 90; st.ty = home.y * T + T + (Math.random() - .3) * 60; }
+        tx = Math.max(12, Math.min(W - 12, st.tx)); ty = Math.max(20, Math.min(H - 8, st.ty));
+      }
+      const dx = tx - st.x, dy = ty - st.y, d = Math.hypot(dx, dy);
+      if (st.act > 0) {
+        st.act -= dt;
+        if (st.act <= 0 && pig) {
+          pig.joy = Math.min(100, pig.joy + 25); pig.hop = .5; pig.sitCd = G.time + 8;
+          let what = '♥';
+          if (pig.food < 65) {
+            if (G.veg >= 1) { G.veg--; pig.food = Math.min(100, pig.food + 25); pig.joy = Math.min(100, pig.joy + 10); what = '♥ 🫑'; }
+            else if (G.hay >= 1) { G.hay--; pig.food = Math.min(100, pig.food + 30); what = '♥ 🌾'; }
+          }
+          if (pig.water < 65 && G.water >= 1) { G.water--; pig.water = Math.min(100, pig.water + 35); what += ' 💧'; }
+          popup(pig.x, pig.y - 22, what, '#e07a9a');
+          st.target = null;
+        }
+      } else if (d > 3) {
+        const sp = Math.min(d, (pig ? 48 : 22) * dt);
+        st.x += dx / d * sp; st.y += dy / d * sp; st.step += dt * 10; if (Math.abs(dx) > .5) st.face = dx > 0 ? 1 : -1;
+      } else if (pig) st.act = .9;
+    });
+    // sitters restock from the market when supplies run dry
+    if (sitters.length) {
+      G.shopT = (G.shopT || 0) - dt;
+      if (G.shopT <= 0) {
+        G.shopT = 3;
+        let bought = [];
+        if (G.hay < 3 && G.coins >= 10) { G.coins -= 10; G.hay += 5; bought.push('5 🌾'); }
+        if (G.water < 3 && G.coins >= 6) { G.coins -= 6; G.water += 5; bought.push('5 💧'); }
+        if (bought.length && homes[0]) popup(homes[0].x * T + T / 2, homes[0].y * T + 4, 'Bought ' + bought.join(' + '), '#3c7ab8');
+      }
+    }
+
     // roombas
     const docks = G.buildings.filter(b => b.type === 'roomba');
     while (roombas.length < docks.length) { const d = docks[roombas.length]; roombas.push({ x: d.x * T + T / 2, y: d.y * T + T / 2, dir: { x: 1, y: 0 } }); }
@@ -753,6 +811,14 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
         c.fillStyle = '#9fd3c7'; c.fillRect(x + 5, y + 8, 30, 6); c.strokeRect(x + 5, y + 8, 30, 6);
         c.fillStyle = '#e07a9a'; c.beginPath(); c.moveTo(cx, y + 31); c.bezierCurveTo(cx - 10, y + 24, cx - 6, y + 15, cx, y + 20); c.bezierCurveTo(cx + 6, y + 15, cx + 10, y + 24, cx, y + 31); c.fill();
         break;
+      case 'sitter':
+        c.fillStyle = '#fdf0e3'; rr(c, x + 7, y + 17, 26, 19, 2); c.fill(); c.stroke();
+        c.fillStyle = '#7a5236'; c.fillRect(x + 25, y + 5, 5, 10); c.strokeRect(x + 25, y + 5, 5, 10);
+        c.fillStyle = '#7fae3e'; c.beginPath(); c.moveTo(x + 3, y + 19); c.lineTo(cx, y + 6); c.lineTo(x + 37, y + 19); c.closePath(); c.fill(); c.stroke();
+        c.fillStyle = '#c96a85'; rr(c, cx - 4, y + 25, 8, 11, [4, 4, 0, 0]); c.fill(); c.lineWidth = 1.2; c.stroke();
+        c.fillStyle = '#e0485f'; c.beginPath(); c.moveTo(x + 13, y + 28); c.bezierCurveTo(x + 9, y + 25, x + 10, y + 21, x + 13, y + 23.5); c.bezierCurveTo(x + 16, y + 21, x + 17, y + 25, x + 13, y + 28); c.fill();
+        c.fillStyle = '#bfe3f2'; c.fillRect(x + 25, y + 22, 6, 6); c.strokeRect(x + 25, y + 22, 6, 6);
+        break;
       case 'roomba':
         c.fillStyle = '#cfc8d8'; rr(c, x + 6, y + 8, 28, 26, 6); c.fill(); c.stroke();
         c.fillStyle = '#8f86d9'; rr(c, x + 11, y + 4, 18, 9, 3); c.fill(); c.stroke();
@@ -793,6 +859,28 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     const items = [];
     for (const b of G.buildings) items.push({ y: (b.y + sz(b.type)) * T, f: () => drawBuilding(c, b) });
     for (const q of G.poops) items.push({ y: q.y, f: () => drawPoop(c, q.x, q.y, q.a, 1.5) });
+    for (const st of sitters) items.push({ y: st.y + 2, f: () => {
+      const bob = st.act > 0 ? 0 : Math.abs(Math.sin(st.step)) * 1.5;
+      c.save(); c.translate(st.x, st.y - bob); c.lineWidth = 1.4; c.strokeStyle = INK;
+      c.fillStyle = 'rgba(0,0,0,.14)'; ell(c, 0, 1 + bob, 7, 2.4); c.fill();
+      // legs
+      c.fillStyle = '#5a4048'; c.fillRect(-3.5, -4, 2.5, 5); c.fillRect(1, -4, 2.5, 5);
+      // dress + apron
+      c.fillStyle = '#7fb3e0'; c.beginPath(); c.moveTo(-6, -3); c.lineTo(-4, -15); c.lineTo(4, -15); c.lineTo(6, -3); c.closePath(); c.fill(); c.stroke();
+      c.fillStyle = '#ffe1ea'; c.beginPath(); c.moveTo(-3.5, -4); c.lineTo(-2.5, -13); c.lineTo(2.5, -13); c.lineTo(3.5, -4); c.closePath(); c.fill();
+      c.fillStyle = '#e0485f'; c.beginPath(); c.moveTo(0, -6); c.bezierCurveTo(-2.4, -7.6, -1.6, -10, 0, -8.6); c.bezierCurveTo(1.6, -10, 2.4, -7.6, 0, -6); c.fill();
+      // arm reaching out while petting
+      c.strokeStyle = '#f2c4a0'; c.lineWidth = 2.2; c.beginPath(); c.moveTo(st.face * 3.5, -13); c.lineTo(st.face * (st.act > 0 ? 9 : 5), st.act > 0 ? -8 + Math.sin(G.time * 18) * 1.5 : -6); c.stroke();
+      // head + hair bun
+      c.lineWidth = 1.4; c.strokeStyle = INK;
+      c.fillStyle = '#6b4226'; ell(c, -st.face * 3, -23, 3, 3); c.fill(); c.stroke();
+      c.fillStyle = '#f2c4a0'; ell(c, 0, -19, 5, 5); c.fill(); c.stroke();
+      c.fillStyle = '#6b4226'; c.beginPath(); c.arc(0, -19.5, 5, Math.PI * 1.05, Math.PI * 1.95); c.fill();
+      c.fillStyle = INK; ell(c, st.face * 2, -18.5, .9, .9); c.fill();
+      c.fillStyle = 'rgba(224,122,154,.5)'; ell(c, st.face * 3, -16.8, 1.4, .9); c.fill();
+      c.restore();
+      if (st.act > 0) { c.font = '11px sans-serif'; c.textAlign = 'center'; c.fillText('💕', st.x + st.face * 8, st.y - 26 - (0.9 - st.act) * 8); }
+    } });
     for (const rb of roombas) items.push({ y: rb.y + 6, f: () => {
       c.save(); c.translate(rb.x, rb.y);
       c.fillStyle = 'rgba(0,0,0,.15)'; ell(c, 0, 6, 9, 3); c.fill();
