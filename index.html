@@ -74,6 +74,17 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
 .pigname { font-family: var(--font-display); font-size: 26px; margin: 0; }
 .tag { font-size: 12px; font-weight: 800; color: var(--muted); }
 .sick { color: var(--alert); }
+.goal { background: #fff; border: 2px solid var(--fleece-deep); border-radius: 12px; padding: 6px 8px; margin-bottom: 6px; display: grid; grid-template-columns: 30px 1fr; gap: 2px 8px; align-items: center; }
+.goal .ge { grid-row: span 2; font-size: 22px; text-align: center; }
+.goal b { font-family: var(--font-display); font-weight: 400; font-size: 16px; }
+.goal .gd { font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; gap: 6px; }
+.goal .track { grid-column: 2; height: 8px; background: #f1e3dc; border-radius: 999px; overflow: hidden; border: 1.5px solid var(--ink); }
+.goal .fill { height: 100%; background: linear-gradient(90deg, #e9b93b, #f4a3b8); border-radius: 999px; transition: width .3s; }
+.badges { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.badge { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-size: 16px; background: #fff3e2; border: 2px solid var(--ink); }
+.badge.locked { filter: grayscale(1); opacity: .3; border-color: var(--fleece-deep); }
+.jobrow { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 13px; font-weight: 800; }
+.jobrow select { flex: 1; min-width: 0; font: inherit; font-weight: 700; font-size: 13px; padding: 4px 6px; border: 2px solid var(--ink); border-radius: 10px; background: #fff; color: var(--ink); }
 #pigcanvas { width: 120px; height: 80px; display: block; margin: 0 auto; }
 </style>
 </head>
@@ -101,6 +112,14 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     </div>
 
     <div class="side">
+      <div class="panel" id="bldPanel" hidden>
+        <h2 id="bName" style="margin-bottom:2px"></h2>
+        <div class="tag" id="bLvl"></div>
+        <canvas id="bcanvas" width="440" height="220" style="width:220px;height:110px;display:block;margin:4px auto"></canvas>
+        <p class="small" id="bInfo" style="margin-top:0"></p>
+        <p class="small" id="bNext"></p>
+        <div class="btns"><button class="btn" id="upBtn">Upgrade</button><button class="btn ghost" id="bClose">Close</button></div>
+      </div>
       <div class="panel" id="pigPanel">
         <h2>Your pig</h2>
         <div id="pigEmpty" class="small">Click a pig in town (or in the list below) to check on it.</div>
@@ -109,12 +128,18 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
           <p class="pigname" id="pName"></p>
           <div class="tag" id="pTag"></div>
           <div id="pBars"></div>
+          <div class="jobrow"><label for="jobSel">Job</label><select id="jobSel"></select></div>
           <div class="btns">
             <button class="btn" id="petBtn">Pet</button>
             <button class="btn alt" id="treatBtn">Treat 🫑</button>
             <button class="btn ghost" id="renameBtn">Rename</button>
           </div>
         </div>
+      </div>
+      <div class="panel" id="goalPanel">
+        <h2>Goals <span class="tag" id="badgeTag"></span></h2>
+        <div id="goals"></div>
+        <div class="badges" id="badges"></div>
       </div>
       <div class="panel">
         <h2>Market</h2>
@@ -130,7 +155,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
       </div>
       <div class="panel">
         <h2>How it works</h2>
-        <p class="small" style="margin-top:0">Pigs eat 🌾 and drink 💧 on their own, so keep the fields and water towers going. Happy pigs earn 🪙. When everyone's happy and there's room in the castles, babies are born and your town grows. Hungry, thirsty or lonely pigs get sick, and a Vet helps them recover. Your town saves automatically.</p>
+        <p class="small" style="margin-top:0">Pigs eat 🌾 and drink 💧 on their own, so keep the fields and water towers going. Happy pigs earn 🪙. When everyone's happy and there's room in the castles, babies are born and your town grows. Grown-up pigs can work at the Café, Salon, Toy Shop or Masaki Capital to earn extra 🪙. Click any building to upgrade it (up to level 3) for a fancier, modern look and better perks. Finish Goals for bonus coins and badges. Hungry, thirsty or lonely pigs get sick, and a Vet helps them recover. Your town saves automatically.</p>
         <div class="btns"><button class="btn ghost" id="resetBtn">Start a new town</button></div>
       </div>
     </div>
@@ -249,12 +274,54 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     park:   { name: 'Play Park', cost: 80, desc: 'Pigs stay happy longer' },
     hospital: { name: 'Pig Hospital', cost: 150, desc: 'Sick pigs check in and come out healthy (3 beds)' },
     vet:    { name: 'Vet', cost: 120, desc: 'Sick pigs heal faster' },
-    bank:   { name: 'Masaki Capital', cost: 150, desc: '+2 🪙 every 4s' },
+    bank:   { name: 'Masaki Capital', cost: 150, desc: '+2 🪙 every 4s, 2 analyst jobs' },
+    cafe:   { name: 'Hay Latte Café', cost: 60, desc: '2 jobs: baristas earn 🪙' },
+    salon:  { name: 'Fluff Salon', cost: 90, desc: '2 jobs: stylists pamper pigs' },
+    toys:   { name: 'Toy Shop', cost: 75, desc: '2 jobs: makes the town happier' },
     sitter: { name: 'Pig Sitter', cost: 90, desc: 'Hires a sitter who pets, feeds & restocks' },
     roomba: { name: 'Poop Roomba', cost: 60, desc: 'Drives around scooping poop for you' },
+    upgrade: { name: 'Upgrade ⬆', cost: 0, desc: 'Click a building to make it fancier' },
     bulldoze: { name: 'Bulldoze', cost: 0, desc: 'Remove a building, refunds half' }
   };
   const RATE = { hay: 6, water: 5, garden: 10, bank: 4 };
+  const JOBS = {
+    cafe:  { title: 'Barista', place: 'Hay Latte Café', emoji: '☕', pay: 2, every: 5 },
+    salon: { title: 'Stylist', place: 'Fluff Salon', emoji: '✂️', pay: 3, every: 7 },
+    toys:  { title: 'Toy Seller', place: 'Toy Shop', emoji: '🧸', pay: 2, every: 6 },
+    bank:  { title: 'Analyst', place: 'Masaki Capital', emoji: '💼', pay: 3, every: 5 }
+  };
+  const MULT = [1, 1.5, 2], CAP = [4, 6, 8], BEDS = [3, 4, 6], SLOT_N = [2, 3, 4];
+  const L = b => b.lvl || 1;
+  const slotsOf = b => SLOT_N[L(b) - 1];
+  const upCost = b => B[b.type].cost * L(b);
+  const lvlSum = t => G.buildings.filter(b => b.type === t).reduce((n, b) => n + L(b), 0);
+  const LV_NAMES = {
+    hutch: ['Pig Castle', 'Royal Castle', 'Modern Pig Villa'], hay: ['Hay Field', 'Big Hay Field', 'Hydro Hay Dome'],
+    water: ['Water Tower', 'Big Water Tower', 'Smart Water Tank'], garden: ['Veggie Garden', 'Big Veggie Garden', 'Veggie Greenhouse'],
+    park: ['Play Park', 'Deluxe Park', 'Splash Park'], hospital: ['Pig Hospital', 'Big Pig Hospital', 'Pig Medical Center'],
+    vet: ['Vet', 'Deluxe Vet', 'Modern Vet Clinic'], bank: ['Masaki Capital', 'Masaki Capital HQ', 'Masaki Capital Tower'],
+    cafe: ['Hay Latte Café', 'Hay Latte Café Deluxe', 'Hay Latte Roastery'], salon: ['Fluff Salon', 'Fluff Salon Deluxe', 'Fluff Spa & Salon'],
+    toys: ['Toy Shop', 'Toy Shop Deluxe', 'Toy Mega Store'], sitter: ['Pig Sitter', 'Sitter Cottage', 'Sitter Studio'],
+    roomba: ['Poop Roomba', 'Roomba Plus', 'Roomba Max']
+  };
+  const lvName = (b, l = L(b)) => (LV_NAMES[b.type] || [B[b.type].name])[l - 1];
+  function perkText(t, l) {
+    const every = k => +(RATE[k] / MULT[l - 1]).toFixed(1) + 's';
+    switch (t) {
+      case 'hutch': return `Room for ${CAP[l - 1]} pigs`;
+      case 'hay': return `+1 🌾 every ${every('hay')}`;
+      case 'water': return `+1 💧 every ${every('water')}`;
+      case 'garden': return `+1 🫑 every ${every('garden')}`;
+      case 'bank': return `+2 🪙 every ${every('bank')} · ${SLOT_N[l - 1]} jobs`;
+      case 'park': return `Keeps pigs happy (${l}× power)`;
+      case 'vet': return `Sick pigs heal ${l}× faster`;
+      case 'hospital': return `${BEDS[l - 1]} hospital beds`;
+      case 'cafe': case 'salon': case 'toys': return `${SLOT_N[l - 1]} jobs`;
+      case 'sitter': return `${l} pig sitter${l > 1 ? 's' : ''}`;
+      case 'roomba': return ['Normal speed', 'Fast', 'Super fast'][l - 1];
+    }
+    return '';
+  }
 
   // ---------- map ----------
   const COLS = 16, ROWS = 11, T = 40, W = COLS * T, H = ROWS * T;
@@ -273,7 +340,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
   // ---------- state ----------
   let G, nextId = 1;
   function newTown() {
-    const g = { coins: 80, hay: 12, water: 12, veg: 6, buildings: [], pigs: [], poops: [], time: 0, breedT: 20, born: 0, best: 5, prod: {} };
+    const g = { coins: 80, hay: 12, water: 12, veg: 6, buildings: [], pigs: [], poops: [], time: 0, breedT: 20, born: 0, best: 5, prod: {}, goalsDone: [], stats: {} };
     const place = (type, x, y) => g.buildings.push({ type, x, y, t: Math.random() * 3 });
     place('hutch', 1, 1); place('hutch', 4, 1);
     place('hay', 2, 7); place('water', 12, 2); place('garden', 4, 7);
@@ -291,8 +358,14 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     G = newTown();
   }
   function save() { try { localStorage.setItem('pigcity-v1', JSON.stringify(G)); } catch (e) {} }
+  function initExtras(fresh) {
+    G.prod = G.prod || {};
+    for (const p of G.pigs) if (p.name === 'Masaki' && p.age >= 999 && p.skin && p.skin.suit) p.banker = true;
+    G.stats = Object.assign({ ups: 0, scoop: 0, poop: 0, pets: 0, treats: 0, built: 0, healed: 0, hires: 0, jobPay: 0 }, G.stats);
+    if (!G.goalsDone) { G.goalsDone = []; if (!fresh) { G.catchup = true; G.stats.built = Math.max(G.stats.built, G.buildings.length - 5); } }
+  }
   load();
-  G.prod = G.prod || {};
+  initExtras(false);
   {
     const used = new Set(G.pigs.map(p => p.name));
     for (const p of G.pigs) if (OLD_NAMES.has(p.name)) { const n = NAMES.find(n => !used.has(n)); if (n) { used.add(n); p.name = n; } }
@@ -301,10 +374,23 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
   const SIZE = { hutch: 2, hospital: 2 };
   const sz = t => SIZE[t] || 1;
   const PER_CASTLE = 4;
-  const capacity = () => G.buildings.filter(b => b.type === 'hutch').length * PER_CASTLE;
+  const capacity = () => G.buildings.filter(b => b.type === 'hutch').reduce((n, b) => n + CAP[L(b) - 1], 0);
   const count = t => G.buildings.filter(b => b.type === t).length;
   const covers = (b, x, y) => x >= b.x && x < b.x + sz(b.type) && y >= b.y && y < b.y + sz(b.type);
   const at = (x, y) => G.buildings.find(b => covers(b, x, y));
+  const workersAt = b => b.x === undefined ? [] : G.pigs.filter(q => q.job && q.job.x === b.x && q.job.y === b.y);
+  const maxWorkers = t => Math.max(0, ...G.buildings.filter(b => b.type === t).map(b => workersAt(b).length));
+  const jobOf = p => p.job && G.buildings.find(b => b.x === p.job.x && b.y === p.job.y && JOBS[b.type]);
+  const jobTitle = (p, b) => p.banker && b.type === 'bank' ? 'CEO' : JOBS[b.type].title;
+  function hire(p, b, quiet) {
+    const used = workersAt(b).map(q => q.job.slot);
+    const slot = [0, 1, 2, 3].slice(0, slotsOf(b)).find(k => !used.includes(k));
+    if (slot === undefined) return false;
+    p.job = { x: b.x, y: b.y, slot }; p.workT = 0; p.noJob = false; G.stats.hires++;
+    if (!quiet) { toast(`${p.name} got a job as ${/^[AEIOU]/.test(jobTitle(p, b)) ? 'an' : 'a'} ${jobTitle(p, b)} at ${JOBS[b.type].place}! ${JOBS[b.type].emoji}`); popup(p.x, p.y - 22, 'Hired! ' + JOBS[b.type].emoji, '#1f2f5c'); }
+    return true;
+  }
+  const workSpot = (b, slot) => ({ x: b.x * T + (slot % 2 ? T - 7 : 7), y: b.y * T + T + 7 + (slot > 1 ? 10 : 0) });
   function fits(type, x, y, ignore) {
     const n = sz(type);
     if (x < 0 || y < 0 || x + n > COLS || y + n > ROWS) return false;
@@ -319,7 +405,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     if (!done) G.buildings.splice(G.buildings.indexOf(b), 1);
   }
 
-  const roombas = [], sitters = [];
+  const roombas = [], sitters = [], confetti = [];
 
   // ---------- ui ----------
   const $ = id => document.getElementById(id);
@@ -338,7 +424,8 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
       el.setAttribute('aria-pressed', tool === k ? 'true' : 'false');
       el.disabled = B[k].cost > G.coins && tool !== k;
     });
-    $('toolHint').textContent = tool === 'bulldoze' ? 'Click a building to remove it (you get half the cost back).'
+    $('toolHint').textContent = tool === 'bulldoze' ? 'Click a building to remove it (you get back half of what you spent).'
+      : tool === 'upgrade' ? 'Click a building to upgrade it: ⭐⭐ Deluxe, then ⭐⭐⭐ Modern. Upgrades look fancier and work better.'
       : tool ? `Click empty grass to build a ${B[tool].name}. Click the button again to stop building.`
       : "Pick something to build, then click an empty patch of grass. Click a pig to see how it's doing. Click and drag across poop to sweep it up (1 🪙 each).";
   }
@@ -373,12 +460,13 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
   }
   let listSig = '';
   function hudList() {
-    const sig = G.pigs.map(p => p.id + p.name + moodOf(p)).join('|') + selected;
+    const sig = G.pigs.map(p => p.id + p.name + moodOf(p) + (p.job ? p.job.x + ',' + p.job.y : '')).join('|') + selected;
     if (sig === listSig) return; listSig = sig;
     const el = $('piglist'); el.innerHTML = '';
     G.pigs.forEach(p => {
       const b = document.createElement('button'); b.className = 'pigrow' + (p.id === selected ? ' on' : '');
-      b.innerHTML = `<span>${p.name}${p.age < 90 ? ' 🍼' : ''}</span><span class="mood">${moodOf(p)}</span>`;
+      const jb = jobOf(p);
+      b.innerHTML = `<span>${p.name}${p.age < 90 ? ' 🍼' : ''}${jb ? ' ' + JOBS[jb.type].emoji : ''}</span><span class="mood">${moodOf(p)}</span>`;
       b.addEventListener('click', () => { selected = p.id; renderPig(true); });
       el.appendChild(b);
     });
@@ -394,18 +482,45 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
       c.translate(118, 86); c.scale(2.6, 2.6); drawPig(c, p.skin);
     }
     const age = p.age < 90 ? 'Baby 🍼' : p.age >= 999 ? 'Founder' : 'Grown up';
-    $('pTag').innerHTML = age + (p.state === 'admitted' ? ' · <span class="sick">In the hospital 🏥</span>' : p.state ? ' · Heading to the hospital' : '') + (!p.state && p.health < 50 ? ' · <span class="sick">Feeling sick</span>' : '') + (p.joy < 30 ? ' · Lonely' : '');
+    const jb = jobOf(p);
+    $('pTag').innerHTML = age + (jb ? ` · ${jobTitle(p, jb)} at ${JOBS[jb.type].place} ${JOBS[jb.type].emoji}` + (p.working ? '' : ' (on break)') : '') + (p.state === 'admitted' ? ' · <span class="sick">In the hospital 🏥</span>' : p.state ? ' · Heading to the hospital' : '') + (!p.state && p.health < 50 ? ' · <span class="sick">Feeling sick</span>' : '') + (p.joy < 30 ? ' · Lonely' : '');
     $('pBars').innerHTML = BAR.map(([k, l, col]) => `<div class="bar"><span>${l}</span><div class="track"><div class="fill" style="width:${Math.max(0, p[k])}%;background:${col}"></div></div><span class="num">${Math.round(p[k])}</span></div>`).join('');
     $('petBtn').disabled = p.petCd > 0; $('treatBtn').disabled = G.veg < 1;
+    renderJobSel(p);
   }
+  let jobSig = '';
+  function renderJobSel(p) {
+    const sel = $('jobSel');
+    const places = G.buildings.filter(b => JOBS[b.type]);
+    const sig = p.id + '|' + (p.age < 90) + '|' + (p.job ? p.job.x + ',' + p.job.y : '') + '|' + places.map(b => b.x + ',' + b.y + ':' + workersAt(b).length + ':' + L(b)).join(';');
+    if (sig === jobSig || document.activeElement === sel) return; jobSig = sig;
+    if (p.age < 90) { sel.innerHTML = '<option>Too young to work 🍼</option>'; sel.disabled = true; return; }
+    sel.disabled = false;
+    const cur = p.job ? p.job.x + ',' + p.job.y : '';
+    let html = `<option value="">No job (just relaxing)</option>`;
+    for (const b of places) {
+      const n = workersAt(b).length, mine = cur === b.x + ',' + b.y, j = JOBS[b.type];
+      html += `<option value="${b.x},${b.y}" ${mine ? 'selected' : ''} ${!mine && n >= slotsOf(b) ? 'disabled' : ''}>${j.emoji} ${jobTitle(p, b)} at ${j.place} (${n}/${slotsOf(b)})</option>`;
+    }
+    if (!places.length) html += '<option disabled>Build a Café, Salon or Toy Shop to create jobs</option>';
+    sel.innerHTML = html; sel.value = cur;
+  }
+  $('jobSel').addEventListener('change', e => {
+    const p = G.pigs.find(q => q.id === selected); if (!p) return;
+    const v = e.target.value;
+    p.job = null; p.working = false;
+    if (!v) { p.noJob = true; toast(`${p.name} is taking some time off to relax. 🌸`); }
+    else { const [x, y] = v.split(',').map(Number); const b = G.buildings.find(q => q.x === x && q.y === y); if (b) hire(p, b); }
+    jobSig = ''; listSig = ''; e.target.blur(); renderPig(); save();
+  });
 
   $('petBtn').addEventListener('click', () => {
     const p = G.pigs.find(q => q.id === selected); if (!p || p.petCd > 0) return;
-    p.joy = Math.min(100, p.joy + 20); p.petCd = 4; p.hop = .6; popup(p.x, p.y - 22, '♥', '#e07a9a'); renderPig();
+    p.joy = Math.min(100, p.joy + 20); p.petCd = 4; p.hop = .6; G.stats.pets++; popup(p.x, p.y - 22, '♥', '#e07a9a'); renderPig();
   });
   $('treatBtn').addEventListener('click', () => {
     const p = G.pigs.find(q => q.id === selected); if (!p || G.veg < 1) return;
-    G.veg--; p.joy = Math.min(100, p.joy + 25); p.food = Math.min(100, p.food + 15); p.hop = .6;
+    G.veg--; G.stats.treats++; p.joy = Math.min(100, p.joy + 25); p.food = Math.min(100, p.food + 15); p.hop = .6;
     popup(p.x, p.y - 22, 'Wheek! 🫑', '#5f8f2e'); renderPig(); hudRes();
   });
   $('renameBtn').addEventListener('click', () => {
@@ -419,8 +534,47 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
   $('buyVeg').addEventListener('click', buy(12, 'veg', 3));
   $('resetBtn').addEventListener('click', () => {
     if (!confirm('Start a brand new town? Your current town will be gone.')) return;
-    G = newTown(); selected = null; listSig = ''; save(); hudRes(); renderPig(); syncTools(); toast('A fresh start! Welcome to your new town.');
+    G = newTown(); initExtras(true); selBld = null; confetti.length = 0; selected = null; listSig = ''; jobSig = ''; save(); hudRes(); renderPig(); syncTools(); toast('A fresh start! Welcome to your new town.');
   });
+
+  // ---------- upgrades ----------
+  let selBld = null;
+  function upgrade(b) {
+    const l = L(b);
+    if (l >= 3) { toast(`${lvName(b)} is already fully upgraded! ⭐⭐⭐`); return false; }
+    const cost = upCost(b);
+    if (G.coins < cost) { toast(`You need ${cost} 🪙 to upgrade to ${lvName(b, l + 1)}.`); return false; }
+    const old = lvName(b);
+    G.coins -= cost; b.lvl = l + 1; G.stats.ups++;
+    const cx = (b.x + sz(b.type) / 2) * T;
+    for (let i = 0; i < 34; i++) confetti.push({ x: cx + (Math.random() - .5) * 20, y: b.y * T + 10, vx: (Math.random() - .5) * 150, vy: -80 - Math.random() * 110, r: Math.random() * 6, vr: (Math.random() - .5) * 12, c: ['#e9b93b', '#fff', '#f4a3b8', '#9fe0ff'][i % 4], life: 1.2 + Math.random() * .6 });
+    popup(cx, b.y * T + 4, 'Upgraded! ' + '⭐'.repeat(b.lvl), '#c9a23a');
+    toast(`${old} → ${lvName(b)}! ${perkText(b.type, b.lvl)} ✨`);
+    hudRes(); syncTools(); save(); return true;
+  }
+  function renderBldCanvas(b) {
+    const c = $('bcanvas').getContext('2d'); c.setTransform(2, 0, 0, 2, 0, 0); c.clearRect(0, 0, 220, 110);
+    const l = L(b), n = sz(b.type), k = n > 1 ? .92 : 1.25, w = n * T * k;
+    const one = (lv, cx) => { c.save(); c.translate(cx - w / 2, 106 - w); c.scale(k, k); drawBuilding(c, { type: b.type, x: 0, y: 0, lvl: lv }); c.restore(); };
+    if (l < 3) { one(l, 55); one(l + 1, 165); c.font = '24px Chewy, sans-serif'; c.textAlign = 'center'; c.fillStyle = '#c9a23a'; c.fillText('➜', 110, 72); }
+    else one(l, 110);
+  }
+  function renderBld() {
+    const b = selBld && G.buildings.includes(selBld) ? selBld : null;
+    if (!b) selBld = null;
+    $('bldPanel').hidden = !b; if (!b) return;
+    const l = L(b);
+    $('bName').textContent = lvName(b);
+    $('bLvl').textContent = `Level ${l} ` + '★'.repeat(l) + '☆'.repeat(3 - l);
+    $('bInfo').textContent = perkText(b.type, l) + (JOBS[b.type] ? ` · ${workersAt(b).length} working now` : '');
+    renderBldCanvas(b);
+    if (l < 3) {
+      $('bNext').innerHTML = `<b>Next: ${lvName(b, l + 1)}</b> · ${perkText(b.type, l + 1)}`;
+      $('upBtn').hidden = false; $('upBtn').textContent = `Upgrade for ${upCost(b)} 🪙`; $('upBtn').disabled = G.coins < upCost(b);
+    } else { $('bNext').textContent = 'Fully upgraded! It can\'t get any fancier. ✨'; $('upBtn').hidden = true; }
+  }
+  $('upBtn').addEventListener('click', () => { if (selBld) { upgrade(selBld); renderBld(); } });
+  $('bClose').addEventListener('click', () => { selBld = null; renderBld(); });
 
   // ---------- input ----------
   function toWorld(e) {
@@ -434,7 +588,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
       const q = G.poops[i];
       if (Math.hypot(q.x - w.x, q.y - w.y) < rad) { G.poops.splice(i, 1); G.coins += 1; n++; popup(q.x, q.y - 8, '+1 🪙'); }
     }
-    if (n) hudRes();
+    if (n) { G.stats.scoop += n; G.stats.poop += n; hudRes(); }
     return n;
   }
   canvas.addEventListener('pointerdown', e => { if (!tool) { sweeping = true; try { canvas.setPointerCapture(e.pointerId); } catch (x) {} } });
@@ -449,14 +603,20 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     const w = toWorld(e), tx = Math.floor(w.x / T), ty = Math.floor(w.y / T);
     if (tool === 'bulldoze') {
       const b = at(tx, ty); if (!b) return;
-      if (b.type === 'hutch' && (capacity() - PER_CASTLE) < G.pigs.length) { toast("Can't remove that castle, your pigs need the room!"); return; }
-      G.buildings.splice(G.buildings.indexOf(b), 1); const refund = Math.floor(B[b.type].cost / 2); G.coins += refund;
+      if (b.type === 'hutch' && (capacity() - CAP[L(b) - 1]) < G.pigs.length) { toast("Can't remove that castle, your pigs need the room!"); return; }
+      for (const q of workersAt(b)) { q.job = null; q.working = false; }
+      G.buildings.splice(G.buildings.indexOf(b), 1); if (selBld === b) selBld = null; const refund = Math.floor(B[b.type].cost * [1, 2, 4][L(b) - 1] / 2); G.coins += refund;
       popup(tx * T + T / 2, ty * T + 10, '+' + refund + ' 🪙'); hudRes(); syncTools(); save(); return;
+    }
+    if (tool === 'upgrade') {
+      const b = at(tx, ty); if (!b) { toast('Click a building to upgrade it.'); return; }
+      selBld = b; upgrade(b); renderBld(); return;
     }
     if (tool) {
       if (!fits(tool, tx, ty)) { toast(sz(tool) > 1 ? 'A castle needs a free 2×2 patch of grass (it grows right and down from where you click).' : 'Something is already built there.'); return; }
       if (G.coins < B[tool].cost) { toast(`You need ${B[tool].cost} 🪙 for a ${B[tool].name}.`); return; }
-      G.coins -= B[tool].cost; G.buildings.push({ type: tool, x: tx, y: ty, t: 0 });
+      G.coins -= B[tool].cost; G.buildings.push({ type: tool, x: tx, y: ty, t: 0 }); G.stats.built++;
+      if (JOBS[tool] && tool !== 'bank') toast(`${B[tool].name} is open! Grown-up pigs will apply for its 2 jobs. ${JOBS[tool].emoji}`);
       popup(tx * T + sz(tool) * T / 2, ty * T + 8, 'Built!', '#5f8f2e');
       if (G.coins < B[tool].cost) tool = null;
       hudRes(); syncTools(); save(); return;
@@ -468,20 +628,86 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     for (const p of G.pigs) { if (p.state === 'admitted') continue; const d = Math.hypot(p.x - w.x, p.y - 4 - w.y); if (d < bd) { bd = d; best = p; } }
     if (best) { selected = best.id; best.hop = .4; renderPig(true); listSig = ''; return; }
     const b = at(tx, ty);
-    if (b) toast(B[b.type].name + ': ' + B[b.type].desc);
+    selBld = b || null; renderBld();
   });
   window.addEventListener('keydown', e => { if (e.key === 'Escape') { tool = null; syncTools(); } });
+
+  // ---------- goals ----------
+  const st = () => G.stats;
+  const shopKinds = () => (count('cafe') > 0) + (count('salon') > 0) + (count('toys') > 0);
+  const GOALS = [
+    { id: 'build1', e: '🔨', name: 'Groundbreaking', desc: 'Build anything', r: 20, f: () => [st().built, 1] },
+    { id: 'pet10', e: '🤲', name: 'Pig Whisperer', desc: 'Pet pigs 10 times', r: 25, f: () => [st().pets, 10] },
+    { id: 'scoop25', e: '🧹', name: 'Scoop Troop', desc: 'Sweep up 25 poops', r: 25, f: () => [st().scoop, 25] },
+    { id: 'shop1', e: '☕', name: 'Open for Business', desc: 'Build a Café, Salon or Toy Shop', r: 30, f: () => [shopKinds(), 1] },
+    { id: 'hire1', e: '💼', name: 'First Hire', desc: 'A pig gets a job', r: 20, f: () => [st().hires, 1] },
+    { id: 'up1', e: '⬆️', name: 'Glow Up', desc: 'Upgrade a building', r: 30, f: () => [st().ups, 1] },
+    { id: 'baby1', e: '🍼', name: 'Baby Boom', desc: 'Welcome your first baby', r: 30, f: () => [G.born, 1] },
+    { id: 'treat10', e: '🫑', name: 'Treat Yo Pig', desc: 'Give 10 treats', r: 30, f: () => [st().treats, 10] },
+    { id: 'pay100', e: '🪙', name: 'Payday', desc: 'Earn 100 🪙 from jobs', r: 50, f: () => [st().jobPay, 100] },
+    { id: 'pop6', e: '🏘️', name: 'Pig Village', desc: 'Reach 6 pigs', r: 40, f: () => [G.pigs.length, 6] },
+    { id: 'heal1', e: '🏥', name: 'Get Well Soon', desc: 'A pig leaves the hospital healthy', r: 40, f: () => [st().healed, 1] },
+    { id: 'castle4', e: '🏰', name: 'Castle Kingdom', desc: 'Own 4 Pig Castles', r: 60, f: () => [count('hutch'), 4] },
+    { id: 'modern', e: '✨', name: 'Modern Living', desc: 'Upgrade a building to level 3', r: 100, f: () => [Math.max(0, ...G.buildings.map(L)), 3] },
+    { id: 'masaki', e: '👔', name: "Masaki's Team", desc: 'Fill both jobs at Masaki Capital', r: 80, f: () => [maxWorkers('bank'), 2] },
+    { id: 'hay50', e: '🌾', name: 'Hay Hoarder', desc: 'Have 50 🌾 at once', r: 40, f: () => [Math.floor(G.hay), 50] },
+    { id: 'pop11', e: '🏡', name: 'Pig Town', desc: 'Reach 11 pigs', r: 80, f: () => [G.pigs.length, 11] },
+    { id: 'mall', e: '🛍️', name: 'Shopping District', desc: 'Build a Café, a Salon and a Toy Shop', r: 100, f: () => [shopKinds(), 3] },
+    { id: 'poop200', e: '💩', name: 'Poop Tycoon', desc: 'Clean up 200 poops (Roombas count)', r: 100, f: () => [st().poop, 200] },
+    { id: 'work6', e: '🏭', name: 'Busy Town', desc: 'Have 6 pigs with jobs', r: 120, f: () => [G.pigs.filter(p => p.job).length, 6] },
+    { id: 'pay1000', e: '💰', name: 'Big Earner', desc: 'Earn 1,000 🪙 from jobs', r: 150, f: () => [st().jobPay, 1000] },
+    { id: 'pop21', e: '🌆', name: 'Pig City', desc: 'Reach 21 pigs', r: 150, f: () => [G.pigs.length, 21] },
+    { id: 'pop36', e: '🌃', name: 'Pig Metropolis', desc: 'Reach 36 pigs', r: 300, f: () => [G.pigs.length, 36] }
+  ];
+  let goalT = 0, goalSig = '';
+  function celebrate() {
+    const cols = ['#e88fa5', '#ffd36b', '#9cc65a', '#7fc1ea', '#a98bd9', '#fff'];
+    for (let i = 0; i < 70; i++) confetti.push({ x: W / 2 + (Math.random() - .5) * 160, y: H * .3, vx: (Math.random() - .5) * 260, vy: -120 - Math.random() * 160, r: Math.random() * 6, vr: (Math.random() - .5) * 12, c: cols[i % cols.length], life: 1.8 + Math.random() });
+  }
+  function checkGoals(dt) {
+    goalT -= dt; if (goalT > 0) return; goalT = .5;
+    const done = new Set(G.goalsDone);
+    if (G.catchup) {
+      let sum = 0, n = 0;
+      for (const g of GOALS) { if (done.has(g.id)) continue; const [a, b] = g.f(); if (a >= b) { G.goalsDone.push(g.id); sum += g.r; n++; } }
+      G.catchup = false;
+      if (n) { G.coins += sum; setTimeout(() => toast(`🏆 Your town already earned ${n} badge${n > 1 ? 's' : ''}! +${sum} 🪙`), 600); celebrate(); }
+      return;
+    }
+    for (const g of GOALS) {
+      if (done.has(g.id)) continue;
+      const [a, b] = g.f();
+      if (a >= b) {
+        G.goalsDone.push(g.id); G.coins += g.r; celebrate();
+        toast(`🏆 Goal complete: ${g.name}! +${g.r} 🪙`); popup(W / 2, H * .35, `${g.e} ${g.name}! +${g.r} 🪙`, '#c96a85');
+        save(); return;
+      }
+    }
+  }
+  function hudGoals() {
+    const done = new Set(G.goalsDone);
+    const active = GOALS.filter(g => !done.has(g.id)).slice(0, 3);
+    const rows = active.map(g => { const [a, b] = g.f(); return [g, Math.min(a, b), b]; });
+    const sig = rows.map(([g, a]) => g.id + a).join('|') + G.goalsDone.length;
+    if (sig === goalSig) return; goalSig = sig;
+    $('badgeTag').textContent = `(${G.goalsDone.length}/${GOALS.length} badges)`;
+    $('goals').innerHTML = rows.length ? rows.map(([g, a, b]) =>
+      `<div class="goal"><span class="ge">${g.e}</span><div><b>${g.name}</b><div class="gd"><span>${g.desc}</span><span>${Math.floor(a)}/${b} · +${g.r}🪙</span></div></div><div class="track"><div class="fill" style="width:${a / b * 100}%"></div></div></div>`).join('')
+      : '<p class="small" style="margin-top:0">Every goal complete! You are a legendary pig mayor. 👑</p>';
+    $('badges').innerHTML = GOALS.map(g => `<span class="badge${done.has(g.id) ? '' : ' locked'}" title="${g.name}: ${g.desc}${done.has(g.id) ? ' ✓' : ''}">${g.e}</span>`).join('');
+  }
 
   // ---------- simulation ----------
   function tick(dt) {
     G.time += dt;
-    const parks = count('park'), vets = count('vet');
+    const parks = lvlSum('park'), vets = lvlSum('vet');
     // production
     for (const b of G.buildings) {
       if (!RATE[b.type]) continue;
+      const rt = RATE[b.type] / MULT[L(b) - 1];
       b.t += dt;
-      while (b.t >= RATE[b.type]) {
-        b.t -= RATE[b.type];
+      while (b.t >= rt) {
+        b.t -= rt;
         const cx = b.x * T + T / 2, cy = b.y * T + 6;
         if (b.type === 'hay') { G.hay++; popup(cx, cy, '+1 🌾', '#5f8f2e'); }
         if (b.type === 'water') { G.water++; popup(cx, cy, '+1 💧', '#3c7ab8'); }
@@ -503,7 +729,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
       let hosp = p.hosp && G.buildings.find(b => b.type === 'hospital' && b.x === p.hosp.x && b.y === p.hosp.y);
       if (p.state && !hosp) { p.state = null; p.hosp = null; }
       if (!p.state && p.health < 60) {
-        const h = G.buildings.find(b => b.type === 'hospital' && G.pigs.filter(q => q.hosp && q.hosp.x === b.x && q.hosp.y === b.y).length < 3);
+        const h = G.buildings.find(b => b.type === 'hospital' && G.pigs.filter(q => q.hosp && q.hosp.x === b.x && q.hosp.y === b.y).length < BEDS[L(b) - 1]);
         if (h) { p.state = 'walking'; p.hosp = { x: h.x, y: h.y }; p.wait = 0; hosp = h; }
       }
       if (p.state === 'admitted') {
@@ -511,7 +737,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
         p.health = Math.min(100, p.health + 9 * dt);
         if (p.health >= 98 && p.food > 85 && p.water > 85) {
           p.state = null; p.hosp = null; p.x = hosp.x * T + T; p.y = hosp.y * T + 2 * T + 4; p.tx = p.x; p.ty = p.y + 30; p.hop = .6;
-          popup(p.x, p.y - 22, 'All better! 💖', '#d9455a');
+          popup(p.x, p.y - 22, 'All better! 💖', '#d9455a'); G.stats.healed++;
           toast(`${p.name} got discharged from the hospital, healthy and happy! 💖`);
         }
         continue;
@@ -542,6 +768,32 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
       if (p.coinT <= 0) { p.coinT = 6; if (p.joy > 40 && p.health > 50) { G.coins += 1; popup(p.x, p.y - 20, '+1 🪙', '#a77c4c'); } }
       p.poopT -= dt;
       if (p.poopT <= 0) { p.poopT = 10 + Math.random() * 10; if (G.poops.length < 80) G.poops.push({ x: p.x - p.face * 14 + (Math.random() - .5) * 6, y: p.y + 8 + (Math.random() - .5) * 4, a: Math.random() * 3 }); }
+      // work
+      const wb = jobOf(p);
+      if (p.job && !wb) p.job = null;
+      p.working = false;
+      if (wb && !p.state) {
+        if (p.food > 30 && p.water > 30 && p.joy > 20 && p.health > 60) {
+          const spot = workSpot(wb, p.job.slot), dx = spot.x - p.x, dy = spot.y - p.y, d = Math.hypot(dx, dy);
+          if (d > 3) { const sp = Math.min(d, 24 * dt); p.x += dx / d * sp; p.y += dy / d * sp; if (Math.abs(dx) > 1) p.face = dx > 0 ? 1 : -1; continue; }
+          p.working = true; p.face = p.job.slot % 2 ? -1 : 1; p.tx = p.x; p.ty = p.y;
+          p.joy -= .2 * dt;
+          const J = JOBS[wb.type];
+          p.workT = (p.workT || 0) + dt;
+          if (p.workT >= J.every) {
+            p.workT -= J.every;
+            const pay = J.pay * (p.banker && wb.type === 'bank' ? 2 : 1);
+            G.coins += pay; G.stats.jobPay += pay;
+            popup(p.x, p.y - 22, `+${pay} 🪙 ${J.emoji}`, '#1f2f5c');
+            if (wb.type === 'salon') {
+              const others = G.pigs.filter(q => q !== p && !q.state && q.joy < 90);
+              if (others.length) { const q = pick(others); q.joy = Math.min(100, q.joy + 15); q.hop = .5; popup(q.x, q.y - 22, 'Fresh fluff ✨', '#a98bd9'); }
+            }
+            if (wb.type === 'toys') for (const q of G.pigs) if (!q.state) q.joy = Math.min(100, q.joy + 2);
+          }
+          continue;
+        }
+      }
       // wander
       if (p.wait > 0) p.wait -= dt;
       else {
@@ -552,7 +804,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
       }
     }
     // pig sitters
-    const homes = G.buildings.filter(b => b.type === 'sitter');
+    const homes = G.buildings.filter(b => b.type === 'sitter').flatMap(b => Array(L(b)).fill(b));
     while (sitters.length < homes.length) { const h = homes[sitters.length]; sitters.push({ x: h.x * T + T / 2, y: h.y * T + T, target: null, act: 0, face: 1, step: 0, idleT: 0 }); }
     sitters.length = Math.min(sitters.length, homes.length);
     sitters.forEach((st, i) => {
@@ -617,12 +869,28 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
       for (const q of G.poops) { const d = (q.x - rb.x) ** 2 + (q.y - rb.y) ** 2; if (d < best) { best = d; tx = q.x; ty = q.y; } }
       if (tx === undefined) { const d = docks[i]; tx = d.x * T + T / 2; ty = d.y * T + T / 2 + 4; }
       const dx = tx - rb.x, dy = ty - rb.y, dist = Math.hypot(dx, dy);
-      if (dist > 1) { const sp = Math.min(dist, 55 * dt); rb.x += dx / dist * sp; rb.y += dy / dist * sp; rb.dir = { x: dx / dist, y: dy / dist }; }
+      if (dist > 1) { const sp = Math.min(dist, 55 * [1, 1.4, 1.8][L(docks[i]) - 1] * dt); rb.x += dx / dist * sp; rb.y += dy / dist * sp; rb.dir = { x: dx / dist, y: dy / dist }; }
       for (let k = G.poops.length - 1; k >= 0; k--) {
         const q = G.poops[k];
-        if (Math.hypot(q.x - rb.x, q.y - rb.y) < 9) { G.poops.splice(k, 1); G.coins += 1; popup(q.x, q.y - 10, '+1 🪙', '#6a5fc2'); }
+        if (Math.hypot(q.x - rb.x, q.y - rb.y) < 9) { G.poops.splice(k, 1); G.coins += 1; G.stats.poop++; popup(q.x, q.y - 10, '+1 🪙', '#6a5fc2'); }
       }
     });
+
+    // job market: open spots get filled by grown-up pigs who aren't busy
+    G.hireT = (G.hireT || 0) - dt;
+    if (G.hireT <= 0) {
+      G.hireT = 4;
+      const open = G.buildings.filter(b => JOBS[b.type] && workersAt(b).length < slotsOf(b));
+      const idle = G.pigs.filter(q => !q.job && !q.noJob && !q.state && q.age >= 90 && q.health > 60);
+      const ceo = G.pigs.find(q => q.banker && q.job && !q.noJob && !q.state), cb = ceo && jobOf(ceo), freeBank = open.find(b => b.type === 'bank');
+      if (ceo && cb && cb.type !== 'bank' && freeBank) { ceo.job = null; hire(ceo, freeBank, true); toast('Masaki left his old job to run Masaki Capital as CEO! 💼'); }
+      else if (open.length && idle.length) {
+        const boss = idle.find(q => q.banker), bank = open.find(b => b.type === 'bank');
+        if (boss && bank) hire(boss, bank);
+        else { const q = pick(idle.filter(q => !q.banker).length ? idle.filter(q => !q.banker) : idle); hire(q, pick(open)); }
+      }
+    }
+    checkGoals(dt);
 
     // babies
     G.breedT -= dt;
@@ -645,6 +913,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
         if (G.pigs.length > G.best) { if (townTitle(G.best) !== t) setTimeout(() => toast(`🎉 Your town grew into a ${t}!`), 3300); G.best = G.pigs.length; }
       }
     }
+    for (let i = confetti.length - 1; i >= 0; i--) { const q = confetti[i]; q.vy += 160 * dt; q.x += q.vx * dt; q.y += q.vy * dt; q.r += q.vr * dt; q.life -= dt; if (q.life <= 0) confetti.splice(i, 1); }
     for (let i = popups.length - 1; i >= 0; i--) { const q = popups[i]; q.y -= 18 * dt; q.life -= dt; if (q.life <= 0) popups.splice(i, 1); }
     if (toastT > 0) { toastT -= dt; if (toastT <= 0) $('toast').style.opacity = 0; }
   }
@@ -670,19 +939,19 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     c.beginPath(); c.moveTo(x, y + h); c.lineTo(x, y + w / 2); c.arc(x + w / 2, y + w / 2, w / 2, Math.PI, 0); c.lineTo(x + w, y + h); c.closePath(); c.fill();
     c.strokeStyle = INK; c.lineWidth = 1.2; c.stroke();
   }
-  function tower(c, cx, top, bottom, w, flagPhase) {
+  function tower(c, cx, top, bottom, w, flagPhase, royal) {
     c.fillStyle = '#ddd5c9'; rr(c, cx - w / 2, top, w, bottom - top, 2); c.fill();
     bricks(c, cx - w / 2, top, w, bottom - top);
     c.strokeStyle = INK; c.lineWidth = 1.6; rr(c, cx - w / 2, top, w, bottom - top, 2); c.stroke();
     const rh = w * 1.25;
-    c.fillStyle = '#e88fa5'; c.beginPath(); c.moveTo(cx - w / 2 - 3, top + 1); c.lineTo(cx, top - rh); c.lineTo(cx + w / 2 + 3, top + 1); c.closePath(); c.fill();
-    c.fillStyle = '#c96a85'; c.beginPath(); c.moveTo(cx, top - rh); c.lineTo(cx + w / 2 + 3, top + 1); c.lineTo(cx + 2, top + 1); c.closePath(); c.fill();
+    c.fillStyle = royal ? '#e9b93b' : '#e88fa5'; c.beginPath(); c.moveTo(cx - w / 2 - 3, top + 1); c.lineTo(cx, top - rh); c.lineTo(cx + w / 2 + 3, top + 1); c.closePath(); c.fill();
+    c.fillStyle = royal ? '#c9a23a' : '#c96a85'; c.beginPath(); c.moveTo(cx, top - rh); c.lineTo(cx + w / 2 + 3, top + 1); c.lineTo(cx + 2, top + 1); c.closePath(); c.fill();
     c.beginPath(); c.moveTo(cx - w / 2 - 3, top + 1); c.lineTo(cx, top - rh); c.lineTo(cx + w / 2 + 3, top + 1); c.closePath(); c.stroke();
     c.beginPath(); c.moveTo(cx, top - rh); c.lineTo(cx, top - rh - 9); c.lineWidth = 1.2; c.stroke();
     const wv = Math.sin(flagPhase) * 1.5;
-    c.fillStyle = '#9cc65a'; c.beginPath(); c.moveTo(cx, top - rh - 9); c.quadraticCurveTo(cx + 4, top - rh - 9 + wv, cx + 8, top - rh - 7); c.lineTo(cx, top - rh - 4); c.closePath(); c.fill(); c.stroke();
+    c.fillStyle = royal ? '#a98bd9' : '#9cc65a'; c.beginPath(); c.moveTo(cx, top - rh - 9); c.quadraticCurveTo(cx + 4, top - rh - 9 + wv, cx + 8, top - rh - 7); c.lineTo(cx, top - rh - 4); c.closePath(); c.fill(); c.stroke();
   }
-  function drawCastle(c, x, y) {
+  function drawCastle(c, x, y, royal) {
     const S = 2 * T, cx = x + S / 2, t = G.time || 0;
     c.save(); c.lineJoin = 'round'; c.strokeStyle = INK; c.lineWidth = 1.6;
     // shadow + moat
@@ -728,9 +997,18 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     c.fillStyle = '#a77c4c'; c.fillRect(gx - 1, wallBot, gw + 2, 9); c.strokeRect(gx - 1, wallBot, gw + 2, 9);
     c.strokeStyle = 'rgba(60,40,20,.5)'; c.lineWidth = 1; for (let i = 1; i < 4; i++) { c.beginPath(); c.moveTo(gx - 1 + i * 4.5, wallBot); c.lineTo(gx - 1 + i * 4.5, wallBot + 9); c.stroke(); }
     // corner towers
-    tower(c, x + 12, y + 26, wallBot + 2, 16, t * 4 + 1);
-    tower(c, x + S - 12, y + 26, wallBot + 2, 16, t * 4 + 2.5);
+    tower(c, x + 12, y + 26, wallBot + 2, 16, t * 4 + 1, royal);
+    tower(c, x + S - 12, y + 26, wallBot + 2, 16, t * 4 + 2.5, royal);
     archWin(c, x + 9.5, y + 38, 5, 8, lit(5)); archWin(c, x + S - 14.5, y + 38, 5, 8, lit(6));
+    if (royal) {
+      c.strokeStyle = INK; c.lineWidth = .8; c.beginPath(); c.moveTo(x + 12, y + 30); c.quadraticCurveTo(cx, y + 44, x + S - 12, y + 30); c.stroke();
+      for (let i = 1; i < 8; i++) {
+        const u = i / 8, lx = (1 - u) * (1 - u) * (x + 12) + 2 * u * (1 - u) * cx + u * u * (x + S - 12), ly = (1 - u) * (1 - u) * (y + 30) + 2 * u * (1 - u) * (y + 44) + u * u * (y + 30);
+        c.fillStyle = Math.sin(t * 3 + i) > 0 ? ['#ffd56b', '#f4a3b8', '#9fe0ff'][i % 3] : '#fff6d8'; ell(c, lx, ly + 1.5, 1.7, 1.7); c.fill();
+      }
+      c.fillStyle = '#e9b93b'; c.beginPath(); c.moveTo(cx - 6, kTop + 2); c.lineTo(cx - 6, kTop - 4); c.lineTo(cx - 3, kTop - 1); c.lineTo(cx, kTop - 6); c.lineTo(cx + 3, kTop - 1); c.lineTo(cx + 6, kTop - 4); c.lineTo(cx + 6, kTop + 2); c.closePath(); c.fill(); c.lineWidth = 1.2; c.stroke();
+      for (const fx of [x + 1, x + S - 13]) { c.fillStyle = '#8a5a34'; rr(c, fx, y + S - 7, 12, 5, 2); c.fill(); c.lineWidth = 1.1; c.stroke(); for (let i = 0; i < 3; i++) { c.fillStyle = ['#f4a3b8', '#ffd36b', '#d8c9f5'][i]; ell(c, fx + 3 + i * 3, y + S - 8, 1.8, 1.8); c.fill(); } }
+    }
     c.restore();
   }
   function drawHospital(c, x, y, b) {
@@ -778,11 +1056,221 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     }
     c.restore();
   }
+  // ---------- upgraded looks ----------
+  const MD = '#2f3440';
+  function glassR(c, x, y, w, h, lit) {
+    if (lit) { c.fillStyle = 'rgba(255,225,140,.35)'; c.fillRect(x - 1.5, y - 1.5, w + 3, h + 3); }
+    c.fillStyle = lit ? '#ffe39a' : '#a8dcf2'; c.fillRect(x, y, w, h);
+    c.fillStyle = 'rgba(255,255,255,.45)'; c.beginPath(); c.moveTo(x + w * .12, y + h); c.lineTo(x + w * .4, y); c.lineTo(x + w * .52, y); c.lineTo(x + w * .24, y + h); c.closePath(); c.fill();
+    c.strokeStyle = MD; c.lineWidth = 1.2; c.strokeRect(x, y, w, h);
+  }
+  function mull(c, x, y, w, h, n, rows = 1) {
+    c.strokeStyle = MD; c.lineWidth = .9; c.beginPath();
+    for (let i = 1; i < n; i++) { c.moveTo(x + w * i / n, y); c.lineTo(x + w * i / n, y + h); }
+    for (let j = 1; j < rows; j++) { c.moveTo(x, y + h * j / rows); c.lineTo(x + w, y + h * j / rows); }
+    c.stroke();
+  }
+  function shrub(c, x, y, r, col = '#5a9a3a') { c.fillStyle = col; ell(c, x, y, r, r * .8); c.fill(); c.strokeStyle = INK; c.lineWidth = 1.1; c.stroke(); c.fillStyle = 'rgba(255,255,255,.25)'; ell(c, x - r * .3, y - r * .3, r * .35, r * .25); c.fill(); }
+  function box(c, x, y, w, h, col) { c.fillStyle = col; c.fillRect(x, y, w, h); c.strokeStyle = INK; c.lineWidth = 1.6; c.strokeRect(x, y, w, h); }
+  function shadow(c, cx, y, rx) { c.fillStyle = 'rgba(0,0,0,.13)'; ell(c, cx, y, rx, 4); c.fill(); }
+  const glow = (k, x) => Math.sin((G.time || 0) * 1.1 + k * 1.7 + x * .07) > -.3;
+  function star(c, cx, cy, R) {
+    c.fillStyle = '#e9b93b'; c.beginPath();
+    for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, k = i % 2 ? R * .45 : R; c.lineTo(cx + Math.cos(a) * k, cy + Math.sin(a) * k); }
+    c.closePath(); c.fill(); c.strokeStyle = INK; c.lineWidth = 1; c.stroke();
+  }
+  // level 2: flower boxes and a gold star
+  function deluxe(c, b) {
+    const x = b.x * T, y = b.y * T, n = sz(b.type) * T;
+    c.save(); c.strokeStyle = INK; c.lineWidth = 1.1;
+    for (const fx of [x + 1, x + n - 13]) {
+      c.fillStyle = '#8a5a34'; rr(c, fx, y + n - 7, 12, 5, 2); c.fill(); c.stroke();
+      for (let i = 0; i < 3; i++) { c.fillStyle = ['#f4a3b8', '#ffd36b', '#d8c9f5'][i]; ell(c, fx + 3 + i * 3, y + n - 8, 1.8, 1.8); c.fill(); }
+    }
+    star(c, x + n - 5, y + 5, 4.2);
+    c.restore();
+  }
+  // level 3: modern redesigns
+  const MODERN = {
+    hutch(c, x, y) {
+      const S = 2 * T, t = G.time || 0;
+      shadow(c, x + S / 2, y + S - 4, 38);
+      c.fillStyle = '#d9b88a'; rr(c, x + 3, y + S - 18, S - 6, 15, 3); c.fill(); c.strokeStyle = INK; c.lineWidth = 1.6; c.stroke();
+      c.fillStyle = '#5fcbee'; rr(c, x + 7, y + S - 15, 42, 9, 3); c.fill(); c.lineWidth = 1.2; c.stroke();
+      c.strokeStyle = 'rgba(255,255,255,.85)'; c.lineWidth = 1; c.beginPath();
+      for (let i = 0; i < 4; i++) { const wx = x + 11 + i * 9 + Math.sin(t * 2 + i) * 1.5; c.moveTo(wx, y + S - 10); c.quadraticCurveTo(wx + 2.5, y + S - 12, wx + 5, y + S - 10); }
+      c.stroke();
+      box(c, x + 5, y + 36, S - 10, S - 54, '#f8f7f3');
+      glassR(c, x + 9, y + 40, 36, 18, glow(1, x)); mull(c, x + 9, y + 40, 36, 18, 4);
+      box(c, x + 50, y + 38, 24, 24, '#c9905a');
+      c.strokeStyle = 'rgba(80,50,25,.45)'; c.lineWidth = 1; c.beginPath(); for (let i = 3; i < 24; i += 3) { c.moveTo(x + 50 + i, y + 38); c.lineTo(x + 50 + i, y + 62); } c.stroke();
+      box(c, x + 57, y + 45, 9, 17, MD); c.fillStyle = '#e9b93b'; ell(c, x + 64, y + 54, 1, 1); c.fill();
+      c.fillStyle = '#2b4a7a'; c.beginPath(); c.moveTo(x + 6, y + 36); c.lineTo(x + 8, y + 30); c.lineTo(x + 16, y + 30); c.lineTo(x + 16, y + 36); c.closePath(); c.fill(); c.strokeStyle = INK; c.lineWidth = 1.1; c.stroke();
+      c.strokeStyle = 'rgba(255,255,255,.45)'; c.beginPath(); c.moveTo(x + 12, y + 30); c.lineTo(x + 11, y + 36); c.stroke();
+      box(c, x + 17, y + 15, S - 21, 21, '#f8f7f3');
+      glassR(c, x + 22, y + 19, 42, 12, glow(2, x)); mull(c, x + 22, y + 19, 42, 12, 5);
+      c.fillStyle = MD; c.fillRect(x + 14, y + 12, S - 16, 4);
+      for (let i = 0; i < 5; i++) shrub(c, x + 22 + i * 11, y + 11, 4, i % 2 ? '#6fae3e' : '#5a9a3a');
+      c.fillStyle = '#e88fa5'; ell(c, x + S - 9, y + 26, 3.5, 3.5); c.fill(); c.strokeStyle = INK; c.lineWidth = 1; c.stroke();
+      for (const lx of [x + 4, x + S - 4]) {
+        c.strokeStyle = MD; c.lineWidth = 1.6; c.beginPath(); c.moveTo(lx, y + S - 18); c.lineTo(lx, y + S - 30); c.stroke();
+        c.fillStyle = 'rgba(255,220,120,.4)'; ell(c, lx, y + S - 31, 5, 5); c.fill(); c.fillStyle = '#ffd56b'; ell(c, lx, y + S - 31, 2.2, 2.2); c.fill();
+      }
+    },
+    hospital(c, x, y, b) {
+      const S = 2 * T, cx = x + S / 2, t = G.time || 0;
+      const patients = G.pigs.filter(q => q.state === 'admitted' && q.hosp && q.hosp.x === b.x && q.hosp.y === b.y).length;
+      shadow(c, cx, y + S - 4, 38);
+      c.fillStyle = '#e8dcc6'; c.fillRect(cx - 9, y + S - 10, 18, 8);
+      for (const wx of [x + 3, x + S - 21]) { box(c, wx, y + 34, 18, S - 44, '#f8f7f3'); glassR(c, wx + 3, y + 40, 12, 22, false); mull(c, wx + 3, y + 40, 12, 22, 2, 3); }
+      box(c, x + 19, y + 8, S - 38, S - 18, '#ffffff');
+      let k = 0;
+      for (let r = 0; r < 4; r++) for (let q = 0; q < 3; q++) glassR(c, x + 23 + q * 11.5, y + 13 + r * 10, 9, 7, k++ < patients * 2);
+      c.fillStyle = '#9fd3c7'; c.fillRect(x + 17, y + 5, S - 34, 4); c.strokeStyle = INK; c.lineWidth = 1.4; c.strokeRect(x + 17, y + 5, S - 34, 4);
+      const beat = 1 + Math.max(0, Math.sin(t * 5)) * .15;
+      c.save(); c.translate(cx, y - 1); c.scale(beat, beat); c.fillStyle = 'rgba(224,72,95,.25)'; ell(c, 0, 0, 9, 8); c.fill();
+      c.fillStyle = '#e0485f'; c.beginPath(); c.moveTo(0, 5); c.bezierCurveTo(-8, -1, -4, -8, 0, -3); c.bezierCurveTo(4, -8, 8, -1, 0, 5); c.fill(); c.restore();
+      c.fillStyle = '#9fd3c7'; c.fillRect(cx - 14, y + S - 25, 28, 4); c.strokeStyle = INK; c.lineWidth = 1.4; c.strokeRect(cx - 14, y + S - 25, 28, 4);
+      glassR(c, cx - 8, y + S - 21, 16, 11, false); mull(c, cx - 8, y + S - 21, 16, 11, 2);
+      shrub(c, x + 10, y + S - 7, 5); shrub(c, x + S - 10, y + S - 7, 5);
+      if (patients) { c.font = '10px Chewy, "Comic Sans MS", sans-serif'; c.textAlign = 'center'; c.fillStyle = '#fff'; rr(c, x + S - 20, y + 6, 22, 13, 6); c.fill(); c.lineWidth = 1.2; c.strokeStyle = INK; c.stroke(); c.fillStyle = INK; c.fillText('🛏️' + patients, x + S - 9, y + 16); }
+    },
+    bank(c, x, y) {
+      const t = G.time || 0;
+      shadow(c, x + 20, y + 37, 18);
+      c.fillStyle = '#d8d4cc'; c.fillRect(x + 2, y + 31, 36, 6); c.strokeStyle = INK; c.lineWidth = 1.4; c.strokeRect(x + 2, y + 31, 36, 6);
+      box(c, x + 4, y + 6, 8, 25, '#3a4f86');
+      box(c, x + 10, y - 24, 22, 55, '#1f2f5c');
+      for (let r = 0; r < 9; r++) for (let q = 0; q < 3; q++) { c.fillStyle = Math.sin(r * 3.1 + q * 1.7 + t * .6) > .2 ? '#ffd56b' : '#5c7bc4'; c.fillRect(x + 13 + q * 6.3, y - 20 + r * 5.4, 4, 3.2); }
+      c.fillStyle = 'rgba(255,255,255,.16)'; c.beginPath(); c.moveTo(x + 12, y + 31); c.lineTo(x + 20, y - 24); c.lineTo(x + 24, y - 24); c.lineTo(x + 16, y + 31); c.closePath(); c.fill();
+      c.fillStyle = '#e9b93b'; c.beginPath(); c.moveTo(x + 9, y - 24); c.lineTo(x + 12, y - 30); c.lineTo(x + 16, y - 26); c.lineTo(x + 21, y - 33); c.lineTo(x + 26, y - 26); c.lineTo(x + 30, y - 30); c.lineTo(x + 33, y - 24); c.closePath(); c.fill(); c.strokeStyle = INK; c.lineWidth = 1.3; c.stroke();
+      c.beginPath(); c.moveTo(x + 21, y - 33); c.lineTo(x + 21, y - 40); c.stroke();
+      c.fillStyle = Math.sin(t * 4) > 0 ? '#ff4d4d' : '#7a2020'; ell(c, x + 21, y - 41, 1.6, 1.6); c.fill();
+      c.fillStyle = '#e9b93b'; c.fillRect(x + 15, y + 21, 12, 2);
+      glassR(c, x + 17, y + 23, 8, 8, true);
+    },
+    hay(c, x, y) {
+      shadow(c, x + 20, y + 37, 17);
+      box(c, x + 3, y + 29, 34, 7, '#d8d4cc');
+      c.fillStyle = '#e8b84a'; rr(c, x + 8, y + 20, 11, 9, 2); c.fill(); rr(c, x + 21, y + 20, 11, 9, 2); c.fill(); rr(c, x + 14, y + 12, 12, 8, 2); c.fill();
+      c.strokeStyle = 'rgba(150,100,30,.6)'; c.lineWidth = 1; c.beginPath(); for (const [bx, by] of [[8, 20], [21, 20], [14, 12]]) { c.moveTo(x + bx + 1, y + by + 3); c.lineTo(x + bx + 10, y + by + 3); } c.stroke();
+      c.fillStyle = 'rgba(168,220,242,.45)'; c.beginPath(); c.ellipse(x + 20, y + 29, 16, 24, 0, Math.PI, 0); c.closePath(); c.fill();
+      c.strokeStyle = INK; c.lineWidth = 1.6; c.stroke();
+      c.lineWidth = .9; c.strokeStyle = 'rgba(47,52,64,.6)';
+      c.beginPath(); c.ellipse(x + 20, y + 29, 8, 24, 0, Math.PI, 0); c.stroke();
+      c.beginPath(); c.moveTo(x + 20, y + 29); c.lineTo(x + 20, y + 5); c.stroke();
+      c.beginPath(); c.ellipse(x + 20, y + 29, 16, 12, 0, Math.PI, 0); c.stroke();
+      c.fillStyle = 'rgba(255,255,255,.55)'; c.beginPath(); c.ellipse(x + 12, y + 16, 1.8, 6, -.45, 0, Math.PI * 2); c.fill();
+    },
+    water(c, x, y, b) {
+      shadow(c, x + 22, y + 37, 15);
+      box(c, x + 12, y + 30, 20, 6, '#d8d4cc');
+      c.fillStyle = '#e4ebf0'; rr(c, x + 12, y + 4, 20, 27, 7); c.fill(); c.strokeStyle = INK; c.lineWidth = 1.6; c.stroke();
+      c.fillStyle = '#5aa9e0'; c.fillRect(x + 12.8, y + 14, 18.4, 6);
+      c.fillStyle = '#fff'; c.beginPath(); c.moveTo(x + 22, y + 14.5); c.quadraticCurveTo(x + 25, y + 18, x + 22, y + 19.5); c.quadraticCurveTo(x + 19, y + 18, x + 22, y + 14.5); c.fill();
+      c.fillStyle = 'rgba(255,255,255,.7)'; rr(c, x + 14.5, y + 7, 3, 20, 2); c.fill();
+      for (let i = 0; i < 3; i++) { c.fillStyle = i < 2 + (Math.sin(G.time * 2 + b.x) > 0) ? '#6fd36b' : '#c7cdd2'; ell(c, x + 28, y + 23 + i * 2.4, 1, 1); c.fill(); }
+      c.strokeStyle = MD; c.lineWidth = 1.4; c.beginPath(); c.moveTo(x + 6, y + 36); c.lineTo(x + 6, y + 27); c.stroke();
+      c.fillStyle = '#2b4a7a'; c.beginPath(); c.moveTo(x + 1, y + 27); c.lineTo(x + 4, y + 20); c.lineTo(x + 12, y + 20); c.lineTo(x + 10, y + 27); c.closePath(); c.fill(); c.strokeStyle = INK; c.lineWidth = 1.1; c.stroke();
+      const wob = Math.sin(G.time * 3 + b.x) * 1.5; c.fillStyle = '#5aa9e0'; ell(c, x + 34, y + 33 + wob * .3, 2.4, 2.8); c.fill();
+    },
+    garden(c, x, y) {
+      shadow(c, x + 20, y + 37, 17);
+      box(c, x + 3, y + 30, 34, 6, '#c9905a');
+      c.fillStyle = 'rgba(168,220,242,.5)'; c.beginPath(); c.moveTo(x + 5, y + 30); c.lineTo(x + 5, y + 15); c.lineTo(x + 20, y + 4); c.lineTo(x + 35, y + 15); c.lineTo(x + 35, y + 30); c.closePath(); c.fill();
+      for (let i = 0; i < 4; i++) { const px = x + 9 + i * 7.3; c.fillStyle = '#6fae3e'; ell(c, px, y + 24, 3.5, 5); c.fill(); c.fillStyle = ['#e0483f', '#f2b134', '#e0483f', '#9c5fc4'][i]; ell(c, px + 1, y + 23 + (i % 2) * 3, 1.8, 1.8); c.fill(); }
+      c.strokeStyle = INK; c.lineWidth = 1.6; c.beginPath(); c.moveTo(x + 5, y + 30); c.lineTo(x + 5, y + 15); c.lineTo(x + 20, y + 4); c.lineTo(x + 35, y + 15); c.lineTo(x + 35, y + 30); c.stroke();
+      c.strokeStyle = 'rgba(47,52,64,.55)'; c.lineWidth = .9; c.beginPath(); c.moveTo(x + 5, y + 15); c.lineTo(x + 35, y + 15);
+      for (const k of [12.5, 20, 27.5]) { c.moveTo(x + k, y + 30); c.lineTo(x + k, y + (k === 20 ? 4 : 9.5)); } c.stroke();
+      c.fillStyle = 'rgba(255,255,255,.6)'; c.beginPath(); c.moveTo(x + 8, y + 14); c.lineTo(x + 15, y + 8.5); c.lineTo(x + 16, y + 10); c.lineTo(x + 9, y + 15.5); c.closePath(); c.fill();
+    },
+    park(c, x, y) {
+      const t = G.time || 0;
+      c.fillStyle = '#8fcf6a'; rr(c, x + 2, y + 4, 36, 33, 8); c.fill();
+      c.fillStyle = '#7fd3ee'; ell(c, x + 20, y + 28, 15, 7); c.fill(); c.strokeStyle = INK; c.lineWidth = 1.4; c.stroke();
+      for (let i = 0; i < 3; i++) {
+        const jx = x + 12 + i * 8, h = 9 + Math.sin(t * 4 + i * 2) * 3;
+        c.strokeStyle = '#ffffff'; c.lineWidth = 1.3; c.beginPath(); c.moveTo(jx, y + 28); c.quadraticCurveTo(jx + 1, y + 28 - h * 1.6, jx + 3, y + 28 - h * .3); c.stroke();
+        c.fillStyle = '#e6f8ff'; ell(c, jx + 1.5, y + 28 - h, 1.3, 1.3); c.fill();
+      }
+      c.strokeStyle = MD; c.lineWidth = 1.2; c.beginPath(); c.moveTo(x + 5, y + 24); c.lineTo(x + 5, y + 8); c.moveTo(x + 35, y + 22); c.lineTo(x + 35, y + 6); c.stroke();
+      c.fillStyle = '#f4a3b8'; c.beginPath(); c.moveTo(x + 5, y + 8); c.lineTo(x + 35, y + 6); c.lineTo(x + 22, y + 15); c.closePath(); c.fill(); c.strokeStyle = INK; c.stroke();
+    },
+    vet(c, x, y) {
+      const t = G.time || 0; shadow(c, x + 20, y + 37, 17);
+      box(c, x + 5, y + 13, 30, 23, '#ffffff');
+      c.fillStyle = MD; c.fillRect(x + 3, y + 10, 34, 4);
+      glassR(c, x + 8, y + 18, 15, 11, true); mull(c, x + 8, y + 18, 15, 11, 3);
+      glassR(c, x + 26, y + 20, 6, 16, false);
+      c.fillStyle = '#9fd3c7'; c.fillRect(x + 6, y + 31, 18, 4.5);
+      const beat = .85 + Math.max(0, Math.sin(t * 5)) * .2;
+      c.save(); c.translate(x + 20, y + 4); c.scale(beat, beat); c.fillStyle = 'rgba(233,120,160,.3)'; ell(c, 0, 0, 7, 6); c.fill();
+      c.fillStyle = '#ff6fa0'; c.beginPath(); c.moveTo(0, 4); c.bezierCurveTo(-6, -1, -3, -6, 0, -2.5); c.bezierCurveTo(3, -6, 6, -1, 0, 4); c.fill(); c.restore();
+    },
+    sitter(c, x, y) {
+      shadow(c, x + 20, y + 37, 17);
+      box(c, x + 6, y + 16, 28, 20, '#f8f7f3');
+      c.fillStyle = '#c9905a'; c.fillRect(x + 6.8, y + 16.8, 9, 18.4);
+      c.strokeStyle = 'rgba(80,50,25,.45)'; c.lineWidth = 1; c.beginPath(); for (let i = 3; i < 9; i += 3) { c.moveTo(x + 6.8 + i, y + 17); c.lineTo(x + 6.8 + i, y + 35); } c.stroke();
+      glassR(c, x + 19, y + 20, 12, 9, glow(3, x)); mull(c, x + 19, y + 20, 12, 9, 2);
+      c.fillStyle = MD; c.fillRect(x + 3, y + 13, 34, 4);
+      box(c, x + 9, y + 26, 5, 10, '#e88fa5');
+      c.fillStyle = '#e0485f'; c.beginPath(); c.moveTo(x + 25, y + 11); c.bezierCurveTo(x + 21, y + 8, x + 22, y + 4, x + 25, y + 6.5); c.bezierCurveTo(x + 28, y + 4, x + 29, y + 8, x + 25, y + 11); c.fill();
+      shrub(c, x + 22, y + 35, 3.5); shrub(c, x + 30, y + 35, 3.5);
+    },
+    roomba(c, x, y) {
+      const t = G.time || 0; shadow(c, x + 20, y + 36, 16);
+      c.fillStyle = MD; rr(c, x + 5, y + 24, 30, 11, 5); c.fill(); c.strokeStyle = INK; c.lineWidth = 1.4; c.stroke();
+      c.strokeStyle = `rgba(110,230,255,${.5 + Math.sin(t * 3) * .4})`; c.lineWidth = 2; ell(c, x + 20, y + 29.5, 10, 3); c.stroke();
+      box(c, x + 14, y + 5, 12, 19, '#cfc8d8');
+      c.fillStyle = '#163045'; c.fillRect(x + 16, y + 8, 8, 9);
+      c.fillStyle = '#6ee6ff'; c.beginPath(); c.moveTo(x + 21, y + 9); c.lineTo(x + 18, y + 13); c.lineTo(x + 20, y + 13); c.lineTo(x + 19, y + 16); c.lineTo(x + 22, y + 12); c.lineTo(x + 20, y + 12); c.closePath(); c.fill();
+      c.fillStyle = '#8f86d9'; ell(c, x + 20, y + 20.5, 2, 2); c.fill();
+    },
+    cafe(c, x, y, b) {
+      const open = workersAt(b).length > 0, t = G.time || 0;
+      shadow(c, x + 20, y + 37, 18);
+      box(c, x + 4, y + 9, 32, 27, MD);
+      c.fillStyle = '#c9905a'; c.fillRect(x + 4.8, y + 16, 30.4, 2.5);
+      glassR(c, x + 7, y + 20, 17, 13, open); mull(c, x + 7, y + 20, 17, 13, 2);
+      glassR(c, x + 27, y + 21, 6, 15, false);
+      c.save(); c.shadowColor = '#ff7fb0'; c.shadowBlur = open ? 6 : 0; c.strokeStyle = open ? '#ff8fbf' : '#a0607a'; c.lineWidth = 1.4;
+      c.beginPath(); c.moveTo(x + 15, y + 10.5); c.lineTo(x + 16, y + 14); c.lineTo(x + 22, y + 14); c.lineTo(x + 23, y + 10.5); c.stroke();
+      c.beginPath(); c.arc(x + 23.5, y + 12, 1.5, -Math.PI / 2, Math.PI / 2); c.stroke(); c.restore();
+      if (open) { c.strokeStyle = 'rgba(255,255,255,.85)'; c.lineWidth = 1; const w = Math.sin(t * 4) * 1.2; c.beginPath(); c.moveTo(x + 18, y + 8); c.quadraticCurveTo(x + 17 + w, y + 5, x + 18, y + 2); c.moveTo(x + 21, y + 8); c.quadraticCurveTo(x + 22 - w, y + 5, x + 21, y + 2); c.stroke(); }
+      shrub(c, x + 37, y + 34, 3);
+    },
+    salon(c, x, y, b) {
+      const open = workersAt(b).length > 0;
+      shadow(c, x + 20, y + 37, 18);
+      box(c, x + 5, y + 11, 30, 25, '#ffffff');
+      c.fillStyle = '#a98bd9'; c.fillRect(x + 3, y + 8, 34, 4);
+      if (open) { c.fillStyle = 'rgba(255,220,140,.4)'; ell(c, x + 15, y + 23, 10, 10); c.fill(); }
+      c.fillStyle = open ? '#ffe39a' : '#d9ccf3'; ell(c, x + 15, y + 23, 7.5, 7.5); c.fill(); c.strokeStyle = '#c9a23a'; c.lineWidth = 2; c.stroke();
+      c.fillStyle = 'rgba(255,255,255,.55)'; ell(c, x + 12.5, y + 20, 2, 3.5, -.5); c.fill();
+      box(c, x + 26, y + 21, 7, 15, '#c9a23a'); c.fillStyle = '#fff'; ell(c, x + 31, y + 29, .9, .9); c.fill();
+      c.save(); c.shadowColor = '#c7a8ff'; c.shadowBlur = open ? 6 : 0; c.font = '8px sans-serif'; c.textAlign = 'center'; c.fillStyle = INK; c.fillText('✨✂️✨', x + 20, y + 6); c.restore();
+      shrub(c, x + 3, y + 34, 3.5, '#4f9a3a');
+    },
+    toys(c, x, y, b) {
+      const open = workersAt(b).length > 0, t = G.time || 0;
+      shadow(c, x + 20, y + 37, 18);
+      for (const [bx, by, bw, bh, col] of [[4, 23, 11, 13, '#e0483f'], [25, 23, 11, 13, '#5aa9e0'], [6, 11, 14, 12, '#ffd36b'], [20, 11, 14, 12, '#6fae3e'], [12, 3, 14, 8, '#e88fa5']]) {
+        box(c, x + bx, y + by, bw, bh, col); c.fillStyle = 'rgba(255,255,255,.35)'; ell(c, x + bx + bw / 2, y + by + 2.5, bw / 4, 1.3); c.fill();
+      }
+      glassR(c, x + 15, y + 23, 10, 13, open); mull(c, x + 15, y + 23, 10, 13, 2);
+      const by = y - 5 + Math.sin(t * 2) * 1.5;
+      c.strokeStyle = INK; c.lineWidth = .8; c.beginPath(); c.moveTo(x + 33, y + 11); c.quadraticCurveTo(x + 36, by + 10, x + 35, by + 5); c.stroke();
+      c.fillStyle = '#a98bd9'; ell(c, x + 35, by, 4, 5); c.fill(); c.lineWidth = 1.2; c.stroke();
+      c.fillStyle = 'rgba(255,255,255,.6)'; ell(c, x + 33.8, by - 1.5, 1, 1.6); c.fill();
+    }
+  };
   function drawBuilding(c, b) {
     const x = b.x * T, y = b.y * T, cx = x + T / 2;
     c.save(); c.lineJoin = 'round'; c.lineWidth = 2; c.strokeStyle = INK;
+    if (L(b) === 3 && MODERN[b.type]) { MODERN[b.type](c, x, y, b); c.restore(); return; }
     switch (b.type) {
-      case 'hutch': drawCastle(c, x, y); break;
+      case 'hutch': drawCastle(c, x, y, L(b) === 2); break;
       case 'hospital': drawHospital(c, x, y, b); break;
       case 'hay':
         c.fillStyle = '#c99a5b'; rr(c, x + 3, y + 5, 34, 31, 5); c.fill(); c.stroke();
@@ -830,6 +1318,55 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
         c.fillStyle = '#8f86d9'; rr(c, x + 11, y + 4, 18, 9, 3); c.fill(); c.stroke();
         c.fillStyle = '#ffd36b'; c.beginPath(); c.moveTo(x + 22, y + 15); c.lineTo(x + 16, y + 23); c.lineTo(x + 20, y + 23); c.lineTo(x + 18, y + 30); c.lineTo(x + 24, y + 21); c.lineTo(x + 20, y + 21); c.closePath(); c.fill(); c.lineWidth = 1; c.stroke();
         break;
+      case 'cafe': {
+        const open = workersAt(b).length > 0;
+        c.fillStyle = '#fff3e2'; rr(c, x + 5, y + 14, 30, 22, 3); c.fill(); c.stroke();
+        for (let i = 0; i < 5; i++) { c.fillStyle = i % 2 ? '#fff' : '#e88fa5'; c.fillRect(x + 3 + i * 6.8, y + 10, 6.8, 7); ell(c, x + 6.4 + i * 6.8, y + 17, 3.4, 2.4); c.fill(); }
+        c.lineWidth = 1.6; c.strokeRect(x + 3, y + 10, 34, 7);
+        c.fillStyle = '#7b5236'; rr(c, x + 11, y + 1, 18, 10, 3); c.fill(); c.stroke();
+        c.fillStyle = '#fff'; rr(c, x + 16, y + 3.5, 7, 5.5, [0, 0, 2.5, 2.5]); c.fill();
+        c.strokeStyle = '#fff'; c.lineWidth = 1.2; c.beginPath(); c.arc(x + 23.5, y + 6, 1.8, -Math.PI / 2, Math.PI / 2); c.stroke();
+        if (open) { c.strokeStyle = 'rgba(255,255,255,.85)'; const w = Math.sin(G.time * 4) * 1.2; c.beginPath(); c.moveTo(x + 18, y + 2); c.quadraticCurveTo(x + 17 + w, y - 1, x + 18, y - 4); c.moveTo(x + 21, y + 2); c.quadraticCurveTo(x + 22 - w, y - 1, x + 21, y - 4); c.stroke(); }
+        c.strokeStyle = INK; c.lineWidth = 1.6;
+        c.fillStyle = open ? '#ffd56b' : '#bfe3f2'; c.fillRect(x + 8, y + 21, 11, 8); c.strokeRect(x + 8, y + 21, 11, 8);
+        c.fillStyle = '#a77c4c'; rr(c, x + 23, y + 22, 8, 14, [3, 3, 0, 0]); c.fill(); c.stroke();
+        c.fillStyle = open ? '#5f8f2e' : '#d9455a'; ell(c, x + 27, y + 26, 1.6, 1.6); c.fill();
+        break;
+      }
+      case 'salon': {
+        const open = workersAt(b).length > 0;
+        c.fillStyle = '#efe3fb'; rr(c, x + 5, y + 12, 28, 24, 3); c.fill(); c.stroke();
+        c.fillStyle = '#a98bd9'; rr(c, x + 3, y + 8, 32, 6, 3); c.fill(); c.stroke();
+        // barber pole
+        c.fillStyle = '#fff'; rr(c, x + 33, y + 13, 5, 18, 2); c.fill();
+        c.save(); c.beginPath(); c.rect(x + 33, y + 13, 5, 18); c.clip();
+        c.strokeStyle = '#e0485f'; c.lineWidth = 2;
+        for (let k = -2; k < 7; k++) { const yy = y + 13 + k * 5 + (open ? (G.time * 8) % 5 : 0); c.beginPath(); c.moveTo(x + 33, yy); c.lineTo(x + 38, yy + 4); c.stroke(); }
+        c.restore(); c.strokeStyle = INK; c.lineWidth = 1.4; rr(c, x + 33, y + 13, 5, 18, 2); c.stroke();
+        c.fillStyle = '#c9a23a'; ell(c, x + 35.5, y + 12, 3, 2); c.fill(); c.stroke();
+        // sign
+        c.fillStyle = '#fff'; ell(c, x + 19, y + 5, 8, 5.5); c.fill(); c.stroke();
+        c.font = '8px sans-serif'; c.textAlign = 'center'; c.fillStyle = INK; c.fillText('✂️', x + 19, y + 8);
+        c.lineWidth = 1.6;
+        c.fillStyle = open ? '#ffd56b' : '#bfe3f2'; c.fillRect(x + 8, y + 18, 12, 9); c.strokeRect(x + 8, y + 18, 12, 9);
+        c.fillStyle = '#f4a3b8'; ell(c, x + 14, y + 26, 4, 2); c.fill();
+        c.fillStyle = '#c96a85'; rr(c, x + 23, y + 22, 8, 14, [3, 3, 0, 0]); c.fill(); c.stroke();
+        break;
+      }
+      case 'toys': {
+        const open = workersAt(b).length > 0;
+        c.fillStyle = '#fff1a8'; rr(c, x + 5, y + 14, 30, 22, 3); c.fill(); c.stroke();
+        c.fillStyle = '#e0483f'; c.beginPath(); c.moveTo(x + 2, y + 16); c.lineTo(x + 8, y + 7); c.lineTo(x + 32, y + 7); c.lineTo(x + 38, y + 16); c.closePath(); c.fill(); c.stroke();
+        // beach ball sign
+        const bx = x + 20, by = y + 6, spin = open ? G.time * 1.5 : 0;
+        for (let k = 0; k < 4; k++) { c.fillStyle = ['#e0483f', '#ffd36b', '#5aa9e0', '#fff'][k]; c.beginPath(); c.moveTo(bx, by); c.arc(bx, by, 5.5, spin + k * Math.PI / 2, spin + (k + 1) * Math.PI / 2); c.closePath(); c.fill(); }
+        c.lineWidth = 1.4; ell(c, bx, by, 5.5, 5.5); c.stroke(); c.lineWidth = 1.6;
+        // window with a teddy
+        c.fillStyle = open ? '#ffd56b' : '#bfe3f2'; c.fillRect(x + 8, y + 20, 12, 10); c.strokeRect(x + 8, y + 20, 12, 10);
+        c.fillStyle = '#a77c4c'; for (const [ex, ey, er] of [[11.5, 23, 1.6], [16.5, 23, 1.6], [14, 26, 3], [14, 29.5, 2.4]]) { ell(c, x + ex, y + ey, er, er); c.fill(); }
+        c.fillStyle = '#5aa9e0'; rr(c, x + 23, y + 22, 8, 14, [3, 3, 0, 0]); c.fill(); c.stroke();
+        break;
+      }
       case 'bank':
         c.fillStyle = '#1f2f5c'; c.beginPath(); c.moveTo(x + 3, y + 14); c.lineTo(cx, y + 3); c.lineTo(x + 37, y + 14); c.closePath(); c.fill(); c.stroke();
         c.fillStyle = '#f4ede0'; c.fillRect(x + 5, y + 14, 30, 19); c.strokeRect(x + 5, y + 14, 30, 19);
@@ -841,6 +1378,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
         break;
     }
     c.restore();
+    if (L(b) === 2 && b.type !== 'hutch') deluxe(c, b);
   }
 
   function draw() {
@@ -855,11 +1393,12 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     // build preview
     if (hover && tool && hover.x >= 0 && hover.y >= 0 && hover.x < COLS && hover.y < ROWS) {
       const occ = at(hover.x, hover.y);
-      const ok = tool === 'bulldoze' ? !!occ : fits(tool, hover.x, hover.y) && G.coins >= B[tool].cost;
-      c.fillStyle = ok ? (tool === 'bulldoze' ? 'rgba(217,69,90,.35)' : 'rgba(255,255,255,.55)') : 'rgba(217,69,90,.25)';
-      if (tool === 'bulldoze' && occ) { rr(c, occ.x * T + 2, occ.y * T + 2, sz(occ.type) * T - 4, sz(occ.type) * T - 4, 6); c.fill(); }
+      const onB = tool === 'bulldoze' || tool === 'upgrade';
+      const ok = tool === 'bulldoze' ? !!occ : tool === 'upgrade' ? !!occ && L(occ) < 3 && G.coins >= upCost(occ) : fits(tool, hover.x, hover.y) && G.coins >= B[tool].cost;
+      c.fillStyle = ok ? (tool === 'bulldoze' ? 'rgba(217,69,90,.35)' : tool === 'upgrade' ? 'rgba(233,185,59,.5)' : 'rgba(255,255,255,.55)') : 'rgba(217,69,90,.25)';
+      if (onB && occ) { rr(c, occ.x * T + 2, occ.y * T + 2, sz(occ.type) * T - 4, sz(occ.type) * T - 4, 6); c.fill(); }
       else { const n = sz(tool); rr(c, hover.x * T + 2, hover.y * T + 2, n * T - 4, n * T - 4, 6); c.fill(); }
-      if (ok && tool !== 'bulldoze') { c.globalAlpha = .55; drawBuilding(c, { type: tool, x: hover.x, y: hover.y }); c.globalAlpha = 1; }
+      if (ok && !onB) { c.globalAlpha = .55; drawBuilding(c, { type: tool, x: hover.x, y: hover.y }); c.globalAlpha = 1; }
     }
     // depth-sorted scene
     const items = [];
@@ -909,16 +1448,23 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
       if (p.id === selected) { c.strokeStyle = '#fff'; c.lineWidth = 2.5; ell(c, 0, 9 + hop, 17 * sc / .36, 5); c.stroke(); }
       c.scale(p.face * sc, sc); drawPig(c, p.skin, { sad: p.health < 35 });
       c.restore();
-      if (p.health < 50) { c.font = '12px sans-serif'; c.textAlign = 'center'; c.fillText('🤒', p.x, p.y - 16); }
+      if (p.working) { const jb = jobOf(p); if (jb) { c.font = '11px sans-serif'; c.textAlign = 'center'; c.fillText(JOBS[jb.type].emoji, p.x, p.y - 16 + Math.sin(G.time * 3 + p.id) * 1.2); } }
+      else if (p.health < 50) { c.font = '12px sans-serif'; c.textAlign = 'center'; c.fillText('🤒', p.x, p.y - 16); }
       else if (Math.min(p.food, p.water) < 25) { c.font = '12px sans-serif'; c.textAlign = 'center'; c.fillText(p.food < p.water ? '🌾?' : '💧?', p.x, p.y - 16); }
     } });
     items.sort((a, b) => a.y - b.y).forEach(i => i.f());
+    if (selBld && G.buildings.includes(selBld)) { const n = sz(selBld.type) * T; c.save(); c.setLineDash([5, 4]); c.lineDashOffset = -G.time * 12; c.strokeStyle = '#e9b93b'; c.lineWidth = 2.5; rr(c, selBld.x * T + 1, selBld.y * T + 1, n - 2, n - 2, 8); c.stroke(); c.restore(); }
     // popups
     c.textAlign = 'center'; c.font = '13px Chewy, "Comic Sans MS", sans-serif';
     for (const q of popups) {
       c.globalAlpha = Math.min(1, q.life / .4);
       c.lineWidth = 3.5; c.strokeStyle = '#fff'; c.strokeText(q.text, q.x, q.y);
       c.fillStyle = q.color; c.fillText(q.text, q.x, q.y);
+    }
+    c.globalAlpha = 1;
+    for (const q of confetti) {
+      c.globalAlpha = Math.min(1, q.life / .5);
+      c.save(); c.translate(q.x, q.y); c.rotate(q.r); c.fillStyle = q.c; c.fillRect(-3, -1.5, 6, 3); c.restore();
     }
     c.globalAlpha = 1;
   }
@@ -928,12 +1474,12 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
   function loop(t) {
     const dt = Math.min(.1, (t - last) / 1000 || 0); last = t;
     tick(dt); draw();
-    uiT -= dt; if (uiT <= 0) { uiT = .25; hudRes(); hudList(); renderPig(); syncTools(); }
+    uiT -= dt; if (uiT <= 0) { uiT = .25; hudRes(); hudList(); renderPig(); syncTools(); hudGoals(); renderBld(); }
     saveT -= dt; if (saveT <= 0) { saveT = 5; save(); }
     requestAnimationFrame(loop);
   }
   document.addEventListener('visibilitychange', () => { if (document.hidden) save(); });
-  resize(); hudRes(); syncTools(); renderPig();
+  resize(); hudRes(); syncTools(); renderPig(); hudGoals();
   let seen = false; try { seen = !!localStorage.getItem('pigcity-seen'); localStorage.setItem('pigcity-seen', '1'); } catch (e) {}
   if (!seen) { setTimeout(() => toast('Welcome to Pig City! Toki, Mochi, Poke, Miso Soup and Masaki just moved in.'), 400); }
   requestAnimationFrame(loop);
