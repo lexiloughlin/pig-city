@@ -96,7 +96,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
       <div class="panel">
         <h2>Build</h2>
         <div class="tools" id="tools"></div>
-        <p class="small" id="toolHint">Pick something to build, then click an empty patch of grass. Click a pig to see how it's doing. Click poop to scoop it for a coin.</p>
+        <p class="small" id="toolHint">Pick something to build, then click an empty patch of grass. Click a pig to see how it's doing. Click and drag across poop to sweep it up (1 🪙 each).</p>
       </div>
     </div>
 
@@ -247,6 +247,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     park:   { name: 'Play Park', cost: 80, desc: 'Pigs stay happy longer' },
     vet:    { name: 'Vet', cost: 120, desc: 'Sick pigs heal faster' },
     bank:   { name: 'Masaki Capital', cost: 150, desc: '+2 🪙 every 4s' },
+    roomba: { name: 'Poop Roomba', cost: 60, desc: 'Drives around scooping poop for you' },
     bulldoze: { name: 'Bulldoze', cost: 0, desc: 'Remove a building, refunds half' }
   };
   const RATE = { hay: 6, water: 5, garden: 10, bank: 4 };
@@ -310,6 +311,8 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     if (!done) G.buildings.splice(G.buildings.indexOf(b), 1);
   }
 
+  const roombas = [];
+
   // ---------- ui ----------
   const $ = id => document.getElementById(id);
   let tool = null, selected = null, hover = null;
@@ -329,7 +332,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     });
     $('toolHint').textContent = tool === 'bulldoze' ? 'Click a building to remove it (you get half the cost back).'
       : tool ? `Click empty grass to build a ${B[tool].name}. Click the button again to stop building.`
-      : "Pick something to build, then click an empty patch of grass. Click a pig to see how it's doing. Click poop to scoop it for a coin.";
+      : "Pick something to build, then click an empty patch of grass. Click a pig to see how it's doing. Click and drag across poop to sweep it up (1 🪙 each).";
   }
 
   let toastT = 0;
@@ -415,7 +418,23 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     const r = canvas.getBoundingClientRect();
     return { x: (e.clientX - r.left) / r.width * W, y: (e.clientY - r.top) / r.height * H };
   }
-  canvas.addEventListener('pointermove', e => { const w = toWorld(e); hover = { x: Math.floor(w.x / T), y: Math.floor(w.y / T) }; });
+  let sweeping = false;
+  function scoopNear(w, rad) {
+    let n = 0;
+    for (let i = G.poops.length - 1; i >= 0; i--) {
+      const q = G.poops[i];
+      if (Math.hypot(q.x - w.x, q.y - w.y) < rad) { G.poops.splice(i, 1); G.coins += 1; n++; popup(q.x, q.y - 8, '+1 🪙'); }
+    }
+    if (n) hudRes();
+    return n;
+  }
+  canvas.addEventListener('pointerdown', e => { if (!tool) { sweeping = true; try { canvas.setPointerCapture(e.pointerId); } catch (x) {} } });
+  canvas.addEventListener('pointermove', e => {
+    const w = toWorld(e); hover = { x: Math.floor(w.x / T), y: Math.floor(w.y / T) };
+    if (sweeping) scoopNear(w, 16);
+  });
+  const stopSweep = () => { sweeping = false; };
+  canvas.addEventListener('pointerup', stopSweep); canvas.addEventListener('pointercancel', stopSweep);
   canvas.addEventListener('pointerleave', () => { hover = null; });
   canvas.addEventListener('click', e => {
     const w = toWorld(e), tx = Math.floor(w.x / T), ty = Math.floor(w.y / T);
@@ -434,10 +453,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
       hudRes(); syncTools(); save(); return;
     }
     // poop?
-    for (let i = G.poops.length - 1; i >= 0; i--) {
-      const q = G.poops[i];
-      if (Math.hypot(q.x - w.x, q.y - w.y) < 11) { G.poops.splice(i, 1); G.coins += 1; popup(q.x, q.y - 8, '+1 🪙'); hudRes(); return; }
-    }
+    if (scoopNear(w, 16)) return;
     // pig?
     let best = null, bd = 22;
     for (const p of G.pigs) { const d = Math.hypot(p.x - w.x, p.y - 4 - w.y); if (d < bd) { bd = d; best = p; } }
@@ -501,6 +517,22 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
         else { p.x += dx / d * sp * dt; p.y += dy / d * sp * dt; if (Math.abs(dx) > 1) p.face = dx > 0 ? 1 : -1; }
       }
     }
+    // roombas
+    const docks = G.buildings.filter(b => b.type === 'roomba');
+    while (roombas.length < docks.length) { const d = docks[roombas.length]; roombas.push({ x: d.x * T + T / 2, y: d.y * T + T / 2, dir: { x: 1, y: 0 } }); }
+    roombas.length = Math.min(roombas.length, docks.length);
+    roombas.forEach((rb, i) => {
+      let tx, ty, best = Infinity;
+      for (const q of G.poops) { const d = (q.x - rb.x) ** 2 + (q.y - rb.y) ** 2; if (d < best) { best = d; tx = q.x; ty = q.y; } }
+      if (tx === undefined) { const d = docks[i]; tx = d.x * T + T / 2; ty = d.y * T + T / 2 + 4; }
+      const dx = tx - rb.x, dy = ty - rb.y, dist = Math.hypot(dx, dy);
+      if (dist > 1) { const sp = Math.min(dist, 55 * dt); rb.x += dx / dist * sp; rb.y += dy / dist * sp; rb.dir = { x: dx / dist, y: dy / dist }; }
+      for (let k = G.poops.length - 1; k >= 0; k--) {
+        const q = G.poops[k];
+        if (Math.hypot(q.x - rb.x, q.y - rb.y) < 9) { G.poops.splice(k, 1); G.coins += 1; popup(q.x, q.y - 10, '+1 🪙', '#6a5fc2'); }
+      }
+    });
+
     // babies
     G.breedT -= dt;
     if (G.breedT <= 0) {
@@ -648,6 +680,11 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
         c.fillStyle = '#9fd3c7'; c.fillRect(x + 5, y + 8, 30, 6); c.strokeRect(x + 5, y + 8, 30, 6);
         c.fillStyle = '#e07a9a'; c.beginPath(); c.moveTo(cx, y + 31); c.bezierCurveTo(cx - 10, y + 24, cx - 6, y + 15, cx, y + 20); c.bezierCurveTo(cx + 6, y + 15, cx + 10, y + 24, cx, y + 31); c.fill();
         break;
+      case 'roomba':
+        c.fillStyle = '#cfc8d8'; rr(c, x + 6, y + 8, 28, 26, 6); c.fill(); c.stroke();
+        c.fillStyle = '#8f86d9'; rr(c, x + 11, y + 4, 18, 9, 3); c.fill(); c.stroke();
+        c.fillStyle = '#ffd36b'; c.beginPath(); c.moveTo(x + 22, y + 15); c.lineTo(x + 16, y + 23); c.lineTo(x + 20, y + 23); c.lineTo(x + 18, y + 30); c.lineTo(x + 24, y + 21); c.lineTo(x + 20, y + 21); c.closePath(); c.fill(); c.lineWidth = 1; c.stroke();
+        break;
       case 'bank':
         c.fillStyle = '#1f2f5c'; c.beginPath(); c.moveTo(x + 3, y + 14); c.lineTo(cx, y + 3); c.lineTo(x + 37, y + 14); c.closePath(); c.fill(); c.stroke();
         c.fillStyle = '#f4ede0'; c.fillRect(x + 5, y + 14, 30, 19); c.strokeRect(x + 5, y + 14, 30, 19);
@@ -683,6 +720,20 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     const items = [];
     for (const b of G.buildings) items.push({ y: (b.y + sz(b.type)) * T, f: () => drawBuilding(c, b) });
     for (const q of G.poops) items.push({ y: q.y, f: () => drawPoop(c, q.x, q.y, q.a, 1.5) });
+    for (const rb of roombas) items.push({ y: rb.y + 6, f: () => {
+      c.save(); c.translate(rb.x, rb.y);
+      c.fillStyle = 'rgba(0,0,0,.15)'; ell(c, 0, 6, 9, 3); c.fill();
+      c.fillStyle = '#8f86d9'; ell(c, 0, 0, 9, 9); c.fill(); c.lineWidth = 1.8; c.strokeStyle = INK; c.stroke();
+      c.fillStyle = 'rgba(0,0,0,.18)'; ell(c, 0, 0, 5.5, 5.5); c.fill();
+      const a = Math.atan2(rb.dir.y, rb.dir.x);
+      c.beginPath(); c.arc(0, 0, 9, a - .9, a + .9); c.lineWidth = 2.6; c.strokeStyle = '#2a2a2a'; c.stroke();
+      for (const sgn of [-1, 1]) {
+        const ox = -rb.dir.y * 3 * sgn + rb.dir.x * 2, oy = rb.dir.x * 3 * sgn + rb.dir.y * 2 - 1;
+        c.fillStyle = '#fff'; ell(c, ox, oy, 2.3, 2.3); c.fill();
+        c.fillStyle = INK; ell(c, ox + rb.dir.x, oy + rb.dir.y, 1.1, 1.1); c.fill();
+      }
+      c.restore();
+    } });
     for (const p of G.pigs) items.push({ y: p.y + 8, f: () => {
       const baby = p.age < 90, sc = baby ? .2 + .14 * Math.min(1, p.age / 90) : .36;
       const hop = p.hop > 0 ? Math.abs(Math.sin(p.hop * 16)) * 5 : 0;
