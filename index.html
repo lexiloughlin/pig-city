@@ -245,6 +245,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     water:  { name: 'Water Tower', cost: 25, desc: '+1 💧 every 5s' },
     garden: { name: 'Veggie Garden', cost: 55, desc: '+1 🫑 every 10s' },
     park:   { name: 'Play Park', cost: 80, desc: 'Pigs stay happy longer' },
+    hospital: { name: 'Pig Hospital', cost: 150, desc: 'Sick pigs check in and come out healthy (3 beds)' },
     vet:    { name: 'Vet', cost: 120, desc: 'Sick pigs heal faster' },
     bank:   { name: 'Masaki Capital', cost: 150, desc: '+2 🪙 every 4s' },
     roomba: { name: 'Poop Roomba', cost: 60, desc: 'Drives around scooping poop for you' },
@@ -290,7 +291,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
   load();
   G.prod = G.prod || {};
 
-  const SIZE = { hutch: 2 };
+  const SIZE = { hutch: 2, hospital: 2 };
   const sz = t => SIZE[t] || 1;
   const PER_CASTLE = 4;
   const capacity = () => G.buildings.filter(b => b.type === 'hutch').length * PER_CASTLE;
@@ -358,6 +359,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     $('buyHay').disabled = G.coins < 10; $('buyWater').disabled = G.coins < 6; $('buyVeg').disabled = G.coins < 12;
   }
   function moodOf(p) {
+    if (p.state) return '🏥';
     if (p.health < 50) return '🤒';
     const m = Math.min(p.food, p.water, p.joy);
     return m > 60 ? '😊' : m > 30 ? '😐' : '😟';
@@ -385,7 +387,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
       c.translate(118, 86); c.scale(2.6, 2.6); drawPig(c, p.skin);
     }
     const age = p.age < 90 ? 'Baby 🍼' : p.age >= 999 ? 'Founder' : 'Grown up';
-    $('pTag').innerHTML = age + (p.health < 50 ? ' · <span class="sick">Feeling sick</span>' : '') + (p.joy < 30 ? ' · Lonely' : '');
+    $('pTag').innerHTML = age + (p.state === 'admitted' ? ' · <span class="sick">In the hospital 🏥</span>' : p.state ? ' · Heading to the hospital' : '') + (!p.state && p.health < 50 ? ' · <span class="sick">Feeling sick</span>' : '') + (p.joy < 30 ? ' · Lonely' : '');
     $('pBars').innerHTML = BAR.map(([k, l, col]) => `<div class="bar"><span>${l}</span><div class="track"><div class="fill" style="width:${Math.max(0, p[k])}%;background:${col}"></div></div><span class="num">${Math.round(p[k])}</span></div>`).join('');
     $('petBtn').disabled = p.petCd > 0; $('treatBtn').disabled = G.veg < 1;
   }
@@ -456,7 +458,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     if (scoopNear(w, 16)) return;
     // pig?
     let best = null, bd = 22;
-    for (const p of G.pigs) { const d = Math.hypot(p.x - w.x, p.y - 4 - w.y); if (d < bd) { bd = d; best = p; } }
+    for (const p of G.pigs) { if (p.state === 'admitted') continue; const d = Math.hypot(p.x - w.x, p.y - 4 - w.y); if (d < bd) { bd = d; best = p; } }
     if (best) { selected = best.id; best.hop = .4; renderPig(true); listSig = ''; return; }
     const b = at(tx, ty);
     if (b) toast(B[b.type].name + ': ' + B[b.type].desc);
@@ -481,10 +483,35 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
       }
     }
     const dirt = Math.min(1, G.poops.length / 30);
+    G.warnT = (G.warnT || 0) - dt;
+    if (G.warnT <= 0 && G.pigs.length) {
+      const hungry = G.pigs.filter(p => !p.state && p.food < 40).length, thirsty = G.pigs.filter(p => !p.state && p.water < 40).length;
+      if (G.hay < 1 && hungry) { toast('Out of hay! 🌾 Build more Hay Fields or buy some at the Market.'); G.warnT = 12; }
+      else if (G.water < 1 && thirsty) { toast('Out of water! 💧 Build more Water Towers or buy some at the Market.'); G.warnT = 12; }
+    }
     for (let i = G.pigs.length - 1; i >= 0; i--) {
       const p = G.pigs[i];
       p.age += dt; p.petCd = Math.max(0, p.petCd - dt); p.hop = Math.max(0, p.hop - dt);
-      p.food -= .7 * dt; p.water -= .9 * dt;
+      // hospital: check in when sick, get treated, come out healthy
+      let hosp = p.hosp && G.buildings.find(b => b.type === 'hospital' && b.x === p.hosp.x && b.y === p.hosp.y);
+      if (p.state && !hosp) { p.state = null; p.hosp = null; }
+      if (!p.state && p.health < 60) {
+        const h = G.buildings.find(b => b.type === 'hospital' && G.pigs.filter(q => q.hosp && q.hosp.x === b.x && q.hosp.y === b.y).length < 3);
+        if (h) { p.state = 'walking'; p.hosp = { x: h.x, y: h.y }; p.wait = 0; hosp = h; }
+      }
+      if (p.state === 'admitted') {
+        p.food = Math.min(100, p.food + 12 * dt); p.water = Math.min(100, p.water + 12 * dt); p.joy = Math.min(100, p.joy + 8 * dt);
+        p.health = Math.min(100, p.health + 9 * dt);
+        if (p.health >= 98 && p.food > 85 && p.water > 85) {
+          p.state = null; p.hosp = null; p.x = hosp.x * T + T; p.y = hosp.y * T + 2 * T + 4; p.tx = p.x; p.ty = p.y + 30; p.hop = .6;
+          popup(p.x, p.y - 22, 'All better! 💖', '#d9455a');
+          toast(`${p.name} got discharged from the hospital, healthy and happy! 💖`);
+        }
+        continue;
+      }
+      if (p.state === 'walking') { p.tx = hosp.x * T + T; p.ty = hosp.y * T + 2 * T - 4; p.wait = 0;
+        if (Math.hypot(p.tx - p.x, p.ty - p.y) < 5) { p.state = 'admitted'; popup(p.x, p.y - 22, 'Checked in 🏥', '#3c7ab8'); continue; } }
+      p.food -= .6 * dt; p.water -= .75 * dt;
       p.joy -= (.45 / (1 + .5 * parks) + .5 * dirt) * dt;
       // company keeps pigs happy
       if (G.pigs.length > 1) p.joy += .08 * dt;
@@ -494,7 +521,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
       }
       if (p.water < 70 && G.water >= 1) { G.water--; p.water += 35; }
       for (const k of ['food', 'water', 'joy']) p[k] = Math.max(0, Math.min(100, p[k]));
-      const bad = p.food < 15 || p.water < 15 || p.joy < 10;
+      const bad = p.food < 12 || p.water < 12 || p.joy < 8;
       p.health += (bad ? -1.6 : .5 + vets * 1.5) * dt;
       p.health = Math.max(0, Math.min(100, p.health));
       if (p.health <= 0) {
@@ -512,8 +539,8 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
       if (p.wait > 0) p.wait -= dt;
       else {
         const dx = p.tx - p.x, dy = p.ty - p.y, d = Math.hypot(dx, dy);
-        const sp = (p.age < 90 ? 26 : 20) * (p.health < 50 ? .5 : 1);
-        if (d < 2) { p.wait = 1 + Math.random() * 3; p.tx = 24 + Math.random() * (W - 48); p.ty = 30 + Math.random() * (H - 50); }
+        const sp = (p.age < 90 ? 26 : 20) * (p.state === 'walking' ? 1.4 : p.health < 50 ? .5 : 1);
+        if (d < 2 && !p.state) { p.wait = 1 + Math.random() * 3; p.tx = 24 + Math.random() * (W - 48); p.ty = 30 + Math.random() * (H - 50); }
         else { p.x += dx / d * sp * dt; p.y += dy / d * sp * dt; if (Math.abs(dx) > 1) p.face = dx > 0 ? 1 : -1; }
       }
     }
@@ -642,11 +669,57 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     archWin(c, x + 9.5, y + 38, 5, 8, lit(5)); archWin(c, x + S - 14.5, y + 38, 5, 8, lit(6));
     c.restore();
   }
+  function drawHospital(c, x, y, b) {
+    const S = 2 * T, cx = x + S / 2, t = G.time || 0;
+    const patients = b.x === undefined ? 0 : G.pigs.filter(q => q.state === 'admitted' && q.hosp && q.hosp.x === b.x && q.hosp.y === b.y).length;
+    c.save(); c.lineJoin = 'round'; c.strokeStyle = INK; c.lineWidth = 1.6;
+    c.fillStyle = 'rgba(0,0,0,.12)'; ell(c, cx, y + S - 4, 38, 5); c.fill();
+    // path + flower beds
+    c.fillStyle = '#e8dcc6'; c.fillRect(cx - 9, y + S - 12, 18, 10);
+    for (const fx of [x + 8, x + S - 26]) {
+      c.fillStyle = '#8a5a34'; rr(c, fx, y + S - 10, 18, 6, 3); c.fill();
+      for (let i = 0; i < 4; i++) { c.fillStyle = ['#f4a3b8', '#ffd36b', '#fff', '#d8c9f5'][i]; ell(c, fx + 3 + i * 4, y + S - 11, 2, 2); c.fill(); }
+    }
+    // side wings
+    c.fillStyle = '#f7f3ee'; c.fillRect(x + 4, y + 30, 20, S - 44); c.strokeRect(x + 4, y + 30, 20, S - 44);
+    c.fillRect(x + S - 24, y + 30, 20, S - 44); c.strokeRect(x + S - 24, y + 30, 20, S - 44);
+    c.fillStyle = '#9fd3c7'; c.fillRect(x + 2, y + 26, 24, 5); c.strokeRect(x + 2, y + 26, 24, 5); c.fillRect(x + S - 26, y + 26, 24, 5); c.strokeRect(x + S - 26, y + 26, 24, 5);
+    // main block
+    c.fillStyle = '#ffffff'; c.fillRect(x + 20, y + 16, S - 40, S - 30); c.strokeRect(x + 20, y + 16, S - 40, S - 30);
+    c.fillStyle = '#e88fa5'; c.beginPath(); c.moveTo(x + 16, y + 18); c.lineTo(cx, y + 3); c.lineTo(x + S - 16, y + 18); c.closePath(); c.fill(); c.stroke();
+    // big heart sign
+    const hy = y + 25;
+    c.fillStyle = '#fff'; ell(c, cx, hy, 8.5, 8.5); c.fill(); c.stroke();
+    const beat = 1 + Math.max(0, Math.sin(t * 5)) * .12;
+    c.save(); c.translate(cx, hy + 1); c.scale(beat, beat);
+    c.fillStyle = '#e0485f'; c.beginPath(); c.moveTo(0, 5); c.bezierCurveTo(-8, -1, -4, -8, 0, -3); c.bezierCurveTo(4, -8, 8, -1, 0, 5); c.fill();
+    c.restore();
+    // windows grid (lit = beds in use)
+    let k = 0;
+    for (const [wx, wy] of [[x + 8, y + 36], [x + 8, y + 48], [x + S - 20, y + 36], [x + S - 20, y + 48], [x + 25, y + 38], [x + S - 31, y + 38]]) {
+      const on = k < patients; k++;
+      c.fillStyle = on ? '#ffd56b' : '#bfe3f2'; c.fillRect(wx, wy, 8, 7); c.lineWidth = 1.1; c.strokeRect(wx, wy, 8, 7);
+      c.beginPath(); c.moveTo(wx + 4, wy); c.lineTo(wx + 4, wy + 7); c.stroke();
+    }
+    c.lineWidth = 1.6;
+    // sliding doors
+    c.fillStyle = '#bfe3f2'; c.fillRect(cx - 8, y + S - 26, 16, 12); c.strokeRect(cx - 8, y + S - 26, 16, 12);
+    c.beginPath(); c.moveTo(cx, y + S - 26); c.lineTo(cx, y + S - 14); c.stroke();
+    c.fillStyle = '#9fd3c7'; c.fillRect(cx - 11, y + S - 30, 22, 4); c.strokeRect(cx - 11, y + S - 30, 22, 4);
+    // bed counter
+    if (patients) {
+      c.font = '10px Chewy, "Comic Sans MS", sans-serif'; c.textAlign = 'center';
+      c.fillStyle = '#fff'; rr(c, cx + 14, y + 2, 22, 13, 6); c.fill(); c.lineWidth = 1.2; c.stroke();
+      c.fillStyle = INK; c.fillText('🛏️' + patients, cx + 25, y + 12);
+    }
+    c.restore();
+  }
   function drawBuilding(c, b) {
     const x = b.x * T, y = b.y * T, cx = x + T / 2;
     c.save(); c.lineJoin = 'round'; c.lineWidth = 2; c.strokeStyle = INK;
     switch (b.type) {
       case 'hutch': drawCastle(c, x, y); break;
+      case 'hospital': drawHospital(c, x, y, b); break;
       case 'hay':
         c.fillStyle = '#c99a5b'; rr(c, x + 3, y + 5, 34, 31, 5); c.fill(); c.stroke();
         for (let i = 0; i < 4; i++) { c.fillStyle = i % 2 ? '#ecc55a' : '#d9ad3c'; c.fillRect(x + 6, y + 9 + i * 6.5, 28, 4); }
@@ -734,7 +807,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
       }
       c.restore();
     } });
-    for (const p of G.pigs) items.push({ y: p.y + 8, f: () => {
+    for (const p of G.pigs) if (p.state !== 'admitted') items.push({ y: p.y + 8, f: () => {
       const baby = p.age < 90, sc = baby ? .2 + .14 * Math.min(1, p.age / 90) : .36;
       const hop = p.hop > 0 ? Math.abs(Math.sin(p.hop * 16)) * 5 : 0;
       c.save(); c.translate(p.x, p.y - hop);
