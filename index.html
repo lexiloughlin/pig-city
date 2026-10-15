@@ -236,7 +236,9 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     if (Math.random() < .18 || (a.fluffy && b.fluffy)) s.fluffy = true;
     return s;
   }
-  const NAMES = ['Biscuit', 'Nugget', 'Pudding', 'Dumpling', 'Tofu', 'Boba', 'Peanut', 'Clover', 'Waffles', 'Pepper', 'Ginger', 'Sesame', 'Maple', 'Pickle', 'Daisy', 'Cocoa', 'Mango', 'Bean', 'Noodle', 'Taro', 'Matcha', 'Onigiri', 'Udon', 'Pumpkin', 'Hazel', 'Oreo', 'Fig', 'Kiwi', 'Pancake', 'Sprout', 'Bao', 'Latte', 'Marshmallow', 'Truffle', 'Juniper', 'Nori', 'Yuzu', 'Ramen', 'Gnocchi', 'Pistachio'];
+  const NAMES = ['Sakura', 'Hana', 'Yuki', 'Momo', 'Kiko', 'Sora', 'Haru', 'Natsu', 'Aki', 'Fuyu', 'Hoshi', 'Tsuki', 'Kumo', 'Ume', 'Yuzu', 'Kinako', 'Daifuku', 'Dango', 'Onigiri', 'Udon', 'Soba', 'Ramen', 'Tofu', 'Natto', 'Nori', 'Wasabi', 'Matcha', 'Azuki', 'Kuri', 'Shiro', 'Kuro', 'Chibi', 'Pochi', 'Hachi', 'Kotaro', 'Kenta', 'Haruto', 'Riku', 'Ren', 'Sota', 'Yuna', 'Aoi', 'Mei', 'Rin', 'Koharu', 'Hinata', 'Mikan', 'Ichigo', 'Taiyaki', 'Senbei', 'Mochiko', 'Kabocha', 'Tamago', 'Ebi', 'Gyoza', 'Takoyaki', 'Sushi', 'Kitsune', 'Tanuki', 'Usagi'];
+  // older towns used English baby names: give those pigs Japanese names
+  const OLD_NAMES = new Set(['Biscuit', 'Nugget', 'Pudding', 'Dumpling', 'Boba', 'Peanut', 'Clover', 'Waffles', 'Pepper', 'Ginger', 'Sesame', 'Maple', 'Pickle', 'Daisy', 'Cocoa', 'Mango', 'Bean', 'Noodle', 'Pumpkin', 'Hazel', 'Oreo', 'Fig', 'Kiwi', 'Pancake', 'Sprout', 'Bao', 'Latte', 'Marshmallow', 'Truffle', 'Juniper', 'Gnocchi', 'Pistachio']);
 
   // ---------- buildings ----------
   const B = {
@@ -291,6 +293,10 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
   function save() { try { localStorage.setItem('pigcity-v1', JSON.stringify(G)); } catch (e) {} }
   load();
   G.prod = G.prod || {};
+  {
+    const used = new Set(G.pigs.map(p => p.name));
+    for (const p of G.pigs) if (OLD_NAMES.has(p.name)) { const n = NAMES.find(n => !used.has(n)); if (n) { used.add(n); p.name = n; } }
+  }
 
   const SIZE = { hutch: 2, hospital: 2 };
   const sz = t => SIZE[t] || 1;
