@@ -130,7 +130,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
       </div>
       <div class="panel">
         <h2>How it works</h2>
-        <p class="small" style="margin-top:0">Pigs eat 🌾 and drink 💧 on their own, so keep the fields and water towers going. Happy pigs earn 🪙. When everyone's happy and there's room in the hutches, babies are born and your town grows. Hungry, thirsty or lonely pigs get sick, and a Vet helps them recover. Your town saves automatically.</p>
+        <p class="small" style="margin-top:0">Pigs eat 🌾 and drink 💧 on their own, so keep the fields and water towers going. Happy pigs earn 🪙. When everyone's happy and there's room in the castles, babies are born and your town grows. Hungry, thirsty or lonely pigs get sick, and a Vet helps them recover. Your town saves automatically.</p>
         <div class="btns"><button class="btn ghost" id="resetBtn">Start a new town</button></div>
       </div>
     </div>
@@ -240,7 +240,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
 
   // ---------- buildings ----------
   const B = {
-    hutch:  { name: 'Hutch', cost: 40, desc: 'Room for 2 more pigs' },
+    hutch:  { name: 'Pig Castle', cost: 70, desc: 'A huge castle with room for 4 pigs' },
     hay:    { name: 'Hay Field', cost: 30, desc: '+1 🌾 every 6s' },
     water:  { name: 'Water Tower', cost: 25, desc: '+1 💧 every 5s' },
     garden: { name: 'Veggie Garden', cost: 55, desc: '+1 🫑 every 10s' },
@@ -270,7 +270,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
   function newTown() {
     const g = { coins: 80, hay: 12, water: 12, veg: 6, buildings: [], pigs: [], poops: [], time: 0, breedT: 20, born: 0, best: 5, prod: {} };
     const place = (type, x, y) => g.buildings.push({ type, x, y, t: Math.random() * 3 });
-    place('hutch', 2, 2); place('hutch', 4, 2); place('hutch', 6, 2);
+    place('hutch', 1, 1); place('hutch', 4, 1);
     place('hay', 2, 7); place('water', 12, 2); place('garden', 4, 7);
     FOUNDERS.forEach((f, i) => g.pigs.push(makePig(f.name, f.skin, 260 + i * 34, 210 + (i % 2) * 30, true)));
     return g;
@@ -289,9 +289,26 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
   load();
   G.prod = G.prod || {};
 
-  const capacity = () => G.buildings.filter(b => b.type === 'hutch').length * 2;
+  const SIZE = { hutch: 2 };
+  const sz = t => SIZE[t] || 1;
+  const PER_CASTLE = 4;
+  const capacity = () => G.buildings.filter(b => b.type === 'hutch').length * PER_CASTLE;
   const count = t => G.buildings.filter(b => b.type === t).length;
-  const at = (x, y) => G.buildings.find(b => b.x === x && b.y === y);
+  const covers = (b, x, y) => x >= b.x && x < b.x + sz(b.type) && y >= b.y && y < b.y + sz(b.type);
+  const at = (x, y) => G.buildings.find(b => covers(b, x, y));
+  function fits(type, x, y, ignore) {
+    const n = sz(type);
+    if (x < 0 || y < 0 || x + n > COLS || y + n > ROWS) return false;
+    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) if (G.buildings.some(b => b !== ignore && covers(b, x + i, y + j))) return false;
+    return true;
+  }
+  // older towns had small 1-tile hutches: give each castle a free 2x2 spot
+  for (const b of G.buildings.filter(b => b.type === 'hutch')) {
+    if (fits('hutch', b.x, b.y, b)) continue;
+    let done = false;
+    for (let y = 0; y < ROWS - 1 && !done; y++) for (let x = 0; x < COLS - 1 && !done; x++) if (fits('hutch', x, y, b)) { b.x = x; b.y = y; done = true; }
+    if (!done) G.buildings.splice(G.buildings.indexOf(b), 1);
+  }
 
   // ---------- ui ----------
   const $ = id => document.getElementById(id);
@@ -404,15 +421,15 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     const w = toWorld(e), tx = Math.floor(w.x / T), ty = Math.floor(w.y / T);
     if (tool === 'bulldoze') {
       const b = at(tx, ty); if (!b) return;
-      if (b.type === 'hutch' && (capacity() - 2) < G.pigs.length) { toast("Can't remove that hutch, your pigs need the room!"); return; }
+      if (b.type === 'hutch' && (capacity() - PER_CASTLE) < G.pigs.length) { toast("Can't remove that castle, your pigs need the room!"); return; }
       G.buildings.splice(G.buildings.indexOf(b), 1); const refund = Math.floor(B[b.type].cost / 2); G.coins += refund;
       popup(tx * T + T / 2, ty * T + 10, '+' + refund + ' 🪙'); hudRes(); syncTools(); save(); return;
     }
     if (tool) {
-      if (at(tx, ty)) { toast('Something is already built there.'); return; }
+      if (!fits(tool, tx, ty)) { toast(sz(tool) > 1 ? 'A castle needs a free 2×2 patch of grass (it grows right and down from where you click).' : 'Something is already built there.'); return; }
       if (G.coins < B[tool].cost) { toast(`You need ${B[tool].cost} 🪙 for a ${B[tool].name}.`); return; }
       G.coins -= B[tool].cost; G.buildings.push({ type: tool, x: tx, y: ty, t: 0 });
-      popup(tx * T + T / 2, ty * T + 8, 'Built!', '#5f8f2e');
+      popup(tx * T + sz(tool) * T / 2, ty * T + 8, 'Built!', '#5f8f2e');
       if (G.coins < B[tool].cost) tool = null;
       hudRes(); syncTools(); save(); return;
     }
@@ -491,7 +508,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
       const adults = G.pigs.filter(p => p.age >= 90 && p.health > 60);
       const avgJoy = G.pigs.reduce((s, p) => s + p.joy, 0) / Math.max(1, G.pigs.length);
       if (adults.length < 2) {}
-      else if (G.pigs.length >= capacity()) { if (avgJoy > 55) toast('Your pigs want babies, but the hutches are full! Build another Hutch.'); }
+      else if (G.pigs.length >= capacity()) { if (avgJoy > 55) toast('Your pigs want babies, but the castles are full! Build another Pig Castle.'); }
       else if (avgJoy > 55) {
         const a = pick(adults), b = pick(adults.filter(p => p !== a));
         const used = new Set(G.pigs.map(p => p.name));
@@ -511,15 +528,93 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
 
   // ---------- drawing ----------
   function rr(c, x, y, w, h, r) { c.beginPath(); c.roundRect(x, y, w, h, r); }
+  function bricks(c, x, y, w, h, row = 5) {
+    c.save(); c.beginPath(); c.rect(x, y, w, h); c.clip();
+    c.strokeStyle = 'rgba(110,95,80,.28)'; c.lineWidth = .8;
+    for (let k = 0, yy = y + row; yy < y + h; yy += row, k++) {
+      c.beginPath(); c.moveTo(x, yy); c.lineTo(x + w, yy); c.stroke();
+      for (let xx = x + (k % 2 ? 4 : 0); xx < x + w; xx += 8) { c.beginPath(); c.moveTo(xx, yy - row); c.lineTo(xx, yy); c.stroke(); }
+    }
+    c.restore();
+  }
+  function crenels(c, x, y, w, col) {
+    c.fillStyle = col; c.strokeStyle = INK; c.lineWidth = 1.2;
+    for (let xx = x; xx < x + w - 2; xx += 6) { c.fillRect(xx, y, 4, 5); c.strokeRect(xx, y, 4, 5); }
+  }
+  function archWin(c, x, y, w, h, lit) {
+    if (lit) { c.fillStyle = 'rgba(255,230,140,.35)'; ell(c, x + w / 2, y + h / 2, w * 1.3, h * .9); c.fill(); }
+    c.fillStyle = lit ? '#ffd56b' : '#4a3a5c';
+    c.beginPath(); c.moveTo(x, y + h); c.lineTo(x, y + w / 2); c.arc(x + w / 2, y + w / 2, w / 2, Math.PI, 0); c.lineTo(x + w, y + h); c.closePath(); c.fill();
+    c.strokeStyle = INK; c.lineWidth = 1.2; c.stroke();
+  }
+  function tower(c, cx, top, bottom, w, flagPhase) {
+    c.fillStyle = '#ddd5c9'; rr(c, cx - w / 2, top, w, bottom - top, 2); c.fill();
+    bricks(c, cx - w / 2, top, w, bottom - top);
+    c.strokeStyle = INK; c.lineWidth = 1.6; rr(c, cx - w / 2, top, w, bottom - top, 2); c.stroke();
+    const rh = w * 1.25;
+    c.fillStyle = '#e88fa5'; c.beginPath(); c.moveTo(cx - w / 2 - 3, top + 1); c.lineTo(cx, top - rh); c.lineTo(cx + w / 2 + 3, top + 1); c.closePath(); c.fill();
+    c.fillStyle = '#c96a85'; c.beginPath(); c.moveTo(cx, top - rh); c.lineTo(cx + w / 2 + 3, top + 1); c.lineTo(cx + 2, top + 1); c.closePath(); c.fill();
+    c.beginPath(); c.moveTo(cx - w / 2 - 3, top + 1); c.lineTo(cx, top - rh); c.lineTo(cx + w / 2 + 3, top + 1); c.closePath(); c.stroke();
+    c.beginPath(); c.moveTo(cx, top - rh); c.lineTo(cx, top - rh - 9); c.lineWidth = 1.2; c.stroke();
+    const wv = Math.sin(flagPhase) * 1.5;
+    c.fillStyle = '#9cc65a'; c.beginPath(); c.moveTo(cx, top - rh - 9); c.quadraticCurveTo(cx + 4, top - rh - 9 + wv, cx + 8, top - rh - 7); c.lineTo(cx, top - rh - 4); c.closePath(); c.fill(); c.stroke();
+  }
+  function drawCastle(c, x, y) {
+    const S = 2 * T, cx = x + S / 2, t = G.time || 0;
+    c.save(); c.lineJoin = 'round'; c.strokeStyle = INK; c.lineWidth = 1.6;
+    // shadow + moat
+    c.fillStyle = 'rgba(0,0,0,.12)'; ell(c, cx, y + S - 5, 38, 6); c.fill();
+    c.fillStyle = '#8ccde8'; rr(c, x + 3, y + S - 12, S - 6, 10, 5); c.fill();
+    c.strokeStyle = 'rgba(255,255,255,.75)'; c.lineWidth = 1; c.beginPath();
+    for (let i = 0; i < 4; i++) { const wx = x + 8 + i * 18 + Math.sin(t * 2 + i) * 2; c.moveTo(wx, y + S - 6); c.quadraticCurveTo(wx + 3, y + S - 8.5, wx + 6, y + S - 6); }
+    c.stroke(); c.strokeStyle = INK; c.lineWidth = 1.6;
+    // curtain wall
+    const wallTop = y + 38, wallBot = y + S - 11;
+    c.fillStyle = '#e6dfd3'; c.fillRect(x + 14, wallTop, S - 28, wallBot - wallTop); bricks(c, x + 14, wallTop, S - 28, wallBot - wallTop);
+    c.strokeStyle = INK; c.lineWidth = 1.6; c.strokeRect(x + 14, wallTop, S - 28, wallBot - wallTop);
+    // keep
+    const kx = cx - 13, kTop = y + 16, kH = wallTop - kTop + 4;
+    c.fillStyle = '#d6cdbf'; c.fillRect(kx, kTop, 26, kH); bricks(c, kx, kTop, 26, kH);
+    c.strokeStyle = INK; c.lineWidth = 1.6; c.strokeRect(kx, kTop, 26, kH);
+    crenels(c, kx, kTop - 5, 26, '#d6cdbf');
+    crenels(c, x + 14, wallTop - 5, 12, '#e6dfd3'); crenels(c, x + S - 26, wallTop - 5, 12, '#e6dfd3');
+    // keep flag
+    c.strokeStyle = INK; c.beginPath(); c.moveTo(cx, kTop - 5); c.lineTo(cx, kTop - 18); c.lineWidth = 1.2; c.stroke();
+    const wv = Math.sin(t * 4) * 1.5;
+    c.fillStyle = '#e88fa5'; c.beginPath(); c.moveTo(cx, kTop - 18); c.quadraticCurveTo(cx + 5, kTop - 18 + wv, cx + 11, kTop - 15); c.lineTo(cx, kTop - 12); c.closePath(); c.fill(); c.stroke();
+    // banner with a hay sprig
+    c.fillStyle = '#e88fa5'; c.beginPath(); c.moveTo(cx - 5, kTop + 3); c.lineTo(cx + 5, kTop + 3); c.lineTo(cx + 5, kTop + 15); c.lineTo(cx, kTop + 12); c.lineTo(cx - 5, kTop + 15); c.closePath(); c.fill(); c.stroke();
+    c.strokeStyle = '#4f7f24'; c.lineWidth = 1.2; c.beginPath(); c.moveTo(cx, kTop + 11); c.lineTo(cx, kTop + 6); c.moveTo(cx, kTop + 8.5); c.lineTo(cx - 2.2, kTop + 6); c.moveTo(cx, kTop + 8.5); c.lineTo(cx + 2.2, kTop + 6); c.stroke();
+    // windows, gently flickering
+    const lit = k => Math.sin(t * 1.3 + k * 2.1 + x * .1) > -.6;
+    archWin(c, cx - 10, kTop + 4, 4, 7, lit(1)); archWin(c, cx + 6, kTop + 4, 4, 7, lit(2));
+    archWin(c, x + 19, wallTop + 5, 5, 8, lit(3)); archWin(c, x + S - 24, wallTop + 5, 5, 8, lit(4));
+    // gate: stone arch, wooden door, portcullis
+    const gw = 16, gx = cx - gw / 2, gTop = wallBot - 21;
+    c.strokeStyle = INK; c.lineWidth = 1.6;
+    c.fillStyle = '#b8ad9d'; c.beginPath(); c.moveTo(gx - 3, wallBot); c.lineTo(gx - 3, gTop + gw / 2); c.arc(cx, gTop + gw / 2, gw / 2 + 3, Math.PI, 0); c.lineTo(gx + gw + 3, wallBot); c.closePath(); c.fill(); c.stroke();
+    c.fillStyle = '#7b5236'; c.beginPath(); c.moveTo(gx, wallBot); c.lineTo(gx, gTop + gw / 2); c.arc(cx, gTop + gw / 2, gw / 2, Math.PI, 0); c.lineTo(gx + gw, wallBot); c.closePath(); c.fill(); c.stroke();
+    c.save(); c.clip();
+    c.strokeStyle = 'rgba(30,20,12,.8)'; c.lineWidth = 1.1;
+    for (let p = gx + 2.5; p < gx + gw; p += 3.5) { c.beginPath(); c.moveTo(p, gTop - 2); c.lineTo(p, gTop + 12); c.stroke(); }
+    for (let q = gTop + 3; q < gTop + 13; q += 4) { c.beginPath(); c.moveTo(gx, q); c.lineTo(gx + gw, q); c.stroke(); }
+    c.restore();
+    c.fillStyle = '#e9b93b'; ell(c, cx + 4, wallBot - 5, 1.2, 1.2); c.fill();
+    // drawbridge over the moat
+    c.strokeStyle = INK; c.lineWidth = 1.6;
+    c.fillStyle = '#a77c4c'; c.fillRect(gx - 1, wallBot, gw + 2, 9); c.strokeRect(gx - 1, wallBot, gw + 2, 9);
+    c.strokeStyle = 'rgba(60,40,20,.5)'; c.lineWidth = 1; for (let i = 1; i < 4; i++) { c.beginPath(); c.moveTo(gx - 1 + i * 4.5, wallBot); c.lineTo(gx - 1 + i * 4.5, wallBot + 9); c.stroke(); }
+    // corner towers
+    tower(c, x + 12, y + 26, wallBot + 2, 16, t * 4 + 1);
+    tower(c, x + S - 12, y + 26, wallBot + 2, 16, t * 4 + 2.5);
+    archWin(c, x + 9.5, y + 38, 5, 8, lit(5)); archWin(c, x + S - 14.5, y + 38, 5, 8, lit(6));
+    c.restore();
+  }
   function drawBuilding(c, b) {
     const x = b.x * T, y = b.y * T, cx = x + T / 2;
     c.save(); c.lineJoin = 'round'; c.lineWidth = 2; c.strokeStyle = INK;
     switch (b.type) {
-      case 'hutch':
-        c.fillStyle = '#dcb98a'; rr(c, x + 6, y + 15, 28, 21, 3); c.fill(); c.stroke();
-        c.fillStyle = '#e88fa5'; c.beginPath(); c.moveTo(x + 2, y + 17); c.lineTo(cx, y + 3); c.lineTo(x + 38, y + 17); c.closePath(); c.fill(); c.stroke();
-        c.fillStyle = '#5a3d24'; rr(c, cx - 6, y + 23, 12, 13, [6, 6, 0, 0]); c.fill();
-        break;
+      case 'hutch': drawCastle(c, x, y); break;
       case 'hay':
         c.fillStyle = '#c99a5b'; rr(c, x + 3, y + 5, 34, 31, 5); c.fill(); c.stroke();
         for (let i = 0; i < 4; i++) { c.fillStyle = i % 2 ? '#ecc55a' : '#d9ad3c'; c.fillRect(x + 6, y + 9 + i * 6.5, 28, 4); }
@@ -578,14 +673,15 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     // build preview
     if (hover && tool && hover.x >= 0 && hover.y >= 0 && hover.x < COLS && hover.y < ROWS) {
       const occ = at(hover.x, hover.y);
-      const ok = tool === 'bulldoze' ? !!occ : !occ && G.coins >= B[tool].cost;
+      const ok = tool === 'bulldoze' ? !!occ : fits(tool, hover.x, hover.y) && G.coins >= B[tool].cost;
       c.fillStyle = ok ? (tool === 'bulldoze' ? 'rgba(217,69,90,.35)' : 'rgba(255,255,255,.55)') : 'rgba(217,69,90,.25)';
-      rr(c, hover.x * T + 2, hover.y * T + 2, T - 4, T - 4, 6); c.fill();
+      if (tool === 'bulldoze' && occ) { rr(c, occ.x * T + 2, occ.y * T + 2, sz(occ.type) * T - 4, sz(occ.type) * T - 4, 6); c.fill(); }
+      else { const n = sz(tool); rr(c, hover.x * T + 2, hover.y * T + 2, n * T - 4, n * T - 4, 6); c.fill(); }
       if (ok && tool !== 'bulldoze') { c.globalAlpha = .55; drawBuilding(c, { type: tool, x: hover.x, y: hover.y }); c.globalAlpha = 1; }
     }
     // depth-sorted scene
     const items = [];
-    for (const b of G.buildings) items.push({ y: b.y * T + T, f: () => drawBuilding(c, b) });
+    for (const b of G.buildings) items.push({ y: (b.y + sz(b.type)) * T, f: () => drawBuilding(c, b) });
     for (const q of G.poops) items.push({ y: q.y, f: () => drawPoop(c, q.x, q.y, q.a, 1.5) });
     for (const p of G.pigs) items.push({ y: p.y + 8, f: () => {
       const baby = p.age < 90, sc = baby ? .2 + .14 * Math.min(1, p.age / 90) : .36;
