@@ -11,6 +11,8 @@ Founders: Toki, Mochi, Poke, Miso Soup and Masaki (who runs Masaki Capital).
 - 🏙️ Job City: a downtown map with Wheek Tech HQ, the Hay Factory, Sushi Spot and more. Pigs drive their own cars to work every morning and home after 5pm
 - 📊 Jobs Dashboard: who's working, who's on the road, earnings by workplace and a daily income chart
 - 📈 PCSE (Pig City Stock Exchange): trade six pig companies with big charts, a ticker tape, a portfolio donut and a newswire
+- 🏢 Go inside every Job City business: coder desks at Wheek Tech, a hay conveyor belt, a sushi conveyor, a car showroom and a PCSE trading floor with the live market board
+- 🌉 The bridge links Home Town and Job City, so you can watch pigs drive between towns
 - 🏰 Castle interiors: go inside any castle, pick wallpaper and floors, and place beds, hidey huts, couches and fairy lights. Cozy rooms keep pigs happy, and they sleep in their beds at night
 - 🎺 Town events like the Hay Festival, Pig Parade and Market Boom
 - ⏩ Pause / 1× / 2× / 3× speed, sound effects with mute, and a quick how-to-play guide

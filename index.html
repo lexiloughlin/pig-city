@@ -523,8 +523,8 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     remove:  { name: 'Remove', ic: '🧹', cat: 'tool', cost: 0, desc: 'Click furniture to put it away (refunds half)' }
   };
   const IN_CATS = [['floor', '🛋️ Furniture'], ['wall', '🖼️ Wall decor'], ['style', '🎨 Walls & floor'], ['tool', '🛠️ Tools']];
-  const WALLS = [['#f7dfe2', 'Pink'], ['#e3efd9', 'Mint'], ['#dfe8f7', 'Sky'], ['#f6ead0', 'Butter'], ['#e8dcf2', 'Lilac'], ['#2f3440', 'Night']];
-  const FLOORS = [['#c99a5b', 'Wood'], ['#e9e4dc', 'Tile'], ['#d98fa4', 'Carpet'], ['#e8c86a', 'Hay']];
+  const WALLS = [['#f7dfe2', 'Pink'], ['#e3efd9', 'Mint'], ['#dfe8f7', 'Sky'], ['#f6ead0', 'Butter'], ['#e8dcf2', 'Lilac'], ['#2f3440', 'Night'], ['#b9bdc4', 'Steel'], ['#f4f6f8', 'White']];
+  const FLOORS = [['#c99a5b', 'Wood'], ['#e9e4dc', 'Tile'], ['#d98fa4', 'Carpet'], ['#e8c86a', 'Hay'], ['#9a9fa6', 'Concrete'], ['#dde6ee', 'Gloss'], ['#2e3f66', 'Navy']];
   // ---------- cars ----------
   const CARS = {
     bug:   { name: 'Bubble Bug', speed: 1 },
@@ -788,7 +788,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
       box.innerHTML = `<p class="small" style="margin:0 0 6px"><b>Wallpaper</b></p><div class="swatches" id="sw-wall"></div><p class="small" style="margin:10px 0 6px"><b>Floor</b></p><div class="swatches" id="sw-floor"></div>`;
       toolsEl.appendChild(box);
       const mk = (id, list, key) => list.forEach(([col, name], i) => {
-        const s = document.createElement('button'); s.className = 'swatch'; s.style.background = col; s.style.color = i === 5 && key === 'wall' ? '#fff' : INK; s.textContent = name;
+        const s = document.createElement('button'); s.className = 'swatch'; s.style.background = col; s.style.color = (key === 'wall' && i === 5) || (key === 'floor' && i === 6) ? '#fff' : INK; s.textContent = name;
         s.setAttribute('aria-pressed', R[key] === i ? 'true' : 'false');
         s.addEventListener('click', () => { R[key] = i; sfx('tap'); save(); drawTools(); });
         $(id).appendChild(s);
@@ -1048,7 +1048,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     $('bLvl').textContent = `Level ${l} ` + '★'.repeat(l) + '☆'.repeat(3 - l);
     $('bInfo').textContent = perkText(b.type, l) + (JOBS[b.type] ? ` · ${workersAt(b).length} working now` : '');
     renderBldCanvas(b);
-    $('goInBtn').hidden = b.type !== 'hutch';
+    $('goInBtn').hidden = !canEnter(b);
     if (b.type === 'hutch') $('bInfo').textContent += ` · Coziness ${cozyOf(b)}`;
     if (DECOR[b.type]) { $('bLvl').textContent = 'Decoration'; $('bNext').textContent = ''; $('upBtn').hidden = true; }
     else if (l < 3) {
@@ -1201,11 +1201,158 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     for (let i = 0; i < w; i++) if (furnAt(x + i, y, !!d.under)) return false;
     return true;
   }
+  // ---------- inside Job City workplaces ----------
+  const WORKPLACES = { office: { wall: 2, floor: 1 }, factory: { wall: 6, floor: 4 }, market: { wall: 1, floor: 1 }, sushi: { wall: 3, floor: 0 }, dealer: { wall: 7, floor: 5 }, pcse: { wall: 5, floor: 6 } };
+  const canEnter = b => b && (b.type === 'hutch' || !!WORKPLACES[b.type]);
+  const isWork = b => b && !!WORKPLACES[b.type];
+  const DESKS = [[80, 150], [200, 150], [320, 150], [80, 232], [200, 232], [320, 232]];
+  function stationOf(b, slot) {
+    switch (b.type) {
+      case 'office': case 'pcse': { const d = DESKS[slot % 6]; return { x: d[0] - 14, y: d[1] - 22, face: 1 }; }
+      case 'factory': return slot < 4 ? { x: 80 + slot * 80, y: 160, face: 1 } : { x: 120 + (slot - 4) * 160, y: 238, face: -1 };
+      case 'market': return [{ x: 322, y: 160, face: -1 }, { x: 105, y: 168, face: 1 }, { x: 205, y: 168, face: 1 }, { x: 105, y: 246, face: 1 }, { x: 215, y: 246, face: -1 }][slot % 5];
+      case 'sushi': return { x: 90 + (slot % 4) * 80, y: 162, face: slot % 2 ? -1 : 1 };
+      case 'dealer': return [{ x: 205, y: 218, face: -1 }, { x: 318, y: 112, face: -1 }, { x: 250, y: 112, face: 1 }, { x: 60, y: 240, face: 1 }][slot % 4];
+    }
+    return { x: 200, y: 180, face: 1 };
+  }
+  function workersHere(b) { return G.pigs.filter(p => { const jb = jobOf(p); return jb === b && pigMap(p) === 'city' && !p.trip; }); }
+  function drawHat(c, kind) {
+    c.save(); c.lineWidth = 2; c.strokeStyle = INK;
+    if (kind === 'factory') { c.fillStyle = '#f2c230'; c.beginPath(); c.ellipse(22, -17, 14, 11, 0, Math.PI, 0); c.fill(); c.stroke(); c.fillRect(6, -18, 32, 4); c.strokeRect(6, -18, 32, 4); c.fillStyle = '#fff3b0'; c.fillRect(20, -27, 4, 9); }
+    if (kind === 'sushi') { c.fillStyle = '#fff'; c.fillRect(13, -40, 18, 22); c.strokeRect(13, -40, 18, 22); for (const dx of [14, 22, 30]) { ell(c, dx, -42, 7, 6); c.fill(); c.stroke(); } c.fillStyle = '#e0483f'; c.fillRect(13, -22, 18, 3); }
+    if (kind === 'market' || kind === 'dealer') { c.fillStyle = kind === 'market' ? '#5fae48' : '#e0483f'; c.beginPath(); c.ellipse(20, -16, 13, 9, 0, Math.PI, 0); c.fill(); c.stroke(); c.beginPath(); c.moveTo(28, -17); c.lineTo(44, -15); c.lineTo(30, -12); c.closePath(); c.fill(); c.stroke(); }
+    if (kind === 'pcse' || kind === 'office') { c.strokeStyle = '#2f3440'; c.lineWidth = 3; c.beginPath(); c.arc(20, -10, 14, Math.PI * 1.05, Math.PI * 1.95); c.stroke(); c.fillStyle = '#2f3440'; ell(c, 8, -8, 4, 5); c.fill(); if (kind === 'pcse') { c.lineWidth = 2; c.beginPath(); c.moveTo(8, -4); c.quadraticCurveTo(14, 8, 30, 6); c.stroke(); } }
+    c.restore();
+  }
+  function screenLines(c, x, y, w, h, seed, col) {
+    c.fillStyle = '#1b2230'; rr(c, x, y, w, h, 2); c.fill(); c.strokeStyle = INK; c.lineWidth = 1.2; c.stroke();
+    const t = G.time || 0, n = Math.floor(h / 4) - 1;
+    for (let i = 0; i < n; i++) { const k = (i + Math.floor(t * 2 + seed)) % 7; c.fillStyle = ['#8fe07a', '#7fc1ea', '#f4a3b8', '#ffd36b'][k % 4]; c.fillRect(x + 3 + (k % 3) * 2, y + 3 + i * 4, 4 + ((k * 5 + seed) % (w - 10)), 1.6); }
+  }
+  function miniChart(c, x, y, w, h, pts, col) {
+    c.fillStyle = '#0f1724'; rr(c, x, y, w, h, 2); c.fill(); c.strokeStyle = INK; c.lineWidth = 1; c.stroke();
+    if (!pts || pts.length < 2) return;
+    const lo = Math.min(...pts), hi = Math.max(...pts), r = Math.max(.01, hi - lo);
+    c.beginPath(); pts.forEach((p, i) => { const px = x + 2 + i / (pts.length - 1) * (w - 4), py = y + h - 2 - (p - lo) / r * (h - 4); i ? c.lineTo(px, py) : c.moveTo(px, py); });
+    c.strokeStyle = col || (pts[pts.length - 1] >= pts[0] ? '#8fe07a' : '#ff8a9a'); c.lineWidth = 1.4; c.stroke();
+  }
+  function skyline(c, x, y, w, h) {
+    const night = darkness() > .4;
+    const g = c.createLinearGradient(0, y, 0, y + h); g.addColorStop(0, night ? '#1f2f5c' : '#9fd3f2'); g.addColorStop(1, night ? '#3b4a7a' : '#dff1fb');
+    c.fillStyle = g; c.fillRect(x, y, w, h);
+    c.save(); c.beginPath(); c.rect(x, y, w, h); c.clip();
+    for (let i = 0; i < 12; i++) { const bw = 14 + (i * 7) % 16, bh = 16 + (i * 13) % 30, bx = x + i * (w / 11) - 6; c.fillStyle = night ? '#141c33' : '#8fb0c9'; c.fillRect(bx, y + h - bh, bw, bh); if (night) { c.fillStyle = '#ffe08a'; for (let k = 0; k < 4; k++) if ((i + k) % 3) c.fillRect(bx + 3 + (k % 2) * 6, y + h - bh + 4 + (k >> 1) * 8, 2.5, 3); } }
+    if (night) { c.fillStyle = '#fff1a8'; ell(c, x + w - 20, y + 12, 5, 5); c.fill(); }
+    c.restore();
+    c.strokeStyle = '#fff'; c.lineWidth = 3; c.strokeRect(x, y, w, h); c.lineWidth = 2; for (let k = 1; k < 4; k++) { c.beginPath(); c.moveTo(x + k * w / 4, y); c.lineTo(x + k * w / 4, y + h); c.stroke(); }
+  }
+  function sign(c, x, y, txt, bg, fg = '#fff', size = 10) { c.font = `bold ${size}px Nunito, sans-serif`; const w = c.measureText(txt).width + 14; c.fillStyle = bg; rr(c, x - w / 2, y - size, w, size + 8, 5); c.fill(); c.strokeStyle = INK; c.lineWidth = 1.5; c.stroke(); c.fillStyle = fg; c.textAlign = 'center'; c.fillText(txt, x, y + 1); }
+  // draws the fixed fixtures of each workplace; returns depth-sorted props that pigs can stand behind
+  function workScene(c, b) {
+    const t = G.time || 0, props = [], lv = L(b), slots = slotsOf(b);
+    switch (b.type) {
+      case 'office': {
+        skyline(c, 20, 10, 230, 56);
+        c.fillStyle = '#fff'; rr(c, 266, 12, 116, 56, 4); c.fill(); c.strokeStyle = INK; c.lineWidth = 1.5; c.stroke();
+        c.strokeStyle = '#5aa9e0'; c.lineWidth = 2; c.beginPath(); for (let i = 0; i <= 10; i++) { const px = 274 + i * 10, py = 58 - i * 3 - Math.sin(i + t * .3) * 3; i ? c.lineTo(px, py) : c.moveTo(px, py); } c.stroke();
+        c.fillStyle = '#e0483f'; c.font = 'bold 8px Nunito, sans-serif'; c.textAlign = 'left'; c.fillText('Q4 GOALS 🚀', 272, 24);
+        sign(c, 135, 76, 'WHEEK TECH 🐹', '#5aa9e0', '#fff', 9);
+        for (let i = 0; i < Math.max(slots, 3); i++) {
+          const [dx, dy] = DESKS[i];
+          props.push({ y: dy, f: () => {
+            c.fillStyle = '#c99a5b'; rr(c, dx - 36, dy - 14, 72, 8, 2); c.fill(); c.strokeStyle = INK; c.lineWidth = 1.5; c.stroke();
+            c.fillStyle = '#a77c4c'; c.fillRect(dx - 34, dy - 6, 68, 16); c.strokeRect(dx - 34, dy - 6, 68, 16);
+            screenLines(c, dx + 2, dy - 38, 28, 22, i * 3); c.fillStyle = '#2f3440'; c.fillRect(dx + 13, dy - 16, 6, 3);
+            c.fillStyle = '#fff'; c.font = '9px sans-serif'; c.textAlign = 'center'; c.fillText('☕', dx + 28, dy - 15);
+          } });
+        }
+        props.push({ y: 260, f: () => { c.fillStyle = '#9fd3f2'; rr(c, 362, 200, 18, 26, 4); c.fill(); c.strokeStyle = INK; c.stroke(); c.fillStyle = '#e8eef4'; c.fillRect(360, 226, 22, 30); c.strokeRect(360, 226, 22, 30); } });
+        break;
+      }
+      case 'pcse': {
+        // giant market board with the live PCSE index
+        c.fillStyle = '#0f1724'; rr(c, 14, 6, 372, 66, 6); c.fill(); c.strokeStyle = '#c9a23a'; c.lineWidth = 2.5; c.stroke();
+        miniChart(c, 20, 12, 160, 54, G.mkt.ihist && G.mkt.ihist.length > 1 ? G.mkt.ihist : null);
+        c.fillStyle = '#c9a23a'; c.font = 'bold 9px Nunito, sans-serif'; c.textAlign = 'left'; c.fillText(`PCSE INDEX ${pcseIdx().toFixed(1)}`, 24, 22);
+        STOCKS.forEach((k, i) => { const S = G.mkt.st[k.s], up = S.p >= S.hist[0], col = i % 2 ? 0 : 1, row = i >> 1; const x = 190 + col * 96, y = 22 + row * 17; c.fillStyle = '#fff'; c.font = 'bold 9px Nunito, sans-serif'; c.textAlign = 'left'; c.fillText(k.s, x, y); c.fillStyle = up ? '#8fe07a' : '#ff8a9a'; c.textAlign = 'right'; c.fillText(`${S.p.toFixed(1)} ${up ? '▲' : '▼'}`, x + 86, y); });
+        { const tk = STOCKS.map(k => `${k.s} ${G.mkt.st[k.s].p.toFixed(1)}`).join('   ·   ') + '   ·   '; c.save(); c.beginPath(); c.rect(18, 60, 364, 10); c.clip(); c.font = 'bold 8px Nunito, sans-serif'; c.fillStyle = '#ffd36b'; c.textAlign = 'left'; const w = c.measureText(tk).width, off = (t * 25) % w; c.fillText(tk, 20 - off, 68); c.fillText(tk, 20 - off + w, 68); c.restore(); }
+        for (let i = 0; i < Math.max(slots, 3); i++) {
+          const [dx, dy] = DESKS[i], k = STOCKS[i % STOCKS.length];
+          props.push({ y: dy, f: () => {
+            c.fillStyle = '#3b3f4a'; rr(c, dx - 38, dy - 14, 76, 8, 2); c.fill(); c.strokeStyle = INK; c.lineWidth = 1.5; c.stroke();
+            c.fillStyle = '#2f3440'; c.fillRect(dx - 36, dy - 6, 72, 16); c.strokeRect(dx - 36, dy - 6, 72, 16);
+            miniChart(c, dx - 4, dy - 36, 20, 18, G.mkt.st[k.s].hist.slice(-20)); miniChart(c, dx + 18, dy - 36, 20, 18, G.mkt.st[STOCKS[(i + 2) % 6].s].hist.slice(-20));
+            c.fillStyle = '#c9a23a'; c.font = 'bold 7px Nunito, sans-serif'; c.textAlign = 'center'; c.fillText(k.s, dx + 6, dy - 39);
+          } });
+        }
+        props.push({ y: 268, f: () => { c.fillStyle = '#8a6a52'; rr(c, 340, 240, 46, 14, 3); c.fill(); c.strokeStyle = INK; c.stroke(); c.font = '34px sans-serif'; c.textAlign = 'center'; c.fillText('🐂', 363, 242); } });
+        break;
+      }
+      case 'factory': {
+        c.fillStyle = '#2f3440'; for (let i = 0; i < 20; i++) { c.fillStyle = i % 2 ? '#2f3440' : '#f2c230'; c.beginPath(); c.moveTo(i * 20, 74); c.lineTo(i * 20 + 10, 74); c.lineTo(i * 20 + 4, 80); c.lineTo(i * 20 - 6, 80); c.closePath(); c.fill(); }
+        c.strokeStyle = '#7a838c'; c.lineWidth = 6; c.beginPath(); c.moveTo(0, 22); c.lineTo(400, 22); c.moveTo(330, 22); c.lineTo(330, 74); c.stroke();
+        for (const gx of [60, 120]) { c.fillStyle = '#fff'; ell(c, gx, 46, 12, 12); c.fill(); c.strokeStyle = INK; c.lineWidth = 1.5; c.stroke(); const a = Math.sin(t * 2 + gx) * 1.2 - .6; c.beginPath(); c.moveTo(gx, 46); c.lineTo(gx + Math.cos(a) * 9, 46 + Math.sin(a) * 9); c.strokeStyle = '#e0483f'; c.stroke(); }
+        sign(c, 230, 50, 'HAY FACTORY 🌾', '#b4654a', '#fff', 10);
+        props.push({ y: 186, f: () => {
+          c.fillStyle = '#5c6670'; c.fillRect(16, 172, 368, 16); c.strokeStyle = INK; c.lineWidth = 1.5; c.strokeRect(16, 172, 368, 16);
+          for (let x = 22; x < 384; x += 14) { c.fillStyle = '#9aa3ac'; ell(c, x, 189, 3, 3); c.fill(); }
+          for (let i = 0; i < 6; i++) { const x = 20 + ((t * 34 + i * 62) % 350); c.fillStyle = '#ecc55a'; rr(c, x, 160, 22, 13, 2); c.fill(); c.strokeStyle = INK; c.lineWidth = 1.2; c.stroke(); c.strokeStyle = '#c99a3c'; c.beginPath(); c.moveTo(x + 7, 160); c.lineTo(x + 7, 173); c.moveTo(x + 15, 160); c.lineTo(x + 15, 173); c.stroke(); }
+        } });
+        props.push({ y: 175, f: () => { c.fillStyle = '#7a838c'; rr(c, 2, 96, 46, 80, 4); c.fill(); c.strokeStyle = INK; c.lineWidth = 1.5; c.stroke(); for (let k = 0; k < 3; k++) { c.fillStyle = Math.sin(t * 4 + k) > 0 ? '#5fe08a' : '#2f8f4a'; ell(c, 14 + k * 10, 108, 3, 3); c.fill(); } c.fillStyle = '#ecc55a'; c.beginPath(); c.moveTo(352, 176); c.quadraticCurveTo(376, 130, 398, 176); c.closePath(); c.fill(); c.stroke(); } });
+        break;
+      }
+      case 'market': {
+        for (let s = 0; s < 3; s++) {
+          c.fillStyle = '#a77c4c'; c.fillRect(14, 22 + s * 18, 250, 4); c.strokeStyle = INK; c.lineWidth = 1; c.strokeRect(14, 22 + s * 18, 250, 4);
+          for (let i = 0; i < 22; i++) { c.fillStyle = ['#ff8a3d', '#e0483f', '#5fb04a', '#f2b134', '#a98bd9', '#5fae48'][(i + s * 2) % 6]; ell(c, 22 + i * 11, 18 + s * 18, 4, 4); c.fill(); }
+        }
+        sign(c, 325, 30, 'VEGGIE MARKET', '#5fae48', '#fff', 9); c.font = '20px sans-serif'; c.textAlign = 'center'; c.fillText('🥕🥬🍓', 325, 64);
+        const crate = (x, y, col) => props.push({ y, f: () => { c.fillStyle = '#c99a5b'; c.fillRect(x - 26, y - 16, 52, 18); c.strokeStyle = INK; c.lineWidth = 1.5; c.strokeRect(x - 26, y - 16, 52, 18); c.strokeStyle = 'rgba(80,50,20,.4)'; c.beginPath(); c.moveTo(x - 26, y - 8); c.lineTo(x + 26, y - 8); c.stroke(); for (let i = 0; i < 6; i++) { c.fillStyle = col; ell(c, x - 18 + i * 7, y - 19, 4.5, 4); c.fill(); c.strokeStyle = INK; c.lineWidth = .8; c.stroke(); } } });
+        crate(140, 180, '#ff8a3d'); crate(240, 180, '#e0483f'); crate(140, 258, '#5fb04a'); crate(250, 258, '#f2b134');
+        props.push({ y: 202, f: () => { c.fillStyle = '#5fae48'; c.fillRect(296, 190, 84, 14); c.strokeStyle = INK; c.lineWidth = 1.5; c.strokeRect(296, 190, 84, 14); c.fillStyle = '#e8eef4'; c.fillRect(296, 172, 84, 18); c.strokeRect(296, 172, 84, 18); c.fillStyle = '#2f3440'; rr(c, 344, 156, 26, 16, 2); c.fill(); c.fillStyle = '#8fe07a'; c.font = 'bold 7px Nunito, sans-serif'; c.textAlign = 'center'; c.fillText(`${Math.round(G.jd.place['🏙️ Veggie Market'] || 0)}🪙`, 357, 167); } });
+        break;
+      }
+      case 'sushi': {
+        for (let i = 0; i < 5; i++) { c.fillStyle = i % 2 ? '#2f3440' : '#c8343c'; c.fillRect(40 + i * 64, 0, 40, 38); c.fillStyle = '#fff'; c.font = '14px sans-serif'; c.textAlign = 'center'; c.fillText(['🍣', '🍙', '🍤', '🍜', '🍵'][i], 60 + i * 64, 28); }
+        for (const lx of [20, 380]) { c.fillStyle = '#e0483f'; ell(c, lx, 56 + Math.sin(t * 2 + lx) * 1.2, 9, 12); c.fill(); c.strokeStyle = INK; c.lineWidth = 1.2; c.stroke(); }
+        sign(c, 200, 60, 'SUSHI SPOT 🍣', '#3b3f4a', '#fff', 10);
+        props.push({ y: 190, f: () => {
+          c.fillStyle = '#c99a5b'; c.fillRect(14, 172, 372, 10); c.strokeStyle = INK; c.lineWidth = 1.5; c.strokeRect(14, 172, 372, 10);
+          c.fillStyle = '#a77c4c'; c.fillRect(18, 182, 364, 22); c.strokeRect(18, 182, 364, 22);
+          c.fillStyle = '#9aa3ac'; c.fillRect(14, 166, 372, 6);
+          for (let i = 0; i < 9; i++) { const x = 18 + ((t * 26 + i * 42) % 364); c.fillStyle = ['#e0483f', '#5aa9e0', '#f2b134'][i % 3]; ell(c, x, 166, 9, 3.5); c.fill(); c.font = '10px sans-serif'; c.textAlign = 'center'; c.fillText(['🍣', '🍙', '🍤'][i % 3], x, 167); }
+        } });
+        for (let i = 0; i < 5; i++) props.push({ y: 240, f: () => { const x = 60 + i * 70; c.fillStyle = '#3b3f4a'; c.fillRect(x - 2, 218, 4, 20); c.fillStyle = '#e0483f'; ell(c, x, 216, 12, 5); c.fill(); c.strokeStyle = INK; c.lineWidth = 1.2; c.stroke(); } });
+        break;
+      }
+      case 'dealer': {
+        skyline(c, 16, 10, 368, 52);
+        c.fillStyle = '#e0483f'; c.fillRect(0, 62, 400, 12); c.fillStyle = '#fff'; c.font = 'bold 9px Nunito, sans-serif'; c.textAlign = 'center'; c.fillText('ZOOMIES MOTORS · NEW ZOOMSTER GT IN STOCK ⚡', 200, 71);
+        const show = (x, y, car, rot) => props.push({ y, f: () => {
+          c.fillStyle = 'rgba(0,0,0,.08)'; ell(c, x, y + 4, 64, 14); c.fill(); c.fillStyle = '#cfd6dc'; ell(c, x, y, 60, 13); c.fill(); c.strokeStyle = INK; c.lineWidth = 1.5; c.stroke();
+          c.save(); c.translate(x, y - 2); c.scale(2.3, 2.3); drawCar(c, 0, 0, Math.sin(t * .5 + rot) > 0 ? 1 : -1, car, null, false); c.restore();
+          if (Math.sin(t * 3 + rot) > .7) { c.font = '12px sans-serif'; c.textAlign = 'center'; c.fillText('✨', x + 30, y - 34); }
+          sign(c, x, y + 24, car.m === 'sport' ? '80 🪙' : '80 🪙', '#fff', INK, 8);
+        } });
+        show(110, 196, { m: 'sport', c: '#f2b134' }, 0); show(300, 210, { m: lv === 3 ? 'limo' : 'jeep', c: '#5aa9e0' }, 2);
+        props.push({ y: 140, f: () => { c.fillStyle = '#fbf6ee'; c.fillRect(230, 118, 110, 20); c.strokeStyle = INK; c.lineWidth = 1.5; c.strokeRect(230, 118, 110, 20); c.fillStyle = '#e0483f'; c.fillRect(230, 118, 110, 5); } });
+        break;
+      }
+    }
+    return props;
+  }
+  function insidePigList() {
+    if (!insideB) return [];
+    if (isWork(insideB)) return workersHere(insideB).map(p => { const s = stationOf(insideB, p.job.slot); return { p, x: s.x, y: s.y + Math.sin((G.time || 0) * 3 + p.id) * .8 * (p.working ? 1 : 0), face: s.face, sleep: false }; });
+    return insideResidents().map(p => { const s = insidePigs.get(p.id); return s ? { p, x: s.x, y: s.y, face: s.face, sleep: s.sleep } : null; }).filter(Boolean);
+  }
   function drawInside(c) {
-    if (!insideB || !G.buildings.includes(insideB)) { setView('home'); return; }
+    if (!insideB || !allB().includes(insideB)) { setView('home'); return; }
     c.save(); c.scale(IS, IS);
     const W = RW, H = RH;
     drawRoom(c, insideB);
+    const work = isWork(insideB), props = work ? workScene(c, insideB) : [];
     const its = insideB.room.items;
     for (const it of its) if (F[it.k].cat === 'wall') drawFurn(c, it);
     for (const it of its) if (F[it.k].under) drawFurn(c, it);
@@ -1217,15 +1364,16 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
       if (ok) { c.globalAlpha = .55; drawFurn(c, { k: tool, x: hover.x, y: hover.y }); c.globalAlpha = 1; }
     }
     if (hover && tool === 'remove') { const it = furnAt(hover.x, hover.y < WALL_R ? 0 : hover.y); if (it) { c.fillStyle = 'rgba(217,69,90,.35)'; rr(c, it.x * T + 2, it.y * T + 2, (F[it.k].w || 1) * T - 4, T - 4, 6); c.fill(); } }
-    const items = [];
+    const items = props.slice();
     for (const it of its) if (F[it.k].cat === 'floor' && !F[it.k].under) items.push({ y: it.y * T + 36, f: () => drawFurn(c, it) });
-    for (const p of insideResidents()) {
-      const s = insidePigs.get(p.id); if (!s) continue;
-      items.push({ y: s.y + (s.sleep ? 40 : 10), f: () => {
+    for (const s of insidePigList()) {
+      const p = s.p;
+      items.push({ y: s.y + (s.sleep ? 40 : work ? -.5 : 10), f: () => {
         c.save(); c.translate(s.x, s.y); c.fillStyle = 'rgba(0,0,0,.12)'; ell(c, 0, 12, 18, 4); c.fill();
         if (p.id === selected) { c.strokeStyle = '#fff'; c.lineWidth = 2.5; ell(c, 0, 12, 24, 7); c.stroke(); }
-        const sc = p.age < 90 ? .34 : .46; c.scale(s.face * sc, sc); drawPig(c, p.skin, { sleep: s.sleep });
+        const sc = p.age < 90 ? .34 : .46; c.scale(s.face * sc, sc); drawPig(c, p.skin, { sleep: s.sleep }); if (work) drawHat(c, insideB.type);
         c.restore();
+        if (work && p.working) { const jb = jobOf(p); c.font = '12px sans-serif'; c.textAlign = 'center'; c.fillText(JOBS[jb.type].emoji, s.x + s.face * 4, s.y - 24 + Math.sin(G.time * 3 + p.id) * 1.5); }
         if (s.sleep) { c.font = '13px Chewy, sans-serif'; c.textAlign = 'center'; c.fillStyle = '#1f2f5c'; const k = (G.time * .8 + p.id) % 1; c.globalAlpha = 1 - k; c.fillText('z', s.x + 12 + k * 6, s.y - 16 - k * 10); c.fillText('Z', s.x + 18 + k * 4, s.y - 26 - k * 8); c.globalAlpha = 1; }
         if (!s.sleep || p.id === selected) { c.font = '11px Nunito, sans-serif'; c.textAlign = 'center'; c.fillStyle = INK; c.fillText(p.name, s.x, s.y + 26); }
       } });
@@ -1233,7 +1381,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     items.sort((a, b) => a.y - b.y).forEach(i => i.f());
     const dk = darkness();
     if (dk > 0) {
-      c.fillStyle = `rgba(22,26,64,${.38 * dk})`; c.fillRect(0, 0, W, H);
+      c.fillStyle = `rgba(22,26,64,${(work ? .22 : .38) * dk})`; c.fillRect(0, 0, W, H);
       c.save(); c.globalCompositeOperation = 'lighter';
       const glow = (x, y, r, a, col = '255,200,110') => { const g = c.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, `rgba(${col},${a})`); g.addColorStop(1, `rgba(${col},0)`); c.fillStyle = g; c.fillRect(x - r, y - r, r * 2, r * 2); };
       for (const it of its) {
@@ -1242,13 +1390,21 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
         if (it.k === 'lights') glow(cx, it.y * T + 18, 90, .35 * dk, '255,220,240');
         if (it.k === 'tv') glow(cx, it.y * T + 15, 50, .35 * dk, '170,220,255');
       }
+      if (work) for (let i = 0; i < 6; i++) glow(40 + i * 64, 30, 70, .22 * dk, '200,230,255');
       c.restore();
     }
     c.textAlign = 'center'; c.font = '13px Chewy, "Comic Sans MS", sans-serif';
     for (const q of popups) { if (q.map !== 'inside' && q.map !== 'any') continue; c.globalAlpha = Math.min(1, q.life / .4); c.lineWidth = 3.5; c.strokeStyle = '#fff'; c.strokeText(q.text, q.x, q.y); c.fillStyle = q.color; c.fillText(q.text, q.x, q.y); }
     c.globalAlpha = 1;
     c.restore(); c.globalAlpha = 1;
-    { const W0 = W * IS, H0 = H * IS; const away = insideResidents(true).filter(p => !insideResidents().includes(p));
+    if (work) {
+      const W0 = W * IS, H0 = H * IS, here = workersHere(insideB), all = workersAt(insideB), today = Math.round(G.jd.place['🏙️ ' + JOBS[insideB.type].place] || 0);
+      const h = hourNow(), closed = !here.length && (h < 7.3 || h >= 17.6);
+      const txt = closed ? `Closed for the night 🌙 Workers drive back in around 8am` : `${here.length}/${slotsOf(insideB)} at work · ${all.length - here.length ? (all.length - here.length) + ' on the way 🚗 · ' : ''}${today} 🪙 earned here today`;
+      c.font = 'bold 13px Nunito, sans-serif'; c.textAlign = 'left'; const w = c.measureText(txt).width; c.fillStyle = 'rgba(255,255,255,.9)'; rr(c, 8, H0 - 30, w + 18, 22, 8); c.fill(); c.fillStyle = INK; c.fillText(txt, 17, H0 - 14);
+      if (closed) { c.fillStyle = 'rgba(22,26,64,.25)'; c.fillRect(0, 0, W0, H0); c.save(); c.translate(W0 / 2, H0 / 2); c.rotate(-.06); c.fillStyle = '#c8343c'; rr(c, -80, -26, 160, 52, 10); c.fill(); c.strokeStyle = '#fff'; c.lineWidth = 3; c.stroke(); c.fillStyle = '#fff'; c.font = '28px Chewy, sans-serif'; c.textAlign = 'center'; c.fillText('CLOSED', 0, 10); c.restore(); }
+    }
+    else { const W0 = W * IS, H0 = H * IS; const away = insideResidents(true).filter(p => !insideResidents().includes(p));
     if (away.length) { c.font = '13px Nunito, sans-serif'; c.textAlign = 'left'; c.fillStyle = 'rgba(255,255,255,.85)'; const txt = 'Out right now: ' + away.map(p => p.name + (p.trip || pigMap(p) === 'city' ? ' 🚗' : p.state ? ' 🏥' : '')).join(', '); const w = c.measureText(txt).width; rr(c, 8, H0 - 28, w + 16, 20, 8); c.fill(); c.fillStyle = INK; c.fillText(txt, 16, H0 - 13); } }
     for (const q of confetti) { c.globalAlpha = Math.min(1, q.life / .5); c.save(); c.translate(q.x, q.y); c.rotate(q.r); c.fillStyle = q.c; c.fillRect(-3, -1.5, 6, 3); c.restore(); }
     c.globalAlpha = 1;
@@ -1269,15 +1425,15 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
       hudRes(); syncTools(); renderCozy(); save(); return;
     }
     let best = null, bd = 26;
-    for (const p of insideResidents()) { const s = insidePigs.get(p.id); if (!s) continue; const d = Math.hypot(s.x - w.x, s.y - w.y); if (d < bd) { bd = d; best = p; } }
-    if (best) { selected = best.id; best.hop = .4; popup(insidePigs.get(best.id).x, insidePigs.get(best.id).y - 26, '♥', '#e07a9a', 'inside'); renderPig(true); listSig = ''; }
+    for (const s of insidePigList()) { const d = Math.hypot(s.x - w.x, s.y - 6 - w.y); if (d < bd) { bd = d; best = s; } }
+    if (best) { selected = best.p.id; best.p.hop = .4; popup(best.x, best.y - 26, '♥', '#e07a9a', 'inside'); renderPig(true); listSig = ''; sfx('wheek'); }
   }
   function renderCozy() {
     const el = $('cozy');
     if (view !== 'inside' || !insideB) { el.hidden = true; return; }
     const cz = cozyOf(insideB), stars = Math.min(5, Math.floor(cz / 6));
     el.hidden = false;
-    el.innerHTML = `Coziness ${'★'.repeat(stars)}${'☆'.repeat(5 - stars)} (${cz}) · residents' joy drains ${Math.round(100 - 100 / (1 + Math.min(.8, .035 * cz)))}% slower`;
+    el.innerHTML = `${isWork(insideB) ? 'Workplace comfort' : 'Coziness'} ${'★'.repeat(stars)}${'☆'.repeat(5 - stars)} (${cz}) · ${isWork(insideB) ? 'workers' : 'residents'}' joy drains ${Math.round(100 - 100 / (1 + Math.min(.8, .035 * cz)))}% slower`;
   }
 
   // ---------- views ----------
@@ -1298,20 +1454,20 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     cat = curCats()[0][0];
     document.querySelectorAll('.vtab').forEach(b => b.setAttribute('aria-selected', b.dataset.v === v ? 'true' : 'false'));
     $('insideTab').hidden = !insideB;
-    if (insideB) $('insideTab').textContent = `🏰 Castle #${G.buildings.filter(q => q.type === 'hutch').indexOf(insideB) + 1}`;
+    if (insideB) $('insideTab').textContent = insideB.type === 'hutch' ? `🏰 Castle #${G.buildings.filter(q => q.type === 'hutch').indexOf(insideB) + 1}` : `${B[insideB.type].ic} ${lvName(insideB)}`;
     const map = v === 'home' || v === 'city' || v === 'inside';
     $('stage').hidden = !map; $('buildPanel').hidden = !map; $('dash').hidden = v !== 'dash'; $('pcse').hidden = v !== 'pcse';
-    $('buildTitle').textContent = v === 'city' ? 'Build downtown 🏙️' : v === 'inside' ? `Decorate ${insideName(insideB)} 🛋️` : 'Build';
+    $('buildTitle').textContent = v === 'city' ? 'Build downtown 🏙️' : v === 'inside' ? `Decorate ${insideName(insideB)} ${isWork(insideB) ? '🪴' : '🛋️'}` : 'Build';
     drawTabs(); drawTools(); renderBld(); renderCozy();
     $('zoombar').hidden = v === 'inside';
     if (map) { resize(); if ((v === 'home' || v === 'city') && !cams[v].init) { camHome(v); cams[v].init = true; } }
     if (v === 'city' && G.cityNew) { G.cityNew = false; setTimeout(() => toast('🏙️ Welcome to Job City! Pigs with jobs here drive in around 8am and home after 5pm.'), 200); }
     if (v === 'dash') renderDash(); if (v === 'pcse') { stockSig = ''; renderStocks(); }
   }
-  const insideName = b => { const i = G.buildings.filter(q => q.type === 'hutch').indexOf(b); return `${lvName(b)} #${i + 1}`; };
-  function goInside(b) { insideB = b; insidePigs.clear(); setView('inside'); sfx('wheek'); }
+  const insideName = b => { if (b.type !== 'hutch') return lvName(b); const i = G.buildings.filter(q => q.type === 'hutch').indexOf(b); return `${lvName(b)} #${i + 1}`; };
+  function goInside(b) { if (!b.room) b.room = Object.assign({ items: [] }, WORKPLACES[b.type] || { wall: 0, floor: 0 }); insideB = b; insidePigs.clear(); setView('inside'); sfx('wheek'); }
   document.querySelectorAll('.vtab').forEach(b => b.addEventListener('click', () => { setView(b.dataset.v); sfx('tap'); }));
-  $('goInBtn').addEventListener('click', () => { if (selBld && selBld.type === 'hutch') goInside(selBld); });
+  $('goInBtn').addEventListener('click', () => { if (canEnter(selBld)) goInside(selBld); });
 
   // ---------- jobs dashboard ----------
   function pigStatus(p) {
@@ -1665,16 +1821,16 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
   function startCommute(p, wb) {
     const pk = parkSpot(wb, p.job.slot); p.park = pk;
     p.trip = { to: 'city', i: 0, j: 1, x: p.x, y: p.y, dir: 1, legs: [
-      { map: 'home', pts: [[p.x, p.y], [p.x, HL_E], [W + GPAD * T, HL_E]] },
-      { map: 'city', pts: [[-GPAD * T, LANE_E], [pk.x, LANE_E], [pk.x, pk.y]] }] };
+      { map: 'home', pts: [[p.x, p.y], [p.x, HL_E], [W + (GPAD + NB) * T, HL_E]] },
+      { map: 'city', pts: [[-(GPAD + 4) * T, LANE_E], [pk.x, LANE_E], [pk.x, pk.y]] }] };
     p.nap = 0; p.working = false;
   }
   function startHome(p) {
     const pk = p.park || { x: p.x, y: CURB_N };
     const hy = 60 + Math.random() * (HOME_ROAD * T - 100), hx = 120 + Math.random() * (W - 240);
     p.trip = { to: 'home', i: 0, j: 1, x: pk.x, y: pk.y, dir: -1, legs: [
-      { map: 'city', pts: [[pk.x, pk.y], [pk.x, LANE_W], [-GPAD * T, LANE_W]] },
-      { map: 'home', pts: [[W + GPAD * T, HL_W], [hx, HL_W], [hx, hy]] }] };
+      { map: 'city', pts: [[pk.x, pk.y], [pk.x, LANE_W], [-(GPAD + NB) * T, LANE_W]] },
+      { map: 'home', pts: [[W + (GPAD + 4) * T, HL_W], [hx, HL_W], [hx, hy]] }] };
     p.working = false;
   }
   function driveTick(p, dt) {
@@ -1764,7 +1920,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
       const inCity = pigMap(p) === 'city', dBase = inCity ? cityDecor : decor;
       const pk = inCity ? 0 : has(p, 'zoomies') ? parks * 2 : parks, dc = has(p, 'fancy') ? dBase * 2 : dBase;
       let jd = .45 / (1 + .5 * pk + .07 * dc) + (inCity ? 0 : (has(p, 'shy') ? .25 : .5) * dirt);
-      jd /= 1 + Math.min(.8, .035 * cozyOf(home.get(p.id)));
+      jd /= 1 + Math.min(.8, .035 * cozyOf(inCity ? jobOf(p) : home.get(p.id)));
       if (has(p, 'sleepy')) jd *= .75;
       if (dark > .5 && !lanterns && !has(p, 'sleepy')) jd += .08; // dark nights feel a little spooky without lanterns
       if (wk === 'snow' && sn === 'Winter') jd += .05;
@@ -1831,6 +1987,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
             if ((has(p, 'brainy') && wb.type === 'bank') || (has(p, 'fancy') && wb.type === 'salon')) pay = Math.round(pay * 1.5);
             G.coins += pay; G.stats.jobPay += pay; logPay(p, wb, pay); if (view === pigMap(p)) sfx('coin');
             popup(p.x, p.y - 22, `+${pay} 🪙 ${J.emoji}`, '#1f2f5c', pigMap(p));
+            if (view === 'inside' && insideB === wb) { const s0 = stationOf(wb, p.job.slot); popup(s0.x, s0.y - 34, `+${pay} 🪙`, '#1f2f5c', 'inside'); }
             if (wb.type === 'factory') { G.hay += 2; popup(p.x, p.y - 34, '+2 🌾', '#5f8f2e', 'city'); }
             if (wb.type === 'market') { G.veg += 1; popup(p.x, p.y - 34, '+1 🫑', '#5f8f2e', 'city'); }
             if (wb.type === 'sushi') for (const q of G.pigs) if (pigMap(q) === 'city' && !q.trip) q.joy = Math.min(100, q.joy + 4);
@@ -2402,6 +2559,9 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     if (R.floor === 0) for (let y = wy; y < H; y += 16) { c.beginPath(); c.moveTo(0, y); c.lineTo(W, y); c.stroke(); for (let x = (y / 16 % 2) * 60; x < W; x += 120) { c.beginPath(); c.moveTo(x, y); c.lineTo(x, y + 16); c.stroke(); } }
     if (R.floor === 1) { for (let y = wy; y < H; y += 40) { c.beginPath(); c.moveTo(0, y); c.lineTo(W, y); c.stroke(); } for (let x = 0; x < W; x += 40) { c.beginPath(); c.moveTo(x, wy); c.lineTo(x, H); c.stroke(); } }
     if (R.floor === 2) { c.fillStyle = 'rgba(255,255,255,.18)'; for (let i = 0; i < 160; i++) { ell(c, (i * 97) % W, wy + (i * 53) % (H - wy), 1.2, 1.2); c.fill(); } }
+    if (R.floor === 4) { c.fillStyle = 'rgba(0,0,0,.12)'; for (let i = 0; i < 140; i++) { ell(c, (i * 97) % W, wy + (i * 53) % (H - wy), 1.4, 1); c.fill(); } }
+    if (R.floor === 5) { c.strokeStyle = 'rgba(255,255,255,.7)'; c.lineWidth = 3; for (let x = -H; x < W; x += 70) { c.beginPath(); c.moveTo(x, H); c.lineTo(x + 40, wy); c.stroke(); } }
+    if (R.floor === 6) { c.fillStyle = 'rgba(255,255,255,.1)'; for (let i = 0; i < 180; i++) { ell(c, (i * 97) % W, wy + (i * 53) % (H - wy), 1.2, 1.2); c.fill(); } }
     if (R.floor === 3) { c.strokeStyle = 'rgba(160,120,40,.45)'; for (let i = 0; i < 120; i++) { const x = (i * 131) % W, y = wy + (i * 71) % (H - wy); c.beginPath(); c.moveTo(x, y); c.lineTo(x + 8, y - 3); c.stroke(); } }
     // baseboard + side shading for a little depth
     c.fillStyle = '#8a5a34'; c.fillRect(0, wy - 6, W, 8); c.strokeStyle = INK; c.lineWidth = 1.5; c.beginPath(); c.moveTo(0, wy + 2); c.lineTo(W, wy + 2); c.stroke();
@@ -2437,7 +2597,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
   const insidePigs = new Map();
   function insideResidents(all) { if (!insideB) return []; const r = residents(); return G.pigs.filter(p => r.get(p.id) === insideB && (all || (!p.trip && pigMap(p) === 'home' && p.state !== 'admitted'))); }
   function insideTick(dt) {
-    if (view !== 'inside' || !insideB) return;
+    if (view !== 'inside' || !insideB || isWork(insideB)) return;
     const dk = darkness(), spots = [];
     for (const i of insideB.room.items) { if (i.k === 'bed') spots.push([i.x * T + 22, i.y * T + 24], [i.x * T + 58, i.y * T + 24]); if (i.k === 'hidey') spots.push([i.x * T + 20, i.y * T + 34]); if (i.k === 'couch') spots.push([i.x * T + 40, i.y * T + 22]); }
     insideResidents().forEach((p, idx) => {
@@ -3024,7 +3184,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
   const cam = () => cams[view] || cams.home;
   function camHome(v) { const c0 = cams[v], p = iso(9 * T, 6.5 * T); c0.x = p.x; c0.y = p.y; c0.z = Math.max(.5, Math.min(1, vw / 980)); }
   function clampCam(cm) {
-    const xs = [-ROWS * HW - 200, COLS * HW + 200], ys = [-60, (COLS + ROWS) * HH + 60];
+    const xs = [-(ROWS + GPAD + 2) * HW, (COLS + GPAD + 2) * HW], ys = [-(GPAD + 2) * HH, (COLS + ROWS + GPAD) * HH];
     cm.x = Math.max(xs[0], Math.min(xs[1], cm.x)); cm.y = Math.max(ys[0], Math.min(ys[1], cm.y)); cm.z = Math.max(.4, Math.min(2.2, cm.z));
   }
   const scrToIso = (sx, sy) => { const cm = cam(); return { x: (sx - vw / 2) / cm.z + cm.x, y: (sy - vh / 2) / cm.z + cm.y }; };
@@ -3034,8 +3194,8 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
 
   // ---------- ground (cached per map + season) ----------
   const groundCache = {};
-  const GPAD = 7, GS = 1.5; // tiles of water/bridge margin, cache resolution
-  function groundBounds() { return { x0: -(ROWS + GPAD) * HW, y0: -GPAD * HH - 40, x1: (COLS + GPAD) * HW, y1: (COLS + ROWS + GPAD) * HH + 60 }; }
+  const GPAD = 7, NB = 7, GS = 1.5; // bridge length, neighbour-town strip, cache resolution
+  function groundBounds() { return { x0: -(ROWS + GPAD + NB + 2) * HW, y0: -(GPAD + NB + 4) * HH - 80, x1: (COLS + GPAD + NB + 2) * HW, y1: (COLS + ROWS + GPAD + NB + 4) * HH + 60 }; }
   function buildGround(mapName) {
     const gb = groundBounds(), cv = document.createElement('canvas');
     cv.width = Math.ceil((gb.x1 - gb.x0) * GS); cv.height = Math.ceil((gb.y1 - gb.y0) * GS);
@@ -3055,6 +3215,33 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
       c.setLineDash([8, 7]); c.strokeStyle = '#f2c94c'; c.lineWidth = 1.6; { const a = IP(O, u0, (v0 + v1) / 2), b2 = IP(O, u1, (v0 + v1) / 2); c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(b2[0], b2[1]); c.stroke(); } c.setLineDash([]);
     };
     if (city) bridge(-GPAD, 0, ROAD[0], ROAD[ROAD.length - 1] + 1); else bridge(COLS, COLS + GPAD, HOME_ROAD, HOME_ROAD + 1);
+    // the other town, waiting at the far end of the bridge
+    {
+      const r0 = city ? ROAD[0] : HOME_ROAD, r1 = city ? ROAD[ROAD.length - 1] + 1 : HOME_ROAD + 1;
+      const u0 = city ? -GPAD - NB : COLS + GPAD, u1 = city ? -GPAD : COLS + GPAD + NB, v0 = r0 - 6, v1 = r1 + 4;
+      const otherCity = !city, D2 = 34;
+      poly(c, [IP(O, u0, v1), IP(O, u1, v1), [IP(O, u1, v1)[0], IP(O, u1, v1)[1] + D2], [IP(O, u0, v1)[0], IP(O, u0, v1)[1] + D2]], otherCity ? '#9a9387' : '#a0714a', 'rgba(40,28,18,.35)');
+      poly(c, [IP(O, u1, v0), IP(O, u1, v1), [IP(O, u1, v1)[0], IP(O, u1, v1)[1] + D2], [IP(O, u1, v0)[0], IP(O, u1, v0)[1] + D2]], otherCity ? '#7d776c' : '#7e5638', 'rgba(40,28,18,.35)');
+      for (let y = v0; y < v1; y++) for (let x = u0; x < u1; x++) {
+        const road = y >= r0 && y < r1;
+        const col = road ? (otherCity ? '#585c63' : '#9a958c') : otherCity ? ((x + y) % 2 ? '#d9d2c5' : '#d2cabd') : shade(S.grass, (x + y) % 2 ? .05 : -.02);
+        poly(c, [IP(O, x, y), IP(O, x + 1, y), IP(O, x + 1, y + 1), IP(O, x, y + 1)], col, road ? 'rgba(0,0,0,.08)' : otherCity ? 'rgba(120,105,90,.18)' : 'rgba(255,255,255,.07)');
+      }
+      { const a = IP(O, u0, (r0 + r1) / 2), b2 = IP(O, u1, (r0 + r1) / 2); c.setLineDash([8, 7]); c.strokeStyle = otherCity ? '#f2c94c' : 'rgba(255,255,255,.75)'; c.lineWidth = 1.6; c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(b2[0], b2[1]); c.stroke(); c.setLineDash([]); }
+      // a few landmarks so you can tell which town it is
+      const spots = [[1, -4], [3, -3], [5, -5], [2, 2], [5, 2], [4, -1.8]];
+      spots.forEach(([du, dv], i) => {
+        const u = u0 + du, v = (dv < 0 ? r0 : r1) + dv; if (v < v0 || v + 1 > v1) return;
+        if (otherCity) { const h = 60 + (i * 37) % 70; box(c, O, u + .15, v + .15, .7, .7, 0, h, ['#7fa8c9', '#4b7fb0', '#9fb7c9'][i % 3]); windowsL(c, O, v + .85, u + .2, u + .8, 6, h - 4, 3, Math.round(h / 12), .2); windowsR(c, O, u + .85, v + .2, v + .8, 6, h - 4, 3, Math.round(h / 12), .2); }
+        else if (i % 3 === 0) { cyl(c, O, u + .5, v + .5, .25, 0, 40, '#ece4d6'); cone(c, O, u + .5, v + .5, .3, 40, 22, '#e08aa0'); }
+        else { box(c, O, u + .2, v + .25, .6, .55, 0, 16, '#fbf6ee'); gableV(c, O, u + .2, v + .25, .6, .55, 16, 12, ['#b4654a', '#6d7fd6', '#5fb0a8'][i % 3], '#fbf6ee'); }
+      });
+      // welcome sign at the end of the bridge
+      const [sx, sy] = IP(O, city ? -GPAD - .2 : COLS + GPAD + .2, r0 - .3, 0);
+      c.fillStyle = '#5c6670'; c.fillRect(sx - 1, sy - 24, 3, 24);
+      c.font = 'bold 9px Nunito, sans-serif'; const label = city ? '🏡 Home Town' : '🏙️ Job City', lw = c.measureText(label).width + 12;
+      c.fillStyle = '#2f7a3a'; rr(c, sx - lw / 2, sy - 38, lw, 16, 4); c.fill(); c.strokeStyle = '#fff'; c.lineWidth = 1.2; c.stroke(); c.fillStyle = '#fff'; c.textAlign = 'center'; c.fillText(label, sx, sy - 27);
+    }
     // tiles
     for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
       const road = isRoad(mapName, x, y), n = ((x * 73856093) ^ (y * 19349663)) & 7;
@@ -3186,7 +3373,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
       const hb = { type: tool, x: hover.x, y: hover.y }; items.push({ d: hb.x + hb.y + sz(tool), f: () => { c.globalAlpha = .6; isoBuilding(c, hb, iso(hb.x * T, hb.y * T)); c.globalAlpha = 1; } });
     }
     for (const p of G.pigs) {
-      if (p.trip && pigMap(p) === view) { const tr = p.trip, P = iso(tr.x, tr.y); items.push({ d: dw(tr.x, tr.y), f: () => drawCar(c, P.x, P.y, tr.dir, p.car, p.skin, true, tr.spin) }); }
+      if (p.trip && pigMap(p) === view) { const tr = p.trip, P = iso(tr.x, tr.y), u = tr.x / T, far = view === 'home' ? u - (COLS + GPAD + 2) : -(GPAD + 2) - u, al = Math.max(0, Math.min(1, 1 - far / 4)); if (al > 0) items.push({ d: dw(tr.x, tr.y), f: () => { c.globalAlpha = al; drawCar(c, P.x, P.y, tr.dir, p.car, p.skin, true, tr.spin); c.globalAlpha = 1; } }); }
       else if (view === 'city' && !p.trip && pigMap(p) === 'city' && p.park) { const P = iso(p.park.x, p.park.y); items.push({ d: dw(p.park.x, p.park.y), f: () => drawCar(c, P.x, P.y, p.park.y < 240 ? -1 : 1, p.car, p.skin, false) }); }
     }
     if (view === 'home') {
