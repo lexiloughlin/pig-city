@@ -17,6 +17,7 @@ Founders: Toki, Mochi, Poke, Miso Soup and Masaki (who runs Masaki Capital).
 - 🌉 The bridge links Home Town and Job City, so you can watch pigs drive between towns
 - 🏡 Sims-style houses: every castle has real rooms (living room, kitchen, bedroom, bathroom, playroom) with walls up / cutaway / down, per-room wallpaper and floors, kitchen and bath furniture, and pigs who walk room to room and sleep in their beds
 - 🛋️ Room view: click any room to step inside a sticker-style room box and decorate it, with bedroom, kitchen, sweets & café and wall decor stickers, wall trims (wainscot, scallops), checker and gingham floors
+- 🔄 Turn furniture to face either way: press R (or the Turn button) before placing, or use the 🔄 Turn tool on furniture already in the room
 - ⛶ Big map mode: a much bigger map window, plus a full-width toggle
 - 🏰 Castle interiors: go inside any castle, pick wallpaper and floors, and place beds, hidey huts, couches and fairy lights. Cozy rooms keep pigs happy, and they sleep in their beds at night
 - 🎺 Town events like the Hay Festival, Pig Parade and Market Boom

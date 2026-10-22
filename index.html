@@ -573,7 +573,8 @@ body.bigmap #zBig { background: var(--wood-dark); color: #fff; }
     clock:   { name: 'Clock', ic: '🕰️', cat: 'wall', cost: 8, cozy: 1 },
     shelf:   { name: 'Shelf', ic: '📚', cat: 'wall', cost: 10, cozy: 1, w: 2 },
     lights:  { name: 'Fairy Lights', ic: '✨', cat: 'wall', cost: 12, cozy: 2, w: 3 },
-    remove:  { name: 'Remove', ic: '🧹', cat: 'tool', cost: 0, desc: 'Click furniture to put it away (refunds half)' }
+    remove:  { name: 'Remove', ic: '🧹', cat: 'tool', cost: 0, desc: 'Click furniture to put it away (refunds half)' },
+    turn:    { name: 'Turn', ic: '🔄', cat: 'tool', cost: 0, desc: 'Click furniture to turn it to face the other way' }
   };
   const IN_CATS = [['floor', '🛋️ Furniture'], ['wall', '🖼️ Wall decor'], ['style', '🎨 Walls & floor'], ['tool', '🛠️ Tools']];
   const WALLS = [['#f7dfe2', 'Pink'], ['#e3efd9', 'Mint'], ['#dfe8f7', 'Sky'], ['#f6ead0', 'Butter'], ['#e8dcf2', 'Lilac'], ['#2f3440', 'Night'], ['#b9bdc4', 'Steel'], ['#f4f6f8', 'White'], ['#f5e6d3', 'Cream'], ['#ffe8a3', 'Lemon']];
@@ -869,8 +870,8 @@ body.bigmap #zBig { background: var(--wood-dark); color: #fff; }
     Object.entries(defs).filter(([, b]) => (isHouse() ? (b.hcat || b.cat) === cat : b.cat === cat) && !(b.house && view === 'inside' && !isHouse())).forEach(([k, b]) => {
       const el = document.createElement('button');
       el.className = 'tool'; el.dataset.k = k; el.setAttribute('aria-pressed', 'false'); el.title = b.desc || `Coziness +${b.cozy}`;
-      el.innerHTML = `${isHouse() && k !== 'remove' ? '<canvas class="thumb" width="168" height="120"></canvas>' : `<span class="ic" aria-hidden="true">${b.ic}</span>`}<b>${b.name}</b>${b.cost ? `<span class="cost">${b.cost} 🪙</span>` : '<span class="cost">free</span>'}`;
-      if (isHouse() && k !== 'remove') furnThumb(k, el.querySelector('canvas'));
+      el.innerHTML = `${isHouse() && k !== 'remove' && k !== 'turn' ? '<canvas class="thumb" width="168" height="120"></canvas>' : `<span class="ic" aria-hidden="true">${b.ic}</span>`}<b>${b.name}</b>${b.cost ? `<span class="cost">${b.cost} 🪙</span>` : '<span class="cost">free</span>'}`;
+      if (isHouse() && k !== 'remove' && k !== 'turn') furnThumb(k, el.querySelector('canvas'));
       el.addEventListener('click', () => { tool = tool === k ? null : k; sfx('tap'); syncTools(); });
       el.addEventListener('pointerenter', () => { hoverTool = k; syncTools(); });
       el.addEventListener('pointerleave', () => { hoverTool = null; syncTools(); });
@@ -887,7 +888,7 @@ body.bigmap #zBig { background: var(--wood-dark); color: #fff; }
     if (view === 'inside' && cat === 'style') return;
     const show = (hoverTool && TD(hoverTool) ? hoverTool : null) || (tool && TD(tool) ? tool : null);
     if (view === 'inside') {
-      $('toolHint').innerHTML = show ? (show === 'remove' ? 'Click furniture to put it away (you get half the coins back).' : `<b>${F[show].ic} ${F[show].name}</b> · ${F[show].cost} 🪙 · Coziness +${F[show].cozy}${F[show].cat === 'wall' ? ' · goes on the wall' : ''}${F[show].w > 1 ? ` · ${F[show].w} tiles wide` : ''}`)
+      $('toolHint').innerHTML = show ? (show === 'remove' ? 'Click furniture to put it away (you get half the coins back).' : show === 'turn' ? 'Click any furniture in the house to turn it to face the other way.' : `<b>${F[show].ic} ${F[show].name}</b> · ${F[show].cost} 🪙 · Coziness +${F[show].cozy}${F[show].cat === 'wall' ? ' · goes on the wall' : ''}${F[show].w > 1 ? ` · ${F[show].w} tiles wide` : ''}${isHouse() && F[show].cat !== 'wall' && show === tool ? ` · facing ${placeRot ? 'right ↘' : 'left ↙'} <button class="btn" id="turnBtn" style="padding:2px 10px;font-size:13px;margin-left:6px">🔄 Turn (R)</button>` : ''}`)
         : isHouse() ? (houseRoom ? `Decorating the ${houseRoom}: pick furniture, then click a spot in the room. Wall decor goes on the two back walls.` : 'Click any room to step inside and decorate it. Or pick furniture and click a floor tile. Press 🧱 for walls up, cutaway or down.') : 'Pick furniture, then click the room to place it. Cozier rooms keep the pigs who live here happier. Click a pig to check on it.';
       return;
     }
@@ -1261,6 +1262,7 @@ body.bigmap #zBig { background: var(--wood-dark); color: #fff; }
   });
   window.addEventListener('keydown', e => {
     if (e.key === 'Escape') { if (!$('tutorial').hidden) closeTut(); tool = null; syncTools(); }
+    if ((e.key === 'r' || e.key === 'R') && isHouse() && !/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)) turnPlacing();
     if (e.key === ' ' && !/INPUT|SELECT|TEXTAREA|BUTTON/.test(document.activeElement.tagName)) { e.preventDefault(); paused = !paused; syncSpeed(); }
     if (!/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName) && /^(arrow(left|right|up|down)|[wasd])$/.test(e.key.toLowerCase()) && (view === 'home' || view === 'city' || isHouse())) { keysDown.add(e.key.toLowerCase()); if (e.key.startsWith('Arrow')) e.preventDefault(); }
     if ((e.key === '+' || e.key === '=') && (view === 'home' || view === 'city' || isHouse())) zoomAt(vw / 2, vh / 2, 1.2);
@@ -1436,7 +1438,7 @@ body.bigmap #zBig { background: var(--wood-dark); color: #fff; }
     for (const it of its) if (F[it.k].cat === 'wall') drawFurn(c, it);
     for (const it of its) if (F[it.k].under) drawFurn(c, it);
     // hover preview
-    if (hover && tool && tool !== 'remove' && F[tool]) {
+    if (hover && tool && tool !== 'remove' && tool !== 'turn' && F[tool]) {
       if (F[tool].cat === 'wall' && hover.y < WALL_R) hover.y = 0;
       const ok = furnFits(tool, hover.x, hover.y) && G.coins >= F[tool].cost, w = F[tool].w || 1;
       c.fillStyle = ok ? 'rgba(255,255,255,.5)' : 'rgba(217,69,90,.3)'; rr(c, hover.x * T + 2, hover.y * T + 2 + (F[tool].cat === 'wall' ? 22 : 0), w * T - 4, T - 4, 6); c.fill();
@@ -1496,7 +1498,7 @@ body.bigmap #zBig { background: var(--wood-dark); color: #fff; }
       R.items.splice(R.items.indexOf(it), 1); const back = Math.floor(F[it.k].cost / 2); G.coins += back;
       popup(tx * T + T / 2, ty * T + 8, `+${back} 🪙`, INK, 'inside'); sfx('tap'); hudRes(); syncTools(); save(); return;
     }
-    if (tool && F[tool]) {
+    if (tool && F[tool] && F[tool].cat !== 'tool') {
       if (!furnFits(tool, tx, ty)) { toast(F[tool].cat === 'wall' ? 'Wall decor goes on the wall (the top part of the room).' : 'Furniture goes on the floor, and that spot is taken.'); return; }
       if (G.coins < F[tool].cost) { toast(`You need ${F[tool].cost} 🪙 for a ${F[tool].name}.`); return; }
       G.coins -= F[tool].cost; R.items.push({ k: tool, x: tx, y: ty }); G.stats.furn = (G.stats.furn || 0) + 1; sfx('build');
@@ -3522,16 +3524,17 @@ body.bigmap #zBig { background: var(--wood-dark); color: #fff; }
     }
     return H;
   }
-  const fDims = k => ({ w: F[k].w || 1, d: F[k].d || 1 });
+  const fDims = (k, r) => r ? { w: F[k].d || 1, d: F[k].w || 1 } : { w: F[k].w || 1, d: F[k].d || 1 };
+  let placeRot = 0; // direction for the next piece of furniture: 0 faces down-left, 1 faces down-right
   function houseItemAt(b, x, y, under) {
     const its = b.house.items;
-    for (let i = its.length - 1; i >= 0; i--) { const it = its[i]; if (it.wall) continue; const { w, d } = fDims(it.k); if (x >= it.x && x < it.x + w && y >= it.y && y < it.y + d && (under === undefined || !!F[it.k].under === under)) return it; }
+    for (let i = its.length - 1; i >= 0; i--) { const it = its[i]; if (it.wall) continue; const { w, d } = fDims(it.k, it.r); if (x >= it.x && x < it.x + w && y >= it.y && y < it.y + d && (under === undefined || !!F[it.k].under === under)) return it; }
     return null;
   }
-  function houseFits(b, k, x, y) {
-    const pl = planOf(b), { w, d } = fDims(k), r = roomAt(pl, x, y);
+  function houseFits(b, k, x, y, rot, ignore) {
+    const pl = planOf(b), { w, d } = fDims(k, rot), r = roomAt(pl, x, y);
     if (!r || x + w > r.x + r.w || y + d > r.y + r.h) return false;
-    for (let i = 0; i < w; i++) for (let j = 0; j < d; j++) if (houseItemAt(b, x + i, y + j, !!F[k].under)) return false;
+    for (let i = 0; i < w; i++) for (let j = 0; j < d; j++) { const q = houseItemAt(b, x + i, y + j, !!F[k].under); if (q && q !== ignore) return false; }
     return true;
   }
   // wall decor hangs on a room's back walls (the ones you can see)
@@ -3549,8 +3552,9 @@ body.bigmap #zBig { background: var(--wood-dark); color: #fff; }
   }
   // ---------- furniture art (isometric) ----------
   function isoFurn(c, it, o, ghost) {
-    const k = it.k, x = it.x, y = it.y, { w, d } = fDims(k), t = G.time || 0, night = darkness() > .4;
-    c.save(); c.lineJoin = 'round';
+    // turned furniture: draw it with u/v swapped and mirror the picture left-to-right, so its front faces down-right
+    const k = it.k, x = it.r ? it.y : it.x, y = it.r ? it.x : it.y, { w, d } = fDims(k), t = G.time || 0, night = darkness() > .4;
+    c.save(); c.lineJoin = 'round'; if (it.r) { c.translate(2 * o.x, 0); c.scale(-1, 1); }
     switch (k) {
       case 'rug': poly(c, [IP(o, x + .1, y + .1), IP(o, x + w - .1, y + .1), IP(o, x + w - .1, y + d - .1), IP(o, x + .1, y + d - .1)], '#c96a85', EDGE); poly(c, [IP(o, x + .3, y + .3), IP(o, x + w - .3, y + .3), IP(o, x + w - .3, y + d - .3), IP(o, x + .3, y + d - .3)], null, '#ffd36b', 2); break;
       case 'bed': box(c, o, x + .1, y + .15, w - .2, .7, 0, 7, '#d9b38c'); box(c, o, x + .15, y + .2, w - .3, .6, 7, 5, '#fffaf2'); box(c, o, x + .9, y + .18, w - 1, .64, 9, 4, '#a8784f'); box(c, o, x + .2, y + .25, .3, .24, 12, 4, '#a8784f'); box(c, o, x + .2, y + .51, .3, .24, 12, 4, '#fff1e2'); box(c, o, x + .03, y + .12, .12, .76, 0, 26, '#fff1e2'); for (let i = 0; i < 3; i++) qR(c, o, x + .15, y + .2 + i * .22, y + .36 + i * .22, 14, 24, '#f6e2cf', true); break;
@@ -3627,7 +3631,7 @@ body.bigmap #zBig { background: var(--wood-dark); color: #fff; }
     if (!isHouse()) return;
     const pl = planOf(insideB), H = ensureHouse(insideB), dk = darkness();
     const beds = H.items.filter(i => i.k === 'bed' || i.k === 'hidey' || i.k === 'couch');
-    const spots = []; for (const b of beds) { const { w } = fDims(b.k); for (let i = 0; i < (b.k === 'hidey' ? 1 : w); i++) spots.push([b.x + i + .5, b.y + .55]); }
+    const spots = []; for (const b of beds) { const n = b.k === 'hidey' ? 1 : (F[b.k].w || 1); for (let i = 0; i < n; i++) spots.push(b.r ? [b.x + .55, b.y + i + .5] : [b.x + i + .5, b.y + .55]); }
     houseResidents().forEach((p, idx) => {
       let s = housePigs.get(p.id);
       if (!s) { const e = pl.entry; s = { u: e.s + .5, v: pl.H - .5, path: [], wait: Math.random() * 2, face: 1 }; housePigs.set(p.id, s); }
@@ -3647,7 +3651,7 @@ body.bigmap #zBig { background: var(--wood-dark); color: #fff; }
         s.wait = 2 + Math.random() * 4;
         const r1 = pick(pl.rooms), r0 = roomAt(pl, Math.floor(s.u), Math.floor(s.v)) || pl.rooms[0];
         const fav = H.items.filter(i => !i.wall && roomAt(pl, i.x, i.y) === r1 && i.k !== 'rug');
-        const tgt = fav.length && Math.random() < .6 ? (() => { const f = pick(fav); return [f.x + .5 + (Math.random() - .5) * .3, f.y + (fDims(f.k).d) + .25]; })() : [r1.x + .5 + Math.random() * (r1.w - 1), r1.y + .5 + Math.random() * (r1.h - 1)];
+        const tgt = fav.length && Math.random() < .6 ? (() => { const f = pick(fav); const fd = fDims(f.k, f.r); return f.r ? [f.x + fd.w + .25, f.y + .5 + (Math.random() - .5) * .3] : [f.x + .5 + (Math.random() - .5) * .3, f.y + fd.d + .25]; })() : [r1.x + .5 + Math.random() * (r1.w - 1), r1.y + .5 + Math.random() * (r1.h - 1)];
         tgt[0] = Math.max(r1.x + .3, Math.min(r1.x + r1.w - .3, tgt[0])); tgt[1] = Math.max(r1.y + .3, Math.min(r1.y + r1.h - .3, tgt[1]));
         s.path = roomPath(pl, r0, r1).concat([tgt]);
       }
@@ -3747,8 +3751,8 @@ body.bigmap #zBig { background: var(--wood-dark); color: #fff; }
     for (const it of H.items) if (!it.wall && F[it.k].under && (!RM || inRoomR(RM, it.x, it.y))) isoFurn(c, it, o);
     // hover preview
     if (hover && tool) {
-      if (tool === 'remove') { const it = houseItemAt(b, hover.x, hover.y); if (it) { const { w, d } = fDims(it.k); poly(c, [IP(o, it.x, it.y), IP(o, it.x + w, it.y), IP(o, it.x + w, it.y + d), IP(o, it.x, it.y + d)], 'rgba(217,69,90,.35)', '#d9455a', 2); } }
-      else if (F[tool] && F[tool].cat !== 'wall') { const ok = houseFits(b, tool, hover.x, hover.y) && G.coins >= F[tool].cost, { w, d } = fDims(tool); poly(c, [IP(o, hover.x, hover.y), IP(o, hover.x + w, hover.y), IP(o, hover.x + w, hover.y + d), IP(o, hover.x, hover.y + d)], ok ? 'rgba(255,255,255,.45)' : 'rgba(217,69,90,.3)', ok ? '#fff' : '#d9455a', 2); }
+      if (tool === 'remove' || tool === 'turn') { const it = houseItemAt(b, hover.x, hover.y); if (it) { const { w, d } = fDims(it.k, it.r); poly(c, [IP(o, it.x, it.y), IP(o, it.x + w, it.y), IP(o, it.x + w, it.y + d), IP(o, it.x, it.y + d)], tool === 'turn' ? 'rgba(127,193,234,.35)' : 'rgba(217,69,90,.35)', tool === 'turn' ? '#5aa9e0' : '#d9455a', 2); } }
+      else if (F[tool] && F[tool].cat !== 'wall' && F[tool].cat !== 'tool') { const ok = houseFits(b, tool, hover.x, hover.y, placeRot) && G.coins >= F[tool].cost, { w, d } = fDims(tool, placeRot); poly(c, [IP(o, hover.x, hover.y), IP(o, hover.x + w, hover.y), IP(o, hover.x + w, hover.y + d), IP(o, hover.x, hover.y + d)], ok ? 'rgba(255,255,255,.45)' : 'rgba(217,69,90,.3)', ok ? '#fff' : '#d9455a', 2); }
     }
     // walls, furniture and pigs, sorted back to front
     const items = [];
@@ -3768,8 +3772,8 @@ body.bigmap #zBig { background: var(--wood-dark); color: #fff; }
         for (const it of H.items) if (it.wall === sg.dir && (sg.dir === 'u' ? it.y === sg.k && it.x === sg.s : it.x === sg.k && it.y === sg.s)) wallFurn(c, it, o, h);
       } });
     }
-    for (const it of H.items) if (!it.wall && !F[it.k].under && (!RM || inRoomR(RM, it.x, it.y))) { const { w, d } = fDims(it.k); items.push({ d: it.x + it.y + (w + d) / 2 - .05, f: () => isoFurn(c, it, o) }); }
-    if (hover && tool && F[tool] && F[tool].cat !== 'wall' && tool !== 'remove' && !F[tool].under && houseFits(b, tool, hover.x, hover.y)) { const { w, d } = fDims(tool); items.push({ d: hover.x + hover.y + (w + d) / 2 - .05, f: () => { c.globalAlpha = .55; isoFurn(c, { k: tool, x: hover.x, y: hover.y }, o); c.globalAlpha = 1; } }); }
+    for (const it of H.items) if (!it.wall && !F[it.k].under && (!RM || inRoomR(RM, it.x, it.y))) { const { w, d } = fDims(it.k, it.r); items.push({ d: it.x + it.y + (w + d) / 2 - .05, f: () => isoFurn(c, it, o) }); }
+    if (hover && tool && F[tool] && F[tool].cat !== 'wall' && F[tool].cat !== 'tool' && !F[tool].under && houseFits(b, tool, hover.x, hover.y, placeRot)) { const { w, d } = fDims(tool, placeRot); items.push({ d: hover.x + hover.y + (w + d) / 2 - .05, f: () => { c.globalAlpha = .55; isoFurn(c, { k: tool, x: hover.x, y: hover.y, r: placeRot }, o); c.globalAlpha = 1; } }); }
     if (hover && tool && F[tool] && F[tool].cat === 'wall') { const sp = wallSpot(b, tool, hover.x, hover.y); if (sp) items.push({ d: 999, f: () => { c.globalAlpha = .6; wallFurn(c, Object.assign({ k: tool }, sp), o, 99); c.globalAlpha = 1; } }); }
     for (const p of houseResidents()) {
       const s = housePigs.get(p.id); if (!s) continue;
@@ -3790,7 +3794,7 @@ body.bigmap #zBig { background: var(--wood-dark); color: #fff; }
       c.setTransform(dprNow, 0, 0, dprNow, 0, 0); c.fillStyle = `rgba(22,26,64,${.4 * dk})`; c.fillRect(0, 0, vw, vh);
       setCamTransform(c); c.save(); c.globalCompositeOperation = 'lighter';
       const glow = (x, y, r, a, col = '255,200,110') => { const g2 = c.createRadialGradient(x, y, 0, x, y, r); g2.addColorStop(0, `rgba(${col},${a})`); g2.addColorStop(1, `rgba(${col},0)`); c.fillStyle = g2; c.fillRect(x - r, y - r, r * 2, r * 2); };
-      for (const it of H.items) { const { w, d } = fDims(it.k), [px, py] = it.wall ? (it.wall === 'u' ? IP(o, it.x + w / 2, it.y, 40) : IP(o, it.x, it.y + w / 2, 40)) : IP(o, it.x + w / 2, it.y + d / 2, 20);
+      for (const it of H.items) { const { w, d } = fDims(it.k, it.r), [px, py] = it.wall ? (it.wall === 'u' ? IP(o, it.x + w / 2, it.y, 40) : IP(o, it.x, it.y + w / 2, 40)) : IP(o, it.x + w / 2, it.y + d / 2, 20);
         if (it.k === 'lamp' || it.k === 'nightstand') glow(px, py - 14, 90, .55 * dk); if (it.k === 'lights') glow(px, py, 100, .4 * dk, '255,220,240'); if (it.k === 'tv') glow(px, py, 60, .35 * dk, '170,220,255'); if (it.k === 'stove') glow(px, py, 40, .25 * dk, '255,140,90'); }
       for (const r of pl.rooms) { if (RM && r !== RM) continue; const [px, py] = IP(o, r.x + r.w / 2, r.y + r.h / 2, 30); glow(px, py, 70, .14 * dk); }
       c.restore();
@@ -3816,13 +3820,21 @@ body.bigmap #zBig { background: var(--wood-dark); color: #fff; }
       H.items.splice(H.items.indexOf(it), 1); const back = Math.floor(F[it.k].cost / 2); G.coins += back;
       pop(tx + .5, ty + .5, `+${back} 🪙`, INK); sfx('tap'); hudRes(); syncTools(); renderCozy(); save(); return;
     }
-    if (tool && F[tool]) {
+    if (tool === 'turn') {
+      const it = houseItemAt(b, tx, ty, false) || houseItemAt(b, tx, ty, true);
+      if (!it) { const wi = H.items.find(q => q.wall && Math.hypot(...(([px, py]) => [px - s.x, py - s.y])(q.wall === 'u' ? IP(o, q.x + (F[q.k].w || 1) / 2, q.y, 33) : IP(o, q.x, q.y + (F[q.k].w || 1) / 2, 33))) < 18); if (wi) toast('Wall decor always faces out from the wall it hangs on.'); return; }
+      const nr = it.r ? 0 : 1;
+      if (!houseFits(b, it.k, it.x, it.y, nr, it)) { toast(`The ${F[it.k].name} doesn't have room to turn here. Move it away from the wall or other furniture first.`); return; }
+      if (nr) it.r = 1; else delete it.r;
+      sfx('tap'); pop(tx + .5, ty + .5, '🔄', '#5aa9e0'); save(); return;
+    }
+    if (tool && F[tool] && F[tool].cat !== 'tool') {
       const d = F[tool];
       if (G.coins < d.cost) { toast(`You need ${d.cost} 🪙 for a ${d.name}.`); return; }
       let placed;
       if (RM && roomAt(pl, tx, ty) !== RM) { toast(`You're decorating the ${RM.name}. Click inside this room, or go back to the whole house.`); return; }
       if (d.cat === 'wall') { const spt = wallSpot(b, tool, tx, ty); if (!spt) { toast('Wall decor goes on a back wall: click a floor tile right next to the top-left or top-right wall of a room.'); return; } placed = Object.assign({ k: tool }, spt); }
-      else { if (!houseFits(b, tool, tx, ty)) { toast('That doesn\'t fit there. Furniture has to stay inside one room and not overlap.'); return; } placed = { k: tool, x: tx, y: ty }; }
+      else { if (!houseFits(b, tool, tx, ty, placeRot)) { toast('That doesn\'t fit there. Furniture has to stay inside one room and not overlap. Try 🔄 Turn (R) to face it the other way.'); return; } placed = { k: tool, x: tx, y: ty }; if (placeRot) placed.r = 1; }
       G.coins -= d.cost; H.items.push(placed); G.stats.furn = (G.stats.furn || 0) + 1; sfx('build');
       pop(tx + .5, ty + .5, `Cozy! +${d.cozy} 🛋️`, '#c96a85');
       hudRes(); syncTools(); renderCozy(); save(); return;
@@ -3832,6 +3844,8 @@ body.bigmap #zBig { background: var(--wood-dark); color: #fff; }
     if (best) { selected = best.id; best.hop = .4; const st = housePigs.get(best.id); pop(st.u, st.v, '♥', '#e07a9a'); renderPig(true); listSig = ''; sfx('wheek'); return; }
     if (!RM && !tool) { const r = roomAt(pl, tx, ty); if (r) enterRoom(r.name); }
   }
+  function turnPlacing() { placeRot ^= 1; sfx('tap'); syncTools(); }
+  document.addEventListener('click', e => { if (e.target && e.target.id === 'turnBtn') { e.stopPropagation(); turnPlacing(); } });
   function houseCamHome() { const pl = planOf(insideB), p = { x: (pl.W - pl.H) / 2 * HW, y: (pl.W + pl.H) / 2 * HH - 20 }; cams.inside.x = p.x; cams.inside.y = p.y; cams.inside.z = Math.max(.6, Math.min(1.5, Math.min(vw / ((pl.W + pl.H) * HW + 60), vh / ((pl.W + pl.H) * HH + 120)))); }
 
   // ================= URBAN PLANNING =================
