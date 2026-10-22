@@ -340,6 +340,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
       </div>
       <div class="panel">
         <h2>Residents <span class="tag" id="popTag"></span></h2>
+        <button class="btn ghost" id="babyBtn" style="margin:0 0 8px;font-size:15px"></button>
         <div class="piglist" id="piglist"></div>
       </div>
       <div class="panel">
@@ -748,6 +749,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     pickFriends();
     initMarket();
     initPlanning();
+    if (G.babiesOff === undefined) G.babiesOff = true;
     if (!G.city) { G.city = [{ type: 'office', x: 2, y: 2, t: 0, map: 'city' }]; G.cityNew = true; }
     for (const b of G.city) b.map = 'city';
     G.jd = G.jd || { day: dayNum(), place: {}, pig: {}, total: 0 };
@@ -1039,7 +1041,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
   $('buyVeg').addEventListener('click', buy(12, 'veg', 3));
   $('resetBtn').addEventListener('click', () => {
     if (!confirm('Start a brand new town? Your current town will be gone.')) return;
-    G = newTown(); initExtras(true); stockSig = "x"; drops.length = 0; selBld = null; confetti.length = 0; selected = null; listSig = ''; jobSig = ''; save(); hudRes(); renderPig(); syncTools(); toast('A fresh start! Welcome to your new town.');
+    G = newTown(); initExtras(true); syncBaby(); stockSig = "x"; drops.length = 0; selBld = null; confetti.length = 0; selected = null; listSig = ''; jobSig = ''; save(); hudRes(); renderPig(); syncTools(); toast('A fresh start! Welcome to your new town.');
   });
 
   // ---------- upgrades ----------
@@ -2150,6 +2152,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     checkGoals(dt);
 
     // babies
+    if (G.babiesOff) G.breedT = Math.max(G.breedT, 5);
     G.breedT -= dt;
     if (G.breedT <= 0) {
       G.breedT = sn === 'Spring' ? 15 : sn === 'Winter' ? 30 : 22;
@@ -3929,6 +3932,8 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     drawHoodLabels(c, view); drawOverlayLegend(c);
   }
 
+  function syncBaby() { $('babyBtn').textContent = G.babiesOff ? '🍼 New piglets: paused (tap to resume)' : '🍼 New piglets: on (tap to pause)'; $('babyBtn').setAttribute('aria-pressed', G.babiesOff ? 'true' : 'false'); }
+  $('babyBtn').addEventListener('click', () => { G.babiesOff = !G.babiesOff; syncBaby(); save(); sfx('tap'); toast(G.babiesOff ? '🍼 Piglets paused. Your town stays the same size while you plan.' : '🍼 Piglets are back! Happy pigs will have babies again.'); });
   // ---------- loop ----------
   let last = 0, uiT = 0, saveT = 0;
   function renderBanner() {
@@ -3946,7 +3951,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     requestAnimationFrame(loop);
   }
   document.addEventListener('visibilitychange', () => { if (document.hidden) save(); });
-  setView('home'); hudRes(); renderPig(); hudGoals(); syncSound(); syncSpeed();
+  setView('home'); syncBaby(); hudRes(); renderPig(); hudGoals(); syncSound(); syncSpeed();
   let seen = false, seen2 = false, seen3 = false;
   try { seen = !!localStorage.getItem('pigcity-seen'); seen2 = !!localStorage.getItem('pigcity-seen2'); seen3 = !!localStorage.getItem('pigcity-seen3'); localStorage.setItem('pigcity-seen', '1'); localStorage.setItem('pigcity-seen2', '1'); localStorage.setItem('pigcity-seen3', '1'); } catch (e) {}
   if (!seen) openTut();
