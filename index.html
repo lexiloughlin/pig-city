@@ -86,6 +86,59 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
 .jobrow { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 13px; font-weight: 800; }
 .jobrow select { flex: 1; min-width: 0; font: inherit; font-weight: 700; font-size: 13px; padding: 4px 6px; border: 2px solid var(--ink); border-radius: 10px; background: #fff; color: var(--ink); }
 #pigcanvas { width: 120px; height: 80px; display: block; margin: 0 auto; }
+/* ---- v2: header controls ---- */
+.hdr-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.ctrls { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+.clock { font-family: var(--font-display); font-size: 17px; background: #fff; border: 2px solid var(--ink); border-radius: 999px; padding: 3px 12px; box-shadow: 0 2px 0 var(--ink); white-space: nowrap; }
+.ibtn { font: inherit; font-size: 15px; font-weight: 800; min-width: 34px; height: 32px; padding: 0 8px; border: 2px solid var(--ink); border-radius: 999px; background: #fff; color: var(--ink); cursor: pointer; box-shadow: 0 2px 0 var(--ink); }
+.ibtn[aria-pressed="true"] { background: var(--wood-dark); color: #fff; }
+.ibtn:active { transform: translateY(2px); box-shadow: none; }
+/* ---- v2: build bar ---- */
+.tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 4px; scrollbar-width: thin; }
+.tab { font-family: var(--font-display); font-size: 16px; white-space: nowrap; border: 2px solid var(--fleece-deep); background: #fff; color: var(--ink); border-radius: 999px; padding: 3px 12px; cursor: pointer; }
+.tab[aria-selected="true"] { border-color: var(--ink); background: #fff3e2; box-shadow: 0 2px 0 var(--ink); }
+.tools { grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); gap: 6px; }
+.tool { align-items: center; text-align: center; padding: 6px 4px 5px; gap: 1px; }
+.tool .ic { font-size: 24px; line-height: 1.1; }
+.tool b { font-size: 14px; line-height: 1.05; }
+.tool .cost { font-size: 12px; }
+.hint { min-height: 2.9em; }
+/* ---- v2: stage overlays ---- */
+.banner { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); background: #1f2f5c; color: #fff; border: 2px solid var(--ink); border-radius: 14px; padding: 5px 14px; font-weight: 800; font-size: 13px; box-shadow: 0 3px 0 var(--ink); pointer-events: none; text-align: center; max-width: 92%; }
+.paused { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(59,42,26,.25); font-family: var(--font-display); font-size: 40px; color: #fff; text-shadow: 3px 3px 0 var(--ink); pointer-events: none; }
+.overlay { position: fixed; inset: 0; background: rgba(59,42,26,.45); display: grid; place-items: center; z-index: 10; padding: 16px; }
+.overlay .panel { max-width: 520px; width: 100%; max-height: 90vh; overflow-y: auto; }
+.steps { display: grid; gap: 8px; margin: 6px 0 4px; }
+.step { display: grid; grid-template-columns: 40px 1fr; gap: 10px; align-items: center; background: #fff; border: 2px solid var(--fleece-deep); border-radius: 12px; padding: 7px 10px; font-size: 14px; }
+.step .se { font-size: 26px; text-align: center; }
+/* ---- v2: pig details ---- */
+.traits { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0 2px; justify-content: center; }
+.pill { font-size: 12px; font-weight: 800; background: #fff3e2; border: 1.5px solid var(--wood); border-radius: 999px; padding: 2px 8px; }
+.pill.link { cursor: pointer; border-color: #e07a9a; background: #ffe9ef; font: inherit; font-size: 12px; font-weight: 800; color: var(--ink); }
+.trait-desc { text-align: center; }
+/* ---- v2: stock exchange ---- */
+.stocks { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; }
+.stock { background: #fff; border: 2px solid var(--fleece-deep); border-radius: 12px; padding: 6px 8px; display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto auto auto; gap: 1px 6px; align-items: center; }
+.stock.on { border-color: #1f2f5c; }
+.stock .sym { font-weight: 800; font-size: 13px; }
+.stock .sym small { font-weight: 700; color: var(--muted); }
+.stock .px { font-variant-numeric: tabular-nums; font-weight: 800; font-size: 14px; text-align: right; }
+.up { color: #3c8a2e; } .down { color: var(--alert); }
+.stock canvas { grid-column: 1 / -1; width: 100%; height: 34px; display: block; }
+.stock .own { font-size: 11.5px; line-height: 1.2; color: var(--muted); font-variant-numeric: tabular-nums; }
+.stock .tb { display: flex; gap: 4px; justify-content: flex-end; }
+.mini { font: inherit; font-size: 12px; font-weight: 800; border: 2px solid var(--ink); border-radius: 999px; padding: 1px 9px; cursor: pointer; background: #fff; color: var(--ink); }
+.mini.buy { background: #3c8a2e; color: #fff; } .mini.sell { background: var(--alert); color: #fff; }
+.mini:disabled { opacity: .35; cursor: not-allowed; }
+.pf { display: flex; justify-content: space-between; font-size: 13px; font-weight: 800; margin-bottom: 6px; font-variant-numeric: tabular-nums; }
+.news { font-size: 12px; background: #eef3ff; border: 1.5px dashed #1f2f5c; border-radius: 10px; padding: 5px 8px; margin-top: 6px; color: #1f2f5c; font-weight: 700; }
+@media (max-width: 860px) {
+  header { align-items: start; }
+  .hdr-right { align-items: stretch; width: 100%; }
+  .res, .ctrls { justify-content: flex-start; }
+  .chip { font-size: 13px; padding: 3px 9px; }
+  .toast { font-size: 12px; white-space: normal; text-align: center; border-radius: 14px; }
+}
 </style>
 </head>
 <body>
@@ -95,7 +148,18 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
       <h1>Pig City</h1>
       <div class="title" id="townTitle">Pig Hamlet</div>
     </div>
-    <div class="res" id="res" aria-live="polite"></div>
+    <div class="hdr-right">
+      <div class="ctrls">
+        <span class="clock" id="clock" title="Season, day and time">🌸 Spring · Day 1</span>
+        <button class="ibtn" id="pauseBtn" title="Pause (space)" aria-label="Pause">❚❚</button>
+        <button class="ibtn" data-spd="1" aria-pressed="true" title="Normal speed">1×</button>
+        <button class="ibtn" data-spd="2" aria-pressed="false" title="Fast">2×</button>
+        <button class="ibtn" data-spd="3" aria-pressed="false" title="Super fast">3×</button>
+        <button class="ibtn" id="soundBtn" title="Sound on/off" aria-label="Sound">🔊</button>
+        <button class="ibtn" id="helpBtn" title="How to play" aria-label="How to play">?</button>
+      </div>
+      <div class="res" id="res" aria-live="polite"></div>
+    </div>
   </header>
 
   <div class="main">
@@ -103,11 +167,23 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
       <div class="stage" id="stage">
         <canvas id="c" aria-label="Your guinea pig town. Click pigs to see them, click poop to scoop it, or pick a building and click grass to build."></canvas>
         <div class="toast" id="toast" style="opacity:0"></div>
+        <div class="banner" id="banner" hidden></div>
+        <div class="paused" id="pausedOv" hidden>Paused</div>
       </div>
       <div class="panel">
         <h2>Build</h2>
+        <div class="tabs" id="tabs" role="tablist"></div>
         <div class="tools" id="tools"></div>
-        <p class="small" id="toolHint">Pick something to build, then click an empty patch of grass. Click a pig to see how it's doing. Click and drag across poop to sweep it up (1 🪙 each).</p>
+        <p class="small hint" id="toolHint">Pick something to build, then click an empty patch of grass. Click a pig to see how it's doing. Click and drag across poop to sweep it up (1 🪙 each).</p>
+      </div>
+      <div class="panel" id="stockPanel">
+        <h2>Pig Stock Exchange 📈</h2>
+        <div id="stockLocked" class="small" style="margin-top:0">Build <b>Masaki Capital</b> to open the exchange. Buy shares low, sell them high, and watch the news for hints.</div>
+        <div id="stockOpen" hidden>
+          <div class="pf"><span id="pfVal"></span><span id="pfPL"></span></div>
+          <div class="stocks" id="stocks"></div>
+          <div class="news" id="news"></div>
+        </div>
       </div>
     </div>
 
@@ -127,6 +203,8 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
           <canvas id="pigcanvas" width="240" height="160"></canvas>
           <p class="pigname" id="pName"></p>
           <div class="tag" id="pTag"></div>
+          <div class="traits" id="pTraits"></div>
+          <p class="small trait-desc" id="pTraitDesc"></p>
           <div id="pBars"></div>
           <div class="jobrow"><label for="jobSel">Job</label><select id="jobSel"></select></div>
           <div class="btns">
@@ -155,10 +233,26 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
       </div>
       <div class="panel">
         <h2>How it works</h2>
-        <p class="small" style="margin-top:0">Pigs eat 🌾 and drink 💧 on their own, so keep the fields and water towers going. Happy pigs earn 🪙. When everyone's happy and there's room in the castles, babies are born and your town grows. Grown-up pigs can work at the Café, Salon, Toy Shop or Masaki Capital to earn extra 🪙. Click any building to upgrade it (up to level 3) for a fancier, modern look and better perks. Finish Goals for bonus coins and badges. Hungry, thirsty or lonely pigs get sick, and a Vet helps them recover. Your town saves automatically.</p>
-        <div class="btns"><button class="btn ghost" id="resetBtn">Start a new town</button></div>
+        <p class="small" style="margin-top:0">Pigs eat 🌾 and drink 💧 on their own, so keep the fields and water towers going. Happy pigs earn 🪙, and every pig has a personality, a favorite snack, a best friend and a birthday. Seasons change every 3 days: rain helps gardens and water towers, winter slows the hay. Grown-up pigs can work at the Café, Salon, Toy Shop or Masaki Capital, and once Masaki Capital opens you can trade pig stocks. Click any building to upgrade it. Your town saves automatically.</p>
+        <div class="btns"><button class="btn ghost" id="helpBtn2">How to play</button><button class="btn ghost" id="resetBtn">Start a new town</button></div>
       </div>
     </div>
+  </div>
+</div>
+
+<div class="overlay" id="tutorial" hidden>
+  <div class="panel" role="dialog" aria-modal="true" aria-labelledby="tutTitle">
+    <h2 id="tutTitle">Welcome, Mayor! 🐹</h2>
+    <p class="small" style="margin-top:0">Toki, Mochi, Poke, Miso Soup and Masaki just moved in. Here's how to grow their town:</p>
+    <div class="steps">
+      <div class="step"><span class="se">👆</span><span><b>Click a pig</b> to see its mood, personality and best friend. Pet it or give it a treat.</span></div>
+      <div class="step"><span class="se">🧹</span><span><b>Drag across poop</b> to sweep it up for 1 🪙 each. Messy towns make pigs grumpy.</span></div>
+      <div class="step"><span class="se">🌾</span><span><b>Keep food and water flowing.</b> Build Hay Fields and Water Towers from the Build bar below the map.</span></div>
+      <div class="step"><span class="se">🏰</span><span><b>Happy pigs have babies</b> when there's room in the castles. Grow from Hamlet to Metropolis.</span></div>
+      <div class="step"><span class="se">📈</span><span><b>Build Masaki Capital</b> to give pigs jobs and open the Pig Stock Exchange.</span></div>
+      <div class="step"><span class="se">⏩</span><span>Use <b>❚❚ 1× 2× 3×</b> up top to pause or speed up time. Space bar pauses too.</span></div>
+    </div>
+    <div class="btns"><button class="btn" id="tutGo">Let's play!</button></div>
   </div>
 </div>
 
@@ -209,9 +303,12 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
       c.beginPath(); c.moveTo(21, -10); c.lineTo(28, -4); c.moveTo(21, -4); c.lineTo(28, -10);
       c.lineWidth = 2; c.strokeStyle = skin.dark ? '#fff' : INK; c.stroke();
     } else {
-      c.fillStyle = '#0b0809'; ell(c, 24.5, -7, 3.6, 3.6); c.fill();
-      if (skin.dark) { c.lineWidth = 1; c.strokeStyle = '#6b5a5f'; c.stroke(); }
-      c.fillStyle = '#fff'; ell(c, 25.8, -8.3, 1.3, 1.3); c.fill();
+      if (o.sleep) { c.beginPath(); c.arc(24.5, -8, 3.6, .2, Math.PI - .2); c.lineWidth = 2; c.strokeStyle = skin.dark ? '#fff' : INK; c.stroke(); }
+      else {
+        c.fillStyle = '#0b0809'; ell(c, 24.5, -7, 3.6, 3.6); c.fill();
+        if (skin.dark) { c.lineWidth = 1; c.strokeStyle = '#6b5a5f'; c.stroke(); }
+        c.fillStyle = '#fff'; ell(c, 25.8, -8.3, 1.3, 1.3); c.fill();
+      }
     }
     if (skin.glasses && !o.sad) {
       c.lineWidth = 1.4; c.strokeStyle = INK;
@@ -267,22 +364,29 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
 
   // ---------- buildings ----------
   const B = {
-    hutch:  { name: 'Pig Castle', cost: 70, desc: 'A huge castle with room for 4 pigs' },
-    hay:    { name: 'Hay Field', cost: 30, desc: '+1 🌾 every 6s' },
-    water:  { name: 'Water Tower', cost: 25, desc: '+1 💧 every 5s' },
-    garden: { name: 'Veggie Garden', cost: 55, desc: '+1 🫑 every 10s' },
-    park:   { name: 'Play Park', cost: 80, desc: 'Pigs stay happy longer' },
-    hospital: { name: 'Pig Hospital', cost: 150, desc: 'Sick pigs check in and come out healthy (3 beds)' },
-    vet:    { name: 'Vet', cost: 120, desc: 'Sick pigs heal faster' },
-    bank:   { name: 'Masaki Capital', cost: 150, desc: '+2 🪙 every 4s, 2 analyst jobs' },
-    cafe:   { name: 'Hay Latte Café', cost: 60, desc: '2 jobs: baristas earn 🪙' },
-    salon:  { name: 'Fluff Salon', cost: 90, desc: '2 jobs: stylists pamper pigs' },
-    toys:   { name: 'Toy Shop', cost: 75, desc: '2 jobs: makes the town happier' },
-    sitter: { name: 'Pig Sitter', cost: 90, desc: 'Hires a sitter who pets, feeds & restocks' },
-    roomba: { name: 'Poop Roomba', cost: 60, desc: 'Drives around scooping poop for you' },
-    upgrade: { name: 'Upgrade ⬆', cost: 0, desc: 'Click a building to make it fancier' },
-    bulldoze: { name: 'Bulldoze', cost: 0, desc: 'Remove a building, refunds half' }
+    hutch:  { name: 'Pig Castle', ic: '🏰', cat: 'home', cost: 70, desc: 'A huge castle with room for 4 pigs (needs a 2×2 patch)' },
+    hay:    { name: 'Hay Field', ic: '🌾', cat: 'home', cost: 30, desc: '+1 🌾 every 6s. Slower in winter.' },
+    water:  { name: 'Water Tower', ic: '💧', cat: 'home', cost: 25, desc: '+1 💧 every 5s. Faster when it rains.' },
+    garden: { name: 'Veggie Garden', ic: '🫑', cat: 'home', cost: 55, desc: '+1 🫑 every 10s. Faster when it rains.' },
+    park:   { name: 'Play Park', ic: '🛝', cat: 'home', cost: 80, desc: 'Pigs stay happy longer. Zoomies pigs love it.' },
+    bank:   { name: 'Masaki Capital', ic: '🏦', cat: 'biz', cost: 150, desc: '+2 🪙 every 4s, 2 analyst jobs, and opens the Pig Stock Exchange' },
+    cafe:   { name: 'Hay Latte Café', ic: '☕', cat: 'biz', cost: 60, desc: '2 jobs: baristas earn 🪙' },
+    salon:  { name: 'Fluff Salon', ic: '✂️', cat: 'biz', cost: 90, desc: '2 jobs: stylists pamper pigs' },
+    toys:   { name: 'Toy Shop', ic: '🧸', cat: 'biz', cost: 75, desc: '2 jobs: makes the whole town happier' },
+    hospital: { name: 'Pig Hospital', ic: '🏥', cat: 'help', cost: 150, desc: 'Sick pigs check in and come out healthy (3 beds, 2×2)' },
+    vet:    { name: 'Vet', ic: '🩺', cat: 'help', cost: 120, desc: 'Sick pigs heal faster' },
+    sitter: { name: 'Pig Sitter', ic: '👩‍🌾', cat: 'help', cost: 90, desc: 'Hires a sitter who pets, feeds & restocks' },
+    roomba: { name: 'Poop Roomba', ic: '🤖', cat: 'help', cost: 60, desc: 'Drives around scooping poop for you' },
+    tree:   { name: 'Cherry Tree', ic: '🌸', cat: 'decor', cost: 12, desc: 'Pretty shade. Every decoration makes pigs a little happier.' },
+    flowers: { name: 'Flower Bed', ic: '🌷', cat: 'decor', cost: 8, desc: 'A splash of color. Adds a little happiness.' },
+    bench:  { name: 'Bench', ic: '🪑', cat: 'decor', cost: 15, desc: 'Sleepy pigs love a nap spot. Adds happiness.' },
+    lantern: { name: 'Lantern', ic: '🏮', cat: 'decor', cost: 18, desc: 'Glows at night so pigs feel cozy after dark.' },
+    pond:   { name: 'Pond', ic: '🪷', cat: 'decor', cost: 40, desc: 'A lily pond. Big happiness boost.' },
+    upgrade: { name: 'Upgrade', ic: '⬆️', cat: 'tool', cost: 0, desc: 'Click a building to make it fancier' },
+    bulldoze: { name: 'Bulldoze', ic: '🚜', cat: 'tool', cost: 0, desc: 'Remove a building, refunds half' }
   };
+  const CATS = [['home', '🏡 Homes & food'], ['biz', '💼 Shops & jobs'], ['help', '🧑‍⚕️ Helpers'], ['decor', '🌷 Decor'], ['tool', '🛠️ Tools']];
+  const DECOR = { tree: 1, flowers: .6, bench: 1, lantern: 1.2, pond: 2.5 };
   const RATE = { hay: 6, water: 5, garden: 10, bank: 4 };
   const JOBS = {
     cafe:  { title: 'Barista', place: 'Hay Latte Café', emoji: '☕', pay: 2, every: 5 },
@@ -320,8 +424,48 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
       case 'sitter': return `${l} pig sitter${l > 1 ? 's' : ''}`;
       case 'roomba': return ['Normal speed', 'Fast', 'Super fast'][l - 1];
     }
+    if (DECOR[t]) return t === 'lantern' ? 'Decoration · glows at night, cozy pigs' : 'Decoration · makes pigs happier';
     return '';
   }
+
+  // ---------- personalities ----------
+  const TRAITS = {
+    foodie:  { e: '🍽️', name: 'Foodie', desc: 'Lives for snacks. Treats make this pig extra happy, but it gets hungry faster.' },
+    social:  { e: '🦋', name: 'Social Butterfly', desc: 'Loves company. Gets a big mood boost hanging out with its best friend.' },
+    sleepy:  { e: '😴', name: 'Sleepy', desc: 'Naps a lot, especially at night and on benches. Stays calm, so joy drops slower.' },
+    zoomies: { e: '⚡', name: 'Zoomies', desc: 'Runs fast and popcorns when happy. Play Parks count double for this pig.' },
+    brainy:  { e: '🧠', name: 'Brainy', desc: 'A natural analyst. Earns 50% more at Masaki Capital.' },
+    fancy:   { e: '💅', name: 'Fancy', desc: 'Loves being pampered. Earns more as a stylist and loves decorations.' },
+    shy:     { e: '🌷', name: 'Shy', desc: 'Prefers quiet. Messy poop bothers this pig less, but parties are a lot.' }
+  };
+  const TRAIT_KEYS = Object.keys(TRAITS);
+  const FOODS = [['🥕', 'carrots'], ['🫑', 'bell peppers'], ['🥬', 'romaine'], ['🍓', 'strawberries'], ['🥒', 'cucumber'], ['🌿', 'cilantro'], ['🍉', 'watermelon'], ['🍎', 'apple slices']];
+  const FOUNDER_TRAITS = { Toki: ['foodie', 0], Mochi: ['sleepy', 2], Poke: ['zoomies', 3], 'Miso Soup': ['social', 4], Masaki: ['brainy', 7] };
+  const FOUNDER_FRIENDS = { Toki: 'Mochi', Mochi: 'Toki', Poke: 'Miso Soup', 'Miso Soup': 'Poke', Masaki: 'Poke' };
+  const has = (p, t) => p.trait === t;
+
+  // ---------- time & seasons ----------
+  const DAY = 240, SEASON_DAYS = 3, YEAR = SEASON_DAYS * 4;
+  const SEASONS = [
+    { name: 'Spring', e: '🌸', grass: '#b9dc8a', check: 'rgba(255,255,255,.12)', flowers: ['#fff', '#ffd6e0', '#ffb7c9', '#d8c9f5'] },
+    { name: 'Summer', e: '☀️', grass: '#a8d371', check: 'rgba(255,255,255,.10)', flowers: ['#fff1a8', '#ffd36b', '#fff', '#ff9e6b'] },
+    { name: 'Autumn', e: '🍂', grass: '#c9c47e', check: 'rgba(255,255,255,.10)', flowers: ['#e0812f', '#c9472f', '#e9b93b', '#a8642a'] },
+    { name: 'Winter', e: '❄️', grass: '#e6eef0', check: 'rgba(180,200,215,.18)', flowers: ['#fff', '#fff', '#dfe9f2', '#cfe0ee'] }
+  ];
+  const WEATHER = { sun: { e: '☀️', name: 'Sunny' }, cloud: { e: '⛅', name: 'Cloudy' }, rain: { e: '🌧️', name: 'Rainy' }, snow: { e: '🌨️', name: 'Snowy' } };
+  const dayNum = () => Math.floor((G.clock || 0) / DAY) + 1;
+  const seasonIdx = () => Math.floor(((dayNum() - 1) % YEAR) / SEASON_DAYS);
+  const season = () => SEASONS[seasonIdx()];
+  const hourNow = () => ((G.clock || 0) % DAY / DAY * 24 + 7) % 24;
+  function darkness() { // 0 = bright day, 1 = deep night
+    const h = hourNow();
+    if (h >= 6.5 && h < 18) return 0;
+    if (h >= 18 && h < 20.5) return (h - 18) / 2.5;
+    if (h >= 4 && h < 6.5) return 1 - (h - 4) / 2.5;
+    return 1;
+  }
+  const yearDay = d => ((d - 1) % YEAR) + 1;
+  const bdayLabel = d => `${SEASONS[Math.floor((d - 1) / SEASON_DAYS)].name} ${((d - 1) % SEASON_DAYS) + 1}`;
 
   // ---------- map ----------
   const COLS = 16, ROWS = 11, T = 40, W = COLS * T, H = ROWS * T;
@@ -348,8 +492,48 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     return g;
   }
   function makePig(name, skin, x, y, adult) {
-    return { id: nextId++, name, skin, x, y, tx: x, ty: y, wait: Math.random() * 2, face: 1, food: 85, water: 85, joy: 80, health: 100, age: adult ? 999 : 0, petCd: 0, poopT: 6 + Math.random() * 10, coinT: 3 + Math.random() * 6, hop: 0 };
+    const p = { id: nextId++, name, skin, x, y, tx: x, ty: y, wait: Math.random() * 2, face: 1, food: 85, water: 85, joy: 80, health: 100, age: adult ? 999 : 0, petCd: 0, poopT: 6 + Math.random() * 10, coinT: 3 + Math.random() * 6, hop: 0 };
+    givePersonality(p);
+    return p;
   }
+  function givePersonality(p, bday) {
+    const f = FOUNDER_TRAITS[p.name];
+    if (!p.trait) p.trait = f && p.age >= 999 ? f[0] : pick(TRAIT_KEYS);
+    if (p.fav === undefined) p.fav = f && p.age >= 999 ? f[1] : Math.floor(Math.random() * FOODS.length);
+    if (!p.bday) p.bday = bday || 1 + Math.floor(Math.random() * YEAR);
+  }
+  function pickFriends() {
+    for (const p of G.pigs) {
+      if (p.friend && G.pigs.some(q => q.id === p.friend)) continue;
+      const named = FOUNDER_FRIENDS[p.name] && G.pigs.find(q => q.name === FOUNDER_FRIENDS[p.name] && q !== p);
+      const lonely = G.pigs.filter(q => q !== p && !G.pigs.some(r => r.friend === q.id));
+      const pool = lonely.length ? lonely : G.pigs.filter(q => q !== p);
+      const f = named || (pool.length ? pick(pool) : null);
+      p.friend = f ? f.id : null;
+    }
+  }
+  const friendOf = p => p.friend && G.pigs.find(q => q.id === p.friend);
+
+  // ---------- stock market ----------
+  const STOCKS = [
+    { s: 'HAY', name: 'Hay Holdings', base: 20, vol: .10, drift: .012, tip: 'steady, pays a little 🌾 dividend' },
+    { s: 'WTR', name: 'Wheek Water Co.', base: 15, vol: .14, drift: .010, tip: 'loves rainy weather' },
+    { s: 'VEG', name: 'Veggie Ventures', base: 30, vol: .20, drift: .015, tip: 'grows with gardens' },
+    { s: 'FLUF', name: 'Fluff Corp', base: 45, vol: .26, drift: .018, tip: 'up when pigs are pampered' },
+    { s: 'ZOOM', name: 'Zoomies Motors', base: 60, vol: .45, drift: .025, tip: 'electric pig cars, very swingy' },
+    { s: 'POOP', name: 'Roomba Robotics', base: 8, vol: .60, drift: .020, tip: 'a meme stock, wild rides' }
+  ];
+  const HIST = 80;
+  function initMarket() {
+    G.mkt = G.mkt || { st: {}, realized: 0, trades: 0, news: '', newsT: 20, tickT: 0 };
+    for (const k of STOCKS) {
+      if (G.mkt.st[k.s]) continue;
+      const hist = []; let x = (Math.random() - .5) * .3;
+      for (let i = 0; i < HIST; i++) { x += -.08 * x + k.vol * .25 * gauss(); hist.push(+(k.base * Math.exp(x)).toFixed(2)); }
+      G.mkt.st[k.s] = { x, base: k.base, p: hist[HIST - 1], hist, own: 0, cost: 0, shock: 0 };
+    }
+  }
+  function gauss() { let u = 0, v = 0; while (!u) u = Math.random(); while (!v) v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
   function load() {
     try {
       const s = JSON.parse(localStorage.getItem('pigcity-v1') || 'null');
@@ -361,7 +545,16 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
   function initExtras(fresh) {
     G.prod = G.prod || {};
     for (const p of G.pigs) if (p.name === 'Masaki' && p.age >= 999 && p.skin && p.skin.suit) p.banker = true;
-    G.stats = Object.assign({ ups: 0, scoop: 0, poop: 0, pets: 0, treats: 0, built: 0, healed: 0, hires: 0, jobPay: 0 }, G.stats);
+    G.stats = Object.assign({ ups: 0, scoop: 0, poop: 0, pets: 0, treats: 0, built: 0, healed: 0, hires: 0, jobPay: 0, decor: 0, parties: 0, events: 0, friendT: 0 }, G.stats);
+    if (G.clock === undefined) G.clock = 0;
+    G.weather = G.weather || { k: 'sun', t: 60 };
+    G.lastDay = G.lastDay || dayNum();
+    G.event = G.event || null;
+    G.eventT = G.eventT === undefined ? DAY * 1.2 : G.eventT;
+    G.speed = [1, 2, 3].includes(G.speed) ? G.speed : 1;
+    for (const p of G.pigs) givePersonality(p);
+    pickFriends();
+    initMarket();
     if (!G.goalsDone) { G.goalsDone = []; if (!fresh) { G.catchup = true; G.stats.built = Math.max(G.stats.built, G.buildings.length - 5); } }
   }
   load();
@@ -410,25 +603,92 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
   // ---------- ui ----------
   const $ = id => document.getElementById(id);
   let tool = null, selected = null, hover = null;
-  const toolsEl = $('tools');
-  Object.entries(B).forEach(([k, b]) => {
-    const el = document.createElement('button');
-    el.className = 'tool'; el.dataset.k = k; el.setAttribute('aria-pressed', 'false');
-    el.innerHTML = `<b>${b.name}</b><span>${b.desc}</span>${b.cost ? `<span class="cost">${b.cost} 🪙</span>` : ''}`;
-    el.addEventListener('click', () => { tool = tool === k ? null : k; syncTools(); });
-    toolsEl.appendChild(el);
+  const toolsEl = $('tools'), tabsEl = $('tabs');
+  let cat = 'home', hoverTool = null;
+  CATS.forEach(([k, label]) => {
+    const t = document.createElement('button');
+    t.className = 'tab'; t.dataset.c = k; t.setAttribute('role', 'tab'); t.textContent = label;
+    t.addEventListener('click', () => { cat = k; drawTools(); sfx('tap'); });
+    tabsEl.appendChild(t);
   });
+  function drawTools() {
+    [...tabsEl.children].forEach(t => t.setAttribute('aria-selected', t.dataset.c === cat ? 'true' : 'false'));
+    toolsEl.innerHTML = '';
+    Object.entries(B).filter(([, b]) => b.cat === cat).forEach(([k, b]) => {
+      const el = document.createElement('button');
+      el.className = 'tool'; el.dataset.k = k; el.setAttribute('aria-pressed', 'false'); el.title = b.desc;
+      el.innerHTML = `<span class="ic" aria-hidden="true">${b.ic}</span><b>${b.name}</b>${b.cost ? `<span class="cost">${b.cost} 🪙</span>` : '<span class="cost">free</span>'}`;
+      el.addEventListener('click', () => { tool = tool === k ? null : k; sfx('tap'); syncTools(); });
+      el.addEventListener('pointerenter', () => { hoverTool = k; syncTools(); });
+      el.addEventListener('pointerleave', () => { hoverTool = null; syncTools(); });
+      toolsEl.appendChild(el);
+    });
+    syncTools();
+  }
   function syncTools() {
     [...toolsEl.children].forEach(el => {
       const k = el.dataset.k;
       el.setAttribute('aria-pressed', tool === k ? 'true' : 'false');
       el.disabled = B[k].cost > G.coins && tool !== k;
     });
-    $('toolHint').textContent = tool === 'bulldoze' ? 'Click a building to remove it (you get back half of what you spent).'
-      : tool === 'upgrade' ? 'Click a building to upgrade it: ⭐⭐ Deluxe, then ⭐⭐⭐ Modern. Upgrades look fancier and work better.'
-      : tool ? `Click empty grass to build a ${B[tool].name}. Click the button again to stop building.`
+    const show = hoverTool || tool;
+    $('toolHint').innerHTML = tool === 'bulldoze' && !hoverTool ? 'Click a building to remove it (you get back half of what you spent).'
+      : tool === 'upgrade' && !hoverTool ? 'Click a building to upgrade it: ⭐⭐ Deluxe, then ⭐⭐⭐ Modern. Upgrades look fancier and work better.'
+      : show ? `<b>${B[show].ic} ${B[show].name}</b>${B[show].cost ? ` · ${B[show].cost} 🪙` : ''} · ${B[show].desc}${tool === show && B[show].cost ? '. Click empty grass to place it, or press Esc to stop.' : ''}`
       : "Pick something to build, then click an empty patch of grass. Click a pig to see how it's doing. Click and drag across poop to sweep it up (1 🪙 each).";
   }
+
+  // ---------- sound (tiny synth, no files) ----------
+  let actx = null, muted = false, lastSfx = {};
+  try { muted = localStorage.getItem('pigcity-muted') === '1'; } catch (e) {}
+  function sfx(kind) {
+    if (muted) return;
+    const now = performance.now();
+    if (now - (lastSfx[kind] || 0) < (kind === 'coin' ? 140 : 60)) return; lastSfx[kind] = now;
+    try {
+      actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+      if (actx.state === 'suspended') actx.resume();
+      const t0 = actx.currentTime;
+      const tone = (f, d, at = 0, type = 'sine', vol = .08, f2) => {
+        const o = actx.createOscillator(), g = actx.createGain();
+        o.type = type; o.frequency.setValueAtTime(f, t0 + at); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t0 + at + d);
+        g.gain.setValueAtTime(0, t0 + at); g.gain.linearRampToValueAtTime(vol, t0 + at + .01); g.gain.exponentialRampToValueAtTime(.0001, t0 + at + d);
+        o.connect(g).connect(actx.destination); o.start(t0 + at); o.stop(t0 + at + d + .02);
+      };
+      switch (kind) {
+        case 'tap': tone(660, .06, 0, 'triangle', .05); break;
+        case 'coin': tone(1320, .07, 0, 'square', .025); tone(1760, .09, .05, 'square', .02); break;
+        case 'build': tone(180, .14, 0, 'triangle', .12, 90); tone(320, .1, .08, 'triangle', .07); break;
+        case 'wheek': tone(1100, .12, 0, 'sine', .07, 1900); tone(1500, .16, .13, 'sine', .07, 2300); break;
+        case 'goal': [523, 659, 784, 1046].forEach((f, i) => tone(f, .18, i * .09, 'triangle', .07)); break;
+        case 'baby': [784, 988, 1175].forEach((f, i) => tone(f, .14, i * .08, 'sine', .06)); break;
+        case 'buy': tone(740, .08, 0, 'triangle', .06); tone(990, .1, .06, 'triangle', .06); break;
+        case 'sell': tone(990, .08, 0, 'triangle', .06); tone(740, .1, .06, 'triangle', .06); break;
+        case 'scoop': tone(420, .05, 0, 'triangle', .04, 300); break;
+        case 'party': [659, 784, 659, 1046, 988].forEach((f, i) => tone(f, .15, i * .11, 'square', .03)); break;
+        case 'bad': tone(300, .2, 0, 'sawtooth', .04, 180); break;
+      }
+    } catch (e) {}
+  }
+  function syncSound() { $('soundBtn').textContent = muted ? '🔇' : '🔊'; $('soundBtn').setAttribute('aria-pressed', muted ? 'false' : 'true'); }
+  $('soundBtn').addEventListener('click', () => { muted = !muted; try { localStorage.setItem('pigcity-muted', muted ? '1' : '0'); } catch (e) {} syncSound(); sfx('tap'); });
+
+  // ---------- pause & speed ----------
+  let paused = false;
+  function syncSpeed() {
+    document.querySelectorAll('[data-spd]').forEach(b => b.setAttribute('aria-pressed', !paused && +b.dataset.spd === G.speed ? 'true' : 'false'));
+    $('pauseBtn').textContent = paused ? '▶' : '❚❚'; $('pauseBtn').setAttribute('aria-pressed', paused ? 'true' : 'false');
+    $('pauseBtn').setAttribute('aria-label', paused ? 'Resume' : 'Pause'); $('pausedOv').hidden = !paused;
+  }
+  $('pauseBtn').addEventListener('click', () => { paused = !paused; syncSpeed(); sfx('tap'); });
+  document.querySelectorAll('[data-spd]').forEach(b => b.addEventListener('click', () => { G.speed = +b.dataset.spd; paused = false; syncSpeed(); sfx('tap'); }));
+
+  // ---------- tutorial ----------
+  const openTut = () => { $('tutorial').hidden = false; paused = true; syncSpeed(); $('tutGo').focus(); };
+  const closeTut = () => { $('tutorial').hidden = true; paused = false; syncSpeed(); sfx('wheek'); };
+  $('helpBtn').addEventListener('click', openTut); $('helpBtn2').addEventListener('click', openTut);
+  $('tutGo').addEventListener('click', closeTut);
+  $('tutorial').addEventListener('click', e => { if (e.target.id === 'tutorial') closeTut(); });
 
   let toastT = 0;
   function toast(msg) { const t = $('toast'); t.textContent = msg; t.style.opacity = 1; toastT = 3.2; }
@@ -451,6 +711,11 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     $('townTitle').textContent = townTitle(G.pigs.length) + ` · ${G.pigs.length} pig${G.pigs.length === 1 ? '' : 's'}`;
     $('popTag').textContent = `(${G.pigs.length})`;
     $('buyHay').disabled = G.coins < 10; $('buyWater').disabled = G.coins < 6; $('buyVeg').disabled = G.coins < 12;
+    const h = hourNow(), hh = Math.floor(h), mm = Math.floor((h - hh) * 6) * 10;
+    const time = `${(hh + 11) % 12 + 1}:${String(mm).padStart(2, '0')} ${hh < 12 ? 'am' : 'pm'}`;
+    const s = season(), w = WEATHER[G.weather.k];
+    $('clock').textContent = `${s.e} ${s.name} · Day ${dayNum()} · ${darkness() > .5 ? '🌙' : w.e} ${time}`;
+    $('clock').title = `${s.name}, day ${yearDay(dayNum())} of ${YEAR} in the pig year. Weather: ${w.name}.`;
   }
   function moodOf(p) {
     if (p.state) return '🏥';
@@ -484,6 +749,16 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     const age = p.age < 90 ? 'Baby 🍼' : p.age >= 999 ? 'Founder' : 'Grown up';
     const jb = jobOf(p);
     $('pTag').innerHTML = age + (jb ? ` · ${jobTitle(p, jb)} at ${JOBS[jb.type].place} ${JOBS[jb.type].emoji}` + (p.working ? '' : ' (on break)') : '') + (p.state === 'admitted' ? ' · <span class="sick">In the hospital 🏥</span>' : p.state ? ' · Heading to the hospital' : '') + (!p.state && p.health < 50 ? ' · <span class="sick">Feeling sick</span>' : '') + (p.joy < 30 ? ' · Lonely' : '');
+    const tr = TRAITS[p.trait], fd = FOODS[p.fav], fr = friendOf(p), isBday = yearDay(dayNum()) === p.bday;
+    const trSig = p.id + p.trait + p.fav + (fr ? fr.id + fr.name : '') + p.bday + isBday;
+    if ($('pTraits').dataset.sig !== trSig) {
+      $('pTraits').dataset.sig = trSig;
+      $('pTraits').innerHTML = `<span class="pill" title="${tr.desc}">${tr.e} ${tr.name}</span><span class="pill" title="Favorite snack">${fd[0]} Loves ${fd[1]}</span>` +
+        `<span class="pill" title="Birthday">${isBday ? '🎉 Birthday today!' : '🎂 ' + bdayLabel(p.bday)}</span>` +
+        (fr ? `<button class="pill link" id="friendBtn" title="Go to best friend">💞 Best friend: ${fr.name}</button>` : '');
+      $('pTraitDesc').textContent = tr.desc;
+      const fb = $('friendBtn'); if (fb) fb.addEventListener('click', () => { selected = fr.id; fr.hop = .5; listSig = ''; renderPig(true); sfx('tap'); });
+    }
     $('pBars').innerHTML = BAR.map(([k, l, col]) => `<div class="bar"><span>${l}</span><div class="track"><div class="fill" style="width:${Math.max(0, p[k])}%;background:${col}"></div></div><span class="num">${Math.round(p[k])}</span></div>`).join('');
     $('petBtn').disabled = p.petCd > 0; $('treatBtn').disabled = G.veg < 1;
     renderJobSel(p);
@@ -516,12 +791,13 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
 
   $('petBtn').addEventListener('click', () => {
     const p = G.pigs.find(q => q.id === selected); if (!p || p.petCd > 0) return;
-    p.joy = Math.min(100, p.joy + 20); p.petCd = 4; p.hop = .6; G.stats.pets++; popup(p.x, p.y - 22, '♥', '#e07a9a'); renderPig();
+    p.joy = Math.min(100, p.joy + 20); p.petCd = 4; p.hop = .6; p.nap = 0; G.stats.pets++; popup(p.x, p.y - 22, '♥', '#e07a9a'); sfx('wheek'); renderPig();
   });
   $('treatBtn').addEventListener('click', () => {
     const p = G.pigs.find(q => q.id === selected); if (!p || G.veg < 1) return;
-    G.veg--; G.stats.treats++; p.joy = Math.min(100, p.joy + 25); p.food = Math.min(100, p.food + 15); p.hop = .6;
-    popup(p.x, p.y - 22, 'Wheek! 🫑', '#5f8f2e'); renderPig(); hudRes();
+    const boost = has(p, 'foodie') ? 40 : 25;
+    G.veg--; G.stats.treats++; p.joy = Math.min(100, p.joy + boost); p.food = Math.min(100, p.food + 15); p.hop = .6; p.nap = 0;
+    popup(p.x, p.y - 22, `Wheek! ${FOODS[p.fav][0]}`, '#5f8f2e'); sfx('wheek'); renderPig(); hudRes();
   });
   $('renameBtn').addEventListener('click', () => {
     const p = G.pigs.find(q => q.id === selected); if (!p) return;
@@ -534,13 +810,14 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
   $('buyVeg').addEventListener('click', buy(12, 'veg', 3));
   $('resetBtn').addEventListener('click', () => {
     if (!confirm('Start a brand new town? Your current town will be gone.')) return;
-    G = newTown(); initExtras(true); selBld = null; confetti.length = 0; selected = null; listSig = ''; jobSig = ''; save(); hudRes(); renderPig(); syncTools(); toast('A fresh start! Welcome to your new town.');
+    G = newTown(); initExtras(true); stockSig = "x"; drops.length = 0; selBld = null; confetti.length = 0; selected = null; listSig = ''; jobSig = ''; save(); hudRes(); renderPig(); syncTools(); toast('A fresh start! Welcome to your new town.');
   });
 
   // ---------- upgrades ----------
   let selBld = null;
   function upgrade(b) {
     const l = L(b);
+    if (DECOR[b.type]) { toast('Decorations are already perfect just the way they are. 🌷'); return false; }
     if (l >= 3) { toast(`${lvName(b)} is already fully upgraded! ⭐⭐⭐`); return false; }
     const cost = upCost(b);
     if (G.coins < cost) { toast(`You need ${cost} 🪙 to upgrade to ${lvName(b, l + 1)}.`); return false; }
@@ -549,7 +826,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     const cx = (b.x + sz(b.type) / 2) * T;
     for (let i = 0; i < 34; i++) confetti.push({ x: cx + (Math.random() - .5) * 20, y: b.y * T + 10, vx: (Math.random() - .5) * 150, vy: -80 - Math.random() * 110, r: Math.random() * 6, vr: (Math.random() - .5) * 12, c: ['#e9b93b', '#fff', '#f4a3b8', '#9fe0ff'][i % 4], life: 1.2 + Math.random() * .6 });
     popup(cx, b.y * T + 4, 'Upgraded! ' + '⭐'.repeat(b.lvl), '#c9a23a');
-    toast(`${old} → ${lvName(b)}! ${perkText(b.type, b.lvl)} ✨`);
+    toast(`${old} → ${lvName(b)}! ${perkText(b.type, b.lvl)} ✨`); sfx('goal');
     hudRes(); syncTools(); save(); return true;
   }
   function renderBldCanvas(b) {
@@ -568,7 +845,8 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     $('bLvl').textContent = `Level ${l} ` + '★'.repeat(l) + '☆'.repeat(3 - l);
     $('bInfo').textContent = perkText(b.type, l) + (JOBS[b.type] ? ` · ${workersAt(b).length} working now` : '');
     renderBldCanvas(b);
-    if (l < 3) {
+    if (DECOR[b.type]) { $('bLvl').textContent = 'Decoration'; $('bNext').textContent = ''; $('upBtn').hidden = true; }
+    else if (l < 3) {
       $('bNext').innerHTML = `<b>Next: ${lvName(b, l + 1)}</b> · ${perkText(b.type, l + 1)}`;
       $('upBtn').hidden = false; $('upBtn').textContent = `Upgrade for ${upCost(b)} 🪙`; $('upBtn').disabled = G.coins < upCost(b);
     } else { $('bNext').textContent = 'Fully upgraded! It can\'t get any fancier. ✨'; $('upBtn').hidden = true; }
@@ -588,7 +866,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
       const q = G.poops[i];
       if (Math.hypot(q.x - w.x, q.y - w.y) < rad) { G.poops.splice(i, 1); G.coins += 1; n++; popup(q.x, q.y - 8, '+1 🪙'); }
     }
-    if (n) { G.stats.scoop += n; G.stats.poop += n; hudRes(); }
+    if (n) { G.stats.scoop += n; G.stats.poop += n; hudRes(); sfx('scoop'); }
     return n;
   }
   canvas.addEventListener('pointerdown', e => { if (!tool) { sweeping = true; try { canvas.setPointerCapture(e.pointerId); } catch (x) {} } });
@@ -615,7 +893,9 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     if (tool) {
       if (!fits(tool, tx, ty)) { toast(sz(tool) > 1 ? 'A castle needs a free 2×2 patch of grass (it grows right and down from where you click).' : 'Something is already built there.'); return; }
       if (G.coins < B[tool].cost) { toast(`You need ${B[tool].cost} 🪙 for a ${B[tool].name}.`); return; }
-      G.coins -= B[tool].cost; G.buildings.push({ type: tool, x: tx, y: ty, t: 0 }); G.stats.built++;
+      G.coins -= B[tool].cost; G.buildings.push({ type: tool, x: tx, y: ty, t: 0 }); G.stats.built++; sfx('build');
+      if (DECOR[tool]) G.stats.decor++;
+      if (tool === 'bank' && count('bank') === 1) setTimeout(() => toast('📈 The Pig Stock Exchange is open! Check the panel on the right.'), 3300);
       if (JOBS[tool] && tool !== 'bank') toast(`${B[tool].name} is open! Grown-up pigs will apply for its 2 jobs. ${JOBS[tool].emoji}`);
       popup(tx * T + sz(tool) * T / 2, ty * T + 8, 'Built!', '#5f8f2e');
       if (G.coins < B[tool].cost) tool = null;
@@ -630,7 +910,10 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     const b = at(tx, ty);
     selBld = b || null; renderBld();
   });
-  window.addEventListener('keydown', e => { if (e.key === 'Escape') { tool = null; syncTools(); } });
+  window.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { if (!$('tutorial').hidden) closeTut(); tool = null; syncTools(); }
+    if (e.key === ' ' && !/INPUT|SELECT|TEXTAREA|BUTTON/.test(document.activeElement.tagName)) { e.preventDefault(); paused = !paused; syncSpeed(); }
+  });
 
   // ---------- goals ----------
   const st = () => G.stats;
@@ -642,6 +925,8 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     { id: 'shop1', e: '☕', name: 'Open for Business', desc: 'Build a Café, Salon or Toy Shop', r: 30, f: () => [shopKinds(), 1] },
     { id: 'hire1', e: '💼', name: 'First Hire', desc: 'A pig gets a job', r: 20, f: () => [st().hires, 1] },
     { id: 'up1', e: '⬆️', name: 'Glow Up', desc: 'Upgrade a building', r: 30, f: () => [st().ups, 1] },
+    { id: 'friends', e: '💞', name: 'Besties', desc: 'Best friends hang out for 30s', r: 25, f: () => [Math.floor(st().friendT), 30] },
+    { id: 'decor3', e: '🌷', name: 'Town Beautiful', desc: 'Place 3 decorations', r: 30, f: () => [st().decor, 3] },
     { id: 'baby1', e: '🍼', name: 'Baby Boom', desc: 'Welcome your first baby', r: 30, f: () => [G.born, 1] },
     { id: 'treat10', e: '🫑', name: 'Treat Yo Pig', desc: 'Give 10 treats', r: 30, f: () => [st().treats, 10] },
     { id: 'pay100', e: '🪙', name: 'Payday', desc: 'Earn 100 🪙 from jobs', r: 50, f: () => [st().jobPay, 100] },
@@ -650,13 +935,18 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     { id: 'castle4', e: '🏰', name: 'Castle Kingdom', desc: 'Own 4 Pig Castles', r: 60, f: () => [count('hutch'), 4] },
     { id: 'modern', e: '✨', name: 'Modern Living', desc: 'Upgrade a building to level 3', r: 100, f: () => [Math.max(0, ...G.buildings.map(L)), 3] },
     { id: 'masaki', e: '👔', name: "Masaki's Team", desc: 'Fill both jobs at Masaki Capital', r: 80, f: () => [maxWorkers('bank'), 2] },
+    { id: 'trade1', e: '📈', name: 'First Trade', desc: 'Buy a share on the Pig Stock Exchange', r: 30, f: () => [G.mkt.trades, 1] },
+    { id: 'party1', e: '🎂', name: 'Party Animal', desc: 'Celebrate a pig birthday', r: 40, f: () => [st().parties, 1] },
     { id: 'hay50', e: '🌾', name: 'Hay Hoarder', desc: 'Have 50 🌾 at once', r: 40, f: () => [Math.floor(G.hay), 50] },
     { id: 'pop11', e: '🏡', name: 'Pig Town', desc: 'Reach 11 pigs', r: 80, f: () => [G.pigs.length, 11] },
     { id: 'mall', e: '🛍️', name: 'Shopping District', desc: 'Build a Café, a Salon and a Toy Shop', r: 100, f: () => [shopKinds(), 3] },
     { id: 'poop200', e: '💩', name: 'Poop Tycoon', desc: 'Clean up 200 poops (Roombas count)', r: 100, f: () => [st().poop, 200] },
     { id: 'work6', e: '🏭', name: 'Busy Town', desc: 'Have 6 pigs with jobs', r: 120, f: () => [G.pigs.filter(p => p.job).length, 6] },
     { id: 'pay1000', e: '💰', name: 'Big Earner', desc: 'Earn 1,000 🪙 from jobs', r: 150, f: () => [st().jobPay, 1000] },
+    { id: 'profit200', e: '💹', name: 'Wolf of Wheek Street', desc: 'Make 200 🪙 profit selling stocks', r: 150, f: () => [Math.max(0, Math.floor(G.mkt.realized)), 200] },
+    { id: 'year1', e: '🗓️', name: 'A Whole Pig Year', desc: 'Live through all 4 seasons', r: 150, f: () => [Math.min(dayNum() - 1, YEAR), YEAR] },
     { id: 'pop21', e: '🌆', name: 'Pig City', desc: 'Reach 21 pigs', r: 150, f: () => [G.pigs.length, 21] },
+    { id: 'pf1000', e: '🏦', name: 'Pig Tycoon', desc: 'Own stocks worth 1,000 🪙', r: 200, f: () => [Math.floor(pfValue()), 1000] },
     { id: 'pop36', e: '🌃', name: 'Pig Metropolis', desc: 'Reach 36 pigs', r: 300, f: () => [G.pigs.length, 36] }
   ];
   let goalT = 0, goalSig = '';
@@ -678,7 +968,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
       if (done.has(g.id)) continue;
       const [a, b] = g.f();
       if (a >= b) {
-        G.goalsDone.push(g.id); G.coins += g.r; celebrate();
+        G.goalsDone.push(g.id); G.coins += g.r; celebrate(); sfx('goal');
         toast(`🏆 Goal complete: ${g.name}! +${g.r} 🪙`); popup(W / 2, H * .35, `${g.e} ${g.name}! +${g.r} 🪙`, '#c96a85');
         save(); return;
       }
@@ -697,14 +987,192 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     $('badges').innerHTML = GOALS.map(g => `<span class="badge${done.has(g.id) ? '' : ' locked'}" title="${g.name}: ${g.desc}${done.has(g.id) ? ' ✓' : ''}">${g.e}</span>`).join('');
   }
 
+  // ---------- stock exchange ----------
+  const pfValue = () => STOCKS.reduce((s, k) => s + G.mkt.st[k.s].own * G.mkt.st[k.s].p, 0);
+  const pfCost = () => STOCKS.reduce((s, k) => s + G.mkt.st[k.s].cost, 0);
+  const NEWS_POOL = [
+    ['WTR', +1, '🌧️ Rain clouds rolling in: analysts think water demand is about to splash up.'],
+    ['WTR', -1, '☀️ Drought fears ease. Water prices expected to cool off.'],
+    ['VEG', +1, '🥕 Record carrot harvest! Veggie Ventures beats expectations.'],
+    ['VEG', -1, '🐛 Caterpillars spotted in the pepper patch. Veggie Ventures under pressure.'],
+    ['FLUF', +1, '✂️ Fluff Corp launches a new detangling spray. Pigs are lining up.'],
+    ['FLUF', -1, '💨 Humidity season: frizzy fur has Fluff Corp customers upset.'],
+    ['ZOOM', +1, '⚡ Zoomies Motors unveils the Wheekster 3, a pig car with cup holders for hay.'],
+    ['ZOOM', -1, '🔋 Zoomies Motors recalls cars after the wheels keep popcorning off.'],
+    ['POOP', +1, '🤖 Roomba Robotics goes viral: "It scoops while you sleep!"'],
+    ['POOP', -1, '💩 Roomba Robotics robot gets stuck under a hay bale. Shares wobble.'],
+    ['HAY', +1, '🌾 Hay Holdings signs a big deal with every Pig Castle in town.'],
+    ['HAY', -1, '🌾 Too much hay on the market: Hay Holdings prices soften.']
+  ];
+  function setNews(text) { G.mkt.news = text; stockSig = ''; }
+  function marketTick(dt) {
+    const M = G.mkt;
+    // prices move a little every second (mean-reverting random walk around a slowly growing base)
+    M.tickT = (M.tickT || 0) + dt;
+    while (M.tickT >= 1) {
+      M.tickT -= 1;
+      const s = season(), w = G.weather.k;
+      for (const k of STOCKS) {
+        const S = M.st[k.s];
+        S.base *= 1 + k.drift / 60;
+        let push = S.shock * .12; S.shock *= .9;
+        if (k.s === 'WTR' && w === 'rain') push += .004;
+        if (k.s === 'HAY' && s.name === 'Winter') push += .003;
+        if (k.s === 'VEG') push += .0015 * Math.min(4, count('garden'));
+        if (k.s === 'FLUF') push += .0015 * Math.min(3, maxWorkers('salon'));
+        if (k.s === 'POOP') push += .0004 * Math.min(10, G.poops.length) - .001;
+        if (G.event && G.event.mkt) push += G.event.mkt * .01;
+        S.x += -.04 * S.x + push + k.vol * .09 * gauss();
+        S.x = Math.max(-1.6, Math.min(1.6, S.x));
+        S.p = Math.max(1, +(S.base * Math.exp(S.x)).toFixed(2));
+      }
+      M.histT = (M.histT || 0) + 1;
+      if (M.histT >= 3) { M.histT = 0; for (const k of STOCKS) { const S = M.st[k.s]; S.hist.push(S.p); if (S.hist.length > HIST) S.hist.shift(); } }
+    }
+    // headlines: Masaki's analysts drop hints about what's coming
+    M.newsT -= dt;
+    if (M.newsT <= 0 && count('bank')) {
+      M.newsT = 35 + Math.random() * 30;
+      const [sym, dir, text] = pick(NEWS_POOL);
+      M.st[sym].shock += dir * (1.2 + Math.random());
+      const ceo = G.pigs.find(p => p.banker && jobOf(p) && jobOf(p).type === 'bank');
+      setNews(text + (ceo ? ` <i>Masaki says: "${dir > 0 ? 'Buy' : 'Sell'} ${sym}."</i>` : ''));
+    }
+    // Hay Holdings pays a small dividend in hay each morning (handled in newDay)
+  }
+  function trade(sym, n) {
+    const S = G.mkt.st[sym];
+    if (n > 0) {
+      const cost = S.p * n; if (G.coins < cost) return;
+      G.coins -= cost; S.own += n; S.cost += cost; G.mkt.trades++; sfx('buy');
+      toast(`Bought ${n} ${sym} for ${Math.round(cost)} 🪙`);
+    } else {
+      n = Math.min(S.own, -n); if (!n) return;
+      const avg = S.cost / S.own, got = S.p * n, profit = got - avg * n;
+      G.coins += got; S.own -= n; S.cost -= avg * n; if (!S.own) S.cost = 0; G.mkt.realized += profit; sfx(profit >= 0 ? 'sell' : 'bad');
+      toast(`Sold ${n} ${sym} for ${Math.round(got)} 🪙 (${profit >= 0 ? '+' : ''}${Math.round(profit)} ${profit >= 0 ? 'profit 🎉' : 'loss'})`);
+    }
+    stockSig = ''; hudRes(); syncTools(); save();
+  }
+  let stockSig = '', stockBuilt = false;
+  function buildStocks() {
+    const el = $('stocks'); el.innerHTML = '';
+    for (const k of STOCKS) {
+      const row = document.createElement('div'); row.className = 'stock'; row.id = 'st-' + k.s; row.title = `${k.name}: ${k.tip}`;
+      row.innerHTML = `<span class="sym">${k.s} <small>${k.name}</small></span><span class="px"></span><canvas width="440" height="68"></canvas><span class="own"></span>` +
+        `<span class="tb"><button class="mini buy">Buy</button><button class="mini sell">Sell</button></span>`;
+      row.querySelector('.buy').addEventListener('click', e => trade(k.s, e.shiftKey ? 5 : 1));
+      row.querySelector('.sell').addEventListener('click', e => trade(k.s, e.shiftKey ? -G.mkt.st[k.s].own : -1));
+      el.appendChild(row);
+    }
+    stockBuilt = true;
+  }
+  function renderStocks() {
+    const open = count('bank') > 0;
+    $('stockLocked').hidden = open; $('stockOpen').hidden = !open;
+    if (!open) return;
+    if (!stockBuilt) buildStocks();
+    const M = G.mkt, v = pfValue(), pl = v - pfCost();
+    $('pfVal').textContent = `Portfolio ${Math.round(v)} 🪙`;
+    $('pfPL').innerHTML = `<span class="${pl >= 0 ? 'up' : 'down'}">${pl >= 0 ? '▲' : '▼'} ${Math.abs(Math.round(pl))}</span> · banked ${Math.round(M.realized)}`;
+    for (const k of STOCKS) {
+      const S = M.st[k.s], row = $('st-' + k.s), h = S.hist, first = h[0], chg = (S.p - first) / first * 100;
+      row.classList.toggle('on', S.own > 0);
+      row.querySelector('.px').innerHTML = `${S.p.toFixed(1)} 🪙<br><small class="${chg >= 0 ? 'up' : 'down'}">${chg >= 0 ? '▲' : '▼'}${Math.abs(chg).toFixed(0)}%</small>`;
+      const avg = S.own ? S.cost / S.own : 0, up = S.p >= avg;
+      row.querySelector('.own').innerHTML = S.own ? `You own ${S.own} · avg ${avg.toFixed(1)} · <span class="${up ? 'up' : 'down'}">${up ? '+' : ''}${Math.round((S.p - avg) * S.own)}</span>` : 'Shift-click: buy 5 / sell all';
+      row.querySelector('.buy').disabled = G.coins < S.p; row.querySelector('.sell').disabled = !S.own;
+      // sparkline
+      const c = row.querySelector('canvas').getContext('2d'), Wc = 440, Hc = 68;
+      const pts = h.concat([S.p]), lo = Math.min(...pts, avg || Infinity), hi = Math.max(...pts, avg || 0), rng = Math.max(.01, hi - lo);
+      const X = i => 4 + i / (pts.length - 1) * (Wc - 8), Y = p => Hc - 6 - (p - lo) / rng * (Hc - 12);
+      c.clearRect(0, 0, Wc, Hc);
+      const col = S.p >= first ? '#3c8a2e' : '#d9455a';
+      c.beginPath(); pts.forEach((p, i) => i ? c.lineTo(X(i), Y(p)) : c.moveTo(X(i), Y(p)));
+      c.lineTo(X(pts.length - 1), Hc); c.lineTo(X(0), Hc); c.closePath();
+      c.fillStyle = S.p >= first ? 'rgba(60,138,46,.14)' : 'rgba(217,69,90,.12)'; c.fill();
+      c.beginPath(); pts.forEach((p, i) => i ? c.lineTo(X(i), Y(p)) : c.moveTo(X(i), Y(p)));
+      c.strokeStyle = col; c.lineWidth = 3; c.lineJoin = 'round'; c.stroke();
+      if (S.own) { c.setLineDash([6, 5]); c.strokeStyle = '#1f2f5c'; c.lineWidth = 2; c.beginPath(); c.moveTo(4, Y(avg)); c.lineTo(Wc - 4, Y(avg)); c.stroke(); c.setLineDash([]); }
+      c.fillStyle = col; ell(c, X(pts.length - 1), Y(S.p), 5, 5); c.fill();
+    }
+    if (M.news !== stockSig) { stockSig = M.news; $('news').innerHTML = M.news || '📰 No news yet. Masaki\'s analysts are reading the hay leaves...'; }
+  }
+
+  // ---------- days, weather & events ----------
+  const EVENTS = [
+    { id: 'hayfest', e: '🌾', name: 'Hay Festival', desc: 'Hay Fields produce double today!', mkt: .3 },
+    { id: 'parade', e: '🎺', name: 'Pig Parade', desc: 'Everyone is in a great mood. Joy stays high!' },
+    { id: 'boom', e: '🚀', name: 'Market Boom', desc: 'Every stock is rising on the Exchange!', mkt: 1.2 },
+    { id: 'crash', e: '📉', name: 'Market Dip', desc: 'Stocks are on sale. Buy the dip?', mkt: -1.2 },
+    { id: 'delivery', e: '🚚', name: 'Surprise Delivery', desc: 'A veggie truck dropped off 10 🫑!' },
+    { id: 'spa', e: '🛁', name: 'Spa Day', desc: 'Salons and parks give extra joy today.' },
+    { id: 'tourists', e: '📸', name: 'Tourist Day', desc: 'Visitors are paying to meet your pigs: happy pigs earn double 🪙.' }
+  ];
+  function rollWeather() {
+    const s = seasonIdx(), r = Math.random();
+    const k = s === 3 ? (r < .45 ? 'snow' : r < .75 ? 'cloud' : 'sun')
+      : s === 1 ? (r < .15 ? 'rain' : r < .35 ? 'cloud' : 'sun')
+      : (r < .35 ? 'rain' : r < .6 ? 'cloud' : 'sun');
+    if (k !== G.weather.k && (k === 'rain' || k === 'snow')) toast(k === 'rain' ? '🌧️ Rain! Gardens and Water Towers work faster.' : '🌨️ It\'s snowing! Pigs stay cozy near castles.');
+    G.weather = { k, t: 45 + Math.random() * 50 };
+  }
+  function newDay() {
+    const d = dayNum(), yd = yearDay(d);
+    pickFriends();
+    if ((d - 1) % SEASON_DAYS === 0 && d > 1) { const s = season(); toast(`${s.e} ${s.name} is here!${s.name === 'Winter' ? ' Hay grows slower, stock up.' : s.name === 'Spring' ? ' Baby season: pigs feel romantic.' : ''}`); celebrate(); }
+    const hay = G.mkt.st.HAY.own; if (hay >= 5) { const n = Math.floor(hay / 5); G.hay += n; setTimeout(() => toast(`🌾 Hay Holdings paid a dividend: +${n} 🌾`), 3500); }
+    const bdays = G.pigs.filter(p => p.bday === yd && p.age >= 30);
+    if (bdays.length) {
+      const names = bdays.map(p => p.name).join(' & ');
+      G.party = { ids: bdays.map(p => p.id), t: 40 }; G.stats.parties++;
+      for (const p of G.pigs) { p.joy = Math.min(100, p.joy + (has(p, 'shy') ? 5 : 20)); p.hop = .6; }
+      G.coins += 15 * bdays.length; celebrate(); sfx('party');
+      setTimeout(() => toast(`🎂 Happy birthday ${names}! The town threw a party (+${15 * bdays.length} 🪙)`), 900);
+    }
+  }
+  function startEvent() {
+    const pool = EVENTS.filter(e => e.id !== 'boom' && e.id !== 'crash' || count('bank'));
+    const ev = pick(pool);
+    G.event = { id: ev.id, t: 90, mkt: ev.mkt || 0 }; G.stats.events++;
+    if (ev.id === 'delivery') G.veg += 10;
+    if (ev.mkt) for (const k of STOCKS) G.mkt.st[k.s].shock += ev.mkt * (ev.id === 'hayfest' ? (k.s === 'HAY' ? 4 : 0) : 1);
+    toast(`${ev.e} Town event: ${ev.name}! ${ev.desc}`); sfx('party'); celebrate();
+  }
+  const evOn = id => G.event && G.event.id === id;
+  function worldTick(dt) {
+    G.clock += dt;
+    if (dayNum() !== G.lastDay) { G.lastDay = dayNum(); newDay(); }
+    G.weather.t -= dt; if (G.weather.t <= 0) rollWeather();
+    if (G.party) { G.party.t -= dt; if (G.party.t <= 0) G.party = null; }
+    if (G.event) { G.event.t -= dt; if (G.event.t <= 0) { G.event = null; } }
+    else { G.eventT -= dt; if (G.eventT <= 0) { G.eventT = DAY * (.9 + Math.random() * .8); startEvent(); } }
+    marketTick(dt);
+    // weather particles
+    const wk = G.weather.k;
+    if ((wk === 'rain' || wk === 'snow') && drops.length < (wk === 'rain' ? 90 : 70)) for (let i = 0; i < 4; i++) drops.push({ x: Math.random() * (W + 60) - 30, y: -10, v: wk === 'rain' ? 260 + Math.random() * 80 : 22 + Math.random() * 20, s: Math.random() });
+    for (let i = drops.length - 1; i >= 0; i--) { const q = drops[i]; q.y += q.v * dt; q.x += (wk === 'rain' ? -40 : Math.sin(G.time * 2 + q.s * 9) * 12) * dt; if (q.y > H + 5) drops.splice(i, 1); }
+    if (darkness() > .6 && fireflies.length < 18 && seasonIdx() !== 3) fireflies.push({ x: Math.random() * W, y: Math.random() * H, p: Math.random() * 6 });
+    if (darkness() < .3) fireflies.length = 0;
+    for (const f of fireflies) { f.p += dt; f.x += Math.cos(f.p * .7) * 8 * dt; f.y += Math.sin(f.p * 1.1) * 6 * dt; }
+  }
+  const drops = [], fireflies = [];
+
   // ---------- simulation ----------
   function tick(dt) {
+    worldTick(dt);
     G.time += dt;
-    const parks = lvlSum('park'), vets = lvlSum('vet');
-    // production
+    const parks = lvlSum('park') * (evOn('spa') ? 1.5 : 1), vets = lvlSum('vet');
+    const decor = G.buildings.reduce((s, b) => s + (DECOR[b.type] || 0), 0), lanterns = count('lantern');
+    const dark = darkness(), wk = G.weather.k, sn = season().name;
+    // production (weather, seasons and events change the pace)
     for (const b of G.buildings) {
       if (!RATE[b.type]) continue;
-      const rt = RATE[b.type] / MULT[L(b) - 1];
+      let wx = 1;
+      if (b.type === 'hay') wx = (sn === 'Winter' ? .7 : sn === 'Summer' ? 1.15 : 1) * (evOn('hayfest') ? 2 : 1);
+      if ((b.type === 'garden' || b.type === 'water') && wk === 'rain') wx = 1.5;
+      if (b.type === 'water' && sn === 'Summer' && wk === 'sun') wx = .85;
+      const rt = RATE[b.type] / MULT[L(b) - 1] / wx;
       b.t += dt;
       while (b.t >= rt) {
         b.t -= rt;
@@ -744,10 +1212,25 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
       }
       if (p.state === 'walking') { p.tx = hosp.x * T + T; p.ty = hosp.y * T + 2 * T - 4; p.wait = 0;
         if (Math.hypot(p.tx - p.x, p.ty - p.y) < 5) { p.state = 'admitted'; popup(p.x, p.y - 22, 'Checked in 🏥', '#3c7ab8'); continue; } }
-      p.food -= .6 * dt; p.water -= .75 * dt;
-      p.joy -= (.45 / (1 + .5 * parks) + .5 * dirt) * dt;
-      // company keeps pigs happy
+      p.food -= (has(p, 'foodie') ? .75 : .6) * dt; p.water -= (sn === 'Summer' ? .85 : .75) * dt;
+      const pk = has(p, 'zoomies') ? parks * 2 : parks, dc = has(p, 'fancy') ? decor * 2 : decor;
+      let jd = .45 / (1 + .5 * pk + .07 * dc) + (has(p, 'shy') ? .25 : .5) * dirt;
+      if (has(p, 'sleepy')) jd *= .75;
+      if (dark > .5 && !lanterns && !has(p, 'sleepy')) jd += .08; // dark nights feel a little spooky without lanterns
+      if (wk === 'snow' && sn === 'Winter') jd += .05;
+      if (evOn('parade')) jd = -.4;
+      p.joy -= jd * dt;
+      // company keeps pigs happy, and best friends most of all
       if (G.pigs.length > 1) p.joy += .08 * dt;
+      const fr = friendOf(p);
+      if (fr && !fr.state && Math.hypot(fr.x - p.x, fr.y - p.y) < 40) {
+        p.joy += (has(p, 'social') ? .9 : .35) * dt; G.stats.friendT += dt / 2;
+        p.heartT = (p.heartT || 0) - dt; if (p.heartT <= 0) { p.heartT = 9 + Math.random() * 6; popup((p.x + fr.x) / 2, Math.min(p.y, fr.y) - 22, '💞', '#e07a9a'); }
+      }
+      // naps: sleepy pigs (and everyone, late at night) curl up for a snooze
+      if (p.nap > 0) { p.nap -= dt; p.joy += .3 * dt; }
+      else if (!p.job && Math.random() < dt * (has(p, 'sleepy') ? .03 : .004) * (1 + dark * 4)) { p.nap = 8 + Math.random() * 10; }
+      if (has(p, 'zoomies') && p.joy > 70 && Math.random() < dt * .08) { p.hop = .6; }
       if (p.food < 70) {
         if (G.veg >= 1 && (p.joy < 50 || G.hay < 1)) { G.veg--; p.food += 25; p.joy += 10; p.hop = .3; }
         else if (G.hay >= 1) { G.hay--; p.food += 30; }
@@ -765,7 +1248,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
       }
       // coins & poop
       p.coinT -= dt;
-      if (p.coinT <= 0) { p.coinT = 6; if (p.joy > 40 && p.health > 50) { G.coins += 1; popup(p.x, p.y - 20, '+1 🪙', '#a77c4c'); } }
+      if (p.coinT <= 0) { p.coinT = 6; if (p.joy > 40 && p.health > 50) { const n = evOn('tourists') ? 2 : 1; G.coins += n; popup(p.x, p.y - 20, `+${n} 🪙`, '#a77c4c'); } }
       p.poopT -= dt;
       if (p.poopT <= 0) { p.poopT = 10 + Math.random() * 10; if (G.poops.length < 80) G.poops.push({ x: p.x - p.face * 14 + (Math.random() - .5) * 6, y: p.y + 8 + (Math.random() - .5) * 4, a: Math.random() * 3 }); }
       // work
@@ -782,12 +1265,13 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
           p.workT = (p.workT || 0) + dt;
           if (p.workT >= J.every) {
             p.workT -= J.every;
-            const pay = J.pay * (p.banker && wb.type === 'bank' ? 2 : 1);
-            G.coins += pay; G.stats.jobPay += pay;
+            let pay = J.pay * (p.banker && wb.type === 'bank' ? 2 : 1);
+            if ((has(p, 'brainy') && wb.type === 'bank') || (has(p, 'fancy') && wb.type === 'salon')) pay = Math.round(pay * 1.5);
+            G.coins += pay; G.stats.jobPay += pay; sfx('coin');
             popup(p.x, p.y - 22, `+${pay} 🪙 ${J.emoji}`, '#1f2f5c');
             if (wb.type === 'salon') {
               const others = G.pigs.filter(q => q !== p && !q.state && q.joy < 90);
-              if (others.length) { const q = pick(others); q.joy = Math.min(100, q.joy + 15); q.hop = .5; popup(q.x, q.y - 22, 'Fresh fluff ✨', '#a98bd9'); }
+              if (others.length) { const q = pick(others); q.joy = Math.min(100, q.joy + (has(q, 'fancy') ? 30 : 15) * (evOn('spa') ? 1.5 : 1)); q.hop = .5; popup(q.x, q.y - 22, 'Fresh fluff ✨', '#a98bd9'); }
             }
             if (wb.type === 'toys') for (const q of G.pigs) if (!q.state) q.joy = Math.min(100, q.joy + 2);
           }
@@ -795,11 +1279,18 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
         }
       }
       // wander
+      if (p.nap > 0 && !p.state) continue;
       if (p.wait > 0) p.wait -= dt;
       else {
         const dx = p.tx - p.x, dy = p.ty - p.y, d = Math.hypot(dx, dy);
-        const sp = (p.age < 90 ? 26 : 20) * (p.state === 'walking' ? 1.4 : p.health < 50 ? .5 : 1);
-        if (d < 2 && !p.state) { p.wait = 1 + Math.random() * 3; p.tx = 24 + Math.random() * (W - 48); p.ty = 30 + Math.random() * (H - 50); }
+        const sp = (p.age < 90 ? 26 : 20) * (has(p, 'zoomies') ? 1.6 : 1) * (dark > .6 ? .75 : 1) * (p.state === 'walking' ? 1.4 : p.health < 50 ? .5 : 1);
+        if (d < 2 && !p.state) {
+          p.wait = 1 + Math.random() * 3;
+          const fr = friendOf(p), bench = has(p, 'sleepy') && pick(G.buildings.filter(b => b.type === 'bench') .concat([null]));
+          if (bench) { p.tx = bench.x * T + T / 2 + (Math.random() - .5) * 10; p.ty = bench.y * T + T - 4; }
+          else if (fr && Math.random() < (has(p, 'social') ? .6 : .3)) { p.tx = Math.max(24, Math.min(W - 24, fr.x + (Math.random() - .5) * 40)); p.ty = Math.max(30, Math.min(H - 20, fr.y + (Math.random() - .5) * 30)); }
+          else { p.tx = 24 + Math.random() * (W - 48); p.ty = 30 + Math.random() * (H - 50); }
+        }
         else { p.x += dx / d * sp * dt; p.y += dy / d * sp * dt; if (Math.abs(dx) > 1) p.face = dx > 0 ? 1 : -1; }
       }
     }
@@ -895,7 +1386,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     // babies
     G.breedT -= dt;
     if (G.breedT <= 0) {
-      G.breedT = 22;
+      G.breedT = sn === 'Spring' ? 15 : sn === 'Winter' ? 30 : 22;
       const adults = G.pigs.filter(p => p.age >= 90 && p.health > 60);
       const avgJoy = G.pigs.reduce((s, p) => s + p.joy, 0) / Math.max(1, G.pigs.length);
       if (adults.length < 2) {}
@@ -905,8 +1396,9 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
         const used = new Set(G.pigs.map(p => p.name));
         const name = NAMES.find(n => !used.has(n) && Math.random() < .5) || NAMES.find(n => !used.has(n)) || 'Pig ' + nextId;
         const baby = makePig(name, babySkin(a.skin, b.skin), (a.x + b.x) / 2, (a.y + b.y) / 2, false);
-        baby.food = baby.water = 90; baby.joy = 90;
-        G.pigs.push(baby); G.born++;
+        baby.food = baby.water = 90; baby.joy = 90; baby.bday = yearDay(dayNum()); baby.friend = a.id;
+        baby.trait = Math.random() < .5 ? pick([a.trait, b.trait]) : pick(TRAIT_KEYS);
+        G.pigs.push(baby); G.born++; sfx('baby');
         popup(baby.x, baby.y - 24, 'New baby! 🍼', '#e07a9a');
         toast(`${a.name} and ${b.name} had a baby: ${name}! 🍼`);
         const t = townTitle(G.pigs.length);
@@ -1376,6 +1868,53 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
         for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, k = i % 2 ? 1.6 : 3.6; c.lineTo(Math.cos(a) * k, Math.sin(a) * k); }
         c.fill(); c.restore();
         break;
+      case 'tree': {
+        const si = typeof G === 'object' && G ? seasonIdx() : 0, sway = Math.sin((G ? G.time : 0) * 1.3 + b.x) * .8;
+        shadow(c, cx, y + 36, 13);
+        c.fillStyle = '#7b5236'; c.beginPath(); c.moveTo(cx - 3, y + 36); c.lineTo(cx - 2, y + 18); c.lineTo(cx + 2, y + 18); c.lineTo(cx + 3, y + 36); c.closePath(); c.fill(); c.stroke();
+        const leaf = ['#f6b6c8', '#5fae48', '#e08a35', '#ffffff'][si], dots = ['#fff', '#8fd06a', '#c9472f', '#dfe9f2'][si];
+        if (si === 3) { c.strokeStyle = '#7b5236'; c.lineWidth = 2; c.beginPath(); c.moveTo(cx, y + 20); c.lineTo(cx - 9, y + 8); c.moveTo(cx, y + 18); c.lineTo(cx + 10, y + 7); c.moveTo(cx, y + 22); c.lineTo(cx + 4, y + 4); c.stroke(); c.strokeStyle = INK; }
+        else {
+          c.fillStyle = leaf; c.lineWidth = 1.8;
+          for (const [ox, oy, r] of [[-8, 16, 9], [8, 16, 9], [0, 9, 11], [-5, 6, 7], [6, 5, 7]]) { ell(c, cx + ox + sway, y + oy, r, r * .9); c.fill(); c.stroke(); }
+          c.fillStyle = leaf; ell(c, cx + sway, y + 12, 12, 9); c.fill();
+          c.fillStyle = dots; for (const [ox, oy] of [[-7, 13], [5, 8], [8, 16], [-2, 4], [1, 15]]) { ell(c, cx + ox + sway, y + oy, 1.6, 1.6); c.fill(); }
+        }
+        if (si === 3) { c.fillStyle = '#fff'; ell(c, cx - 9, y + 8, 3, 1.6); c.fill(); ell(c, cx + 10, y + 7, 3, 1.6); c.fill(); }
+        break;
+      }
+      case 'flowers': {
+        c.fillStyle = '#8a5a34'; rr(c, x + 5, y + 22, 30, 13, 6); c.fill(); c.stroke();
+        const cols = ['#f4a3b8', '#ffd36b', '#d8c9f5', '#ff8a7a', '#fff'];
+        for (let i = 0; i < 5; i++) {
+          const fx = x + 9 + i * 5.5, fy = y + 18 + (i % 2) * 4;
+          c.strokeStyle = '#5f8f2e'; c.lineWidth = 1.5; c.beginPath(); c.moveTo(fx, fy); c.lineTo(fx, y + 24); c.stroke();
+          c.fillStyle = cols[(i + b.x) % 5]; for (let k = 0; k < 5; k++) { const a = k / 5 * Math.PI * 2; ell(c, fx + Math.cos(a) * 2.4, fy + Math.sin(a) * 2.4, 1.9, 1.9); c.fill(); }
+          c.fillStyle = '#e9b93b'; ell(c, fx, fy, 1.3, 1.3); c.fill();
+        }
+        break;
+      }
+      case 'bench':
+        shadow(c, cx, y + 33, 15);
+        c.fillStyle = '#a77c4c'; c.fillRect(x + 7, y + 24, 3, 10); c.fillRect(x + 30, y + 24, 3, 10);
+        c.fillStyle = '#c99a5b'; rr(c, x + 4, y + 21, 32, 5, 2); c.fill(); c.stroke();
+        rr(c, x + 5, y + 12, 30, 4, 2); c.fill(); c.stroke(); rr(c, x + 5, y + 17, 30, 3, 1.5); c.fill(); c.stroke();
+        break;
+      case 'lantern': {
+        const glow = darkness();
+        shadow(c, cx, y + 36, 7);
+        c.fillStyle = '#3b2a1a'; c.fillRect(cx - 1.5, y + 14, 3, 22); c.fillRect(cx - 5, y + 34, 10, 3);
+        c.fillStyle = glow > .3 ? '#ffe08a' : '#f3d9a0'; rr(c, cx - 6, y + 2, 12, 13, 3); c.fill(); c.stroke();
+        c.fillStyle = '#c8343c'; c.beginPath(); c.moveTo(cx - 8, y + 3); c.lineTo(cx, y - 2); c.lineTo(cx + 8, y + 3); c.closePath(); c.fill(); c.stroke();
+        break;
+      }
+      case 'pond':
+        c.fillStyle = '#8a7a5c'; ell(c, cx, y + 22, 18, 13); c.fill(); c.stroke();
+        c.fillStyle = typeof G === 'object' && G && seasonIdx() === 3 ? '#cfe6f2' : '#5aa9e0'; ell(c, cx, y + 22, 15, 10.5); c.fill();
+        c.fillStyle = 'rgba(255,255,255,.5)'; ell(c, cx - 6, y + 18, 4, 1.5); c.fill();
+        c.fillStyle = '#5f9a3a'; ell(c, cx + 5, y + 24, 4.5, 3); c.fill(); ell(c, cx - 4, y + 27, 3.5, 2.4); c.fill();
+        c.fillStyle = '#f4a3b8'; ell(c, cx + 5, y + 23, 2, 1.6); c.fill();
+        break;
     }
     c.restore();
     if (L(b) === 2 && b.type !== 'hutch') deluxe(c, b);
@@ -1383,13 +1922,16 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
 
   function draw() {
     const c = ctx;
-    c.fillStyle = '#b9dc8a'; c.fillRect(0, 0, W, H);
-    c.fillStyle = 'rgba(255,255,255,.12)';
+    const S = season(), si = seasonIdx();
+    c.fillStyle = S.grass; c.fillRect(0, 0, W, H);
+    c.fillStyle = S.check;
     for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) if ((x + y) % 2) c.fillRect(x * T, y * T, T, T);
-    for (const f of flowers) {
-      if (f.k) { c.strokeStyle = '#8fc26a'; c.lineWidth = 1.2; c.beginPath(); c.moveTo(f.x, f.y); c.lineTo(f.x - 2, f.y - 5); c.moveTo(f.x, f.y); c.lineTo(f.x + 2, f.y - 5); c.stroke(); }
-      else { c.fillStyle = f.c; ell(c, f.x, f.y, 1.8, 1.8); c.fill(); }
-    }
+    flowers.forEach((f, i) => {
+      if (f.k) { c.strokeStyle = si === 3 ? '#b8c9cf' : si === 2 ? '#a9a25a' : '#8fc26a'; c.lineWidth = 1.2; c.beginPath(); c.moveTo(f.x, f.y); c.lineTo(f.x - 2, f.y - 5); c.moveTo(f.x, f.y); c.lineTo(f.x + 2, f.y - 5); c.stroke(); }
+      else if (si === 2) { c.fillStyle = S.flowers[i % 4]; ell(c, f.x, f.y, 2.6, 1.4, i); c.fill(); }
+      else { c.fillStyle = S.flowers[i % 4]; ell(c, f.x, f.y, 1.8, 1.8); c.fill(); }
+    });
+    if (G.weather.k === 'rain') { c.fillStyle = 'rgba(90,140,200,.18)'; for (let i = 0; i < 6; i++) { ell(c, (i * 173 + 60) % W, (i * 97 + 80) % H, 22, 7); c.fill(); } }
     // build preview
     if (hover && tool && hover.x >= 0 && hover.y >= 0 && hover.x < COLS && hover.y < ROWS) {
       const occ = at(hover.x, hover.y);
@@ -1446,13 +1988,39 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
       c.save(); c.translate(p.x, p.y - hop);
       c.fillStyle = 'rgba(0,0,0,.12)'; ell(c, 0, 9 + hop, 13 * sc / .36, 3); c.fill();
       if (p.id === selected) { c.strokeStyle = '#fff'; c.lineWidth = 2.5; ell(c, 0, 9 + hop, 17 * sc / .36, 5); c.stroke(); }
-      c.scale(p.face * sc, sc); drawPig(c, p.skin, { sad: p.health < 35 });
+      c.scale(p.face * sc, sc); drawPig(c, p.skin, { sad: p.health < 35, sleep: p.nap > 0 });
+      if (G.party && G.party.ids.includes(p.id) || evOn('parade')) {
+        c.save(); c.translate(20, -20); c.rotate(.35); c.fillStyle = G.party && G.party.ids.includes(p.id) ? '#e07a9a' : '#7fc1ea';
+        c.beginPath(); c.moveTo(-9, 0); c.lineTo(0, -26); c.lineTo(9, 0); c.closePath(); c.fill(); c.lineWidth = 2.2; c.strokeStyle = INK; c.stroke();
+        c.fillStyle = '#ffd36b'; ell(c, 0, -27, 4, 4); c.fill(); c.stroke();
+        c.fillStyle = '#fff'; ell(c, -3, -8, 2, 2); c.fill(); ell(c, 3, -15, 2, 2); c.fill(); c.restore();
+      }
       c.restore();
-      if (p.working) { const jb = jobOf(p); if (jb) { c.font = '11px sans-serif'; c.textAlign = 'center'; c.fillText(JOBS[jb.type].emoji, p.x, p.y - 16 + Math.sin(G.time * 3 + p.id) * 1.2); } }
+      if (p.nap > 0) { c.font = '10px Chewy, sans-serif'; c.textAlign = 'center'; c.fillStyle = '#1f2f5c'; const k = (G.time * .8 + p.id) % 1; c.globalAlpha = 1 - k; c.fillText('z', p.x + 8 + k * 6, p.y - 12 - k * 10); c.fillText('Z', p.x + 12 + k * 4, p.y - 20 - k * 8); c.globalAlpha = 1; }
+      else if (p.working) { const jb = jobOf(p); if (jb) { c.font = '11px sans-serif'; c.textAlign = 'center'; c.fillText(JOBS[jb.type].emoji, p.x, p.y - 16 + Math.sin(G.time * 3 + p.id) * 1.2); } }
       else if (p.health < 50) { c.font = '12px sans-serif'; c.textAlign = 'center'; c.fillText('🤒', p.x, p.y - 16); }
       else if (Math.min(p.food, p.water) < 25) { c.font = '12px sans-serif'; c.textAlign = 'center'; c.fillText(p.food < p.water ? '🌾?' : '💧?', p.x, p.y - 16); }
     } });
     items.sort((a, b) => a.y - b.y).forEach(i => i.f());
+    // weather
+    const wk = G.weather.k;
+    if (wk === 'cloud' || wk === 'rain' || wk === 'snow') { c.fillStyle = wk === 'cloud' ? 'rgba(90,100,120,.06)' : 'rgba(70,90,120,.13)'; c.fillRect(0, 0, W, H); }
+    if (wk === 'rain') { c.strokeStyle = 'rgba(200,225,255,.75)'; c.lineWidth = 1.2; c.beginPath(); for (const q of drops) { c.moveTo(q.x, q.y); c.lineTo(q.x - 3, q.y + 9); } c.stroke(); }
+    if (wk === 'snow') { c.fillStyle = '#fff'; for (const q of drops) { ell(c, q.x, q.y, 1.4 + q.s * 1.4, 1.4 + q.s * 1.4); c.fill(); } }
+    // night: darken the town, then light up windows, lanterns and fireflies
+    const dk = darkness();
+    if (dk > 0) {
+      c.fillStyle = `rgba(22,26,64,${.42 * dk})`; c.fillRect(0, 0, W, H);
+      c.save(); c.globalCompositeOperation = 'lighter';
+      const glow = (x, y, r, a, col = '255,200,110') => { const g = c.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, `rgba(${col},${a})`); g.addColorStop(1, `rgba(${col},0)`); c.fillStyle = g; c.fillRect(x - r, y - r, r * 2, r * 2); };
+      for (const b of G.buildings) {
+        const n = sz(b.type) * T, bx = b.x * T + n / 2;
+        if (b.type === 'lantern') glow(bx, b.y * T + 9, 46, .55 * dk);
+        else if (!DECOR[b.type] && !['hay', 'garden', 'park', 'roomba'].includes(b.type)) glow(bx, b.y * T + n * .6, n * .55, .3 * dk);
+      }
+      for (const f of fireflies) glow(f.x, f.y, 6, (.5 + .5 * Math.sin(f.p * 4)) * .8 * dk, '230,255,140');
+      c.restore();
+    }
     if (selBld && G.buildings.includes(selBld)) { const n = sz(selBld.type) * T; c.save(); c.setLineDash([5, 4]); c.lineDashOffset = -G.time * 12; c.strokeStyle = '#e9b93b'; c.lineWidth = 2.5; rr(c, selBld.x * T + 1, selBld.y * T + 1, n - 2, n - 2, 8); c.stroke(); c.restore(); }
     // popups
     c.textAlign = 'center'; c.font = '13px Chewy, "Comic Sans MS", sans-serif';
@@ -1471,17 +2039,26 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
 
   // ---------- loop ----------
   let last = 0, uiT = 0, saveT = 0;
+  function renderBanner() {
+    const el = $('banner'), ev = G.event && EVENTS.find(e => e.id === G.event.id);
+    const party = G.party && G.pigs.filter(p => G.party.ids.includes(p.id)).map(p => p.name);
+    const txt = party && party.length ? `🎂 Birthday party for ${party.join(' & ')}!` : ev ? `${ev.e} ${ev.name}: ${ev.desc}` : '';
+    el.hidden = !txt; if (txt && el.textContent !== txt) el.textContent = txt;
+  }
   function loop(t) {
     const dt = Math.min(.1, (t - last) / 1000 || 0); last = t;
-    tick(dt); draw();
-    uiT -= dt; if (uiT <= 0) { uiT = .25; hudRes(); hudList(); renderPig(); syncTools(); hudGoals(); renderBld(); }
+    if (!paused) for (let i = 0; i < G.speed; i++) tick(dt);
+    draw();
+    uiT -= dt; if (uiT <= 0) { uiT = .25; hudRes(); hudList(); renderPig(); syncTools(); hudGoals(); renderBld(); renderStocks(); renderBanner(); }
     saveT -= dt; if (saveT <= 0) { saveT = 5; save(); }
     requestAnimationFrame(loop);
   }
   document.addEventListener('visibilitychange', () => { if (document.hidden) save(); });
-  resize(); hudRes(); syncTools(); renderPig(); hudGoals();
-  let seen = false; try { seen = !!localStorage.getItem('pigcity-seen'); localStorage.setItem('pigcity-seen', '1'); } catch (e) {}
-  if (!seen) { setTimeout(() => toast('Welcome to Pig City! Toki, Mochi, Poke, Miso Soup and Masaki just moved in.'), 400); }
+  resize(); drawTools(); hudRes(); renderPig(); hudGoals(); syncSound(); syncSpeed();
+  let seen = false, seen2 = false;
+  try { seen = !!localStorage.getItem('pigcity-seen'); seen2 = !!localStorage.getItem('pigcity-seen2'); localStorage.setItem('pigcity-seen', '1'); localStorage.setItem('pigcity-seen2', '1'); } catch (e) {}
+  if (!seen) openTut();
+  else if (!seen2) setTimeout(() => toast('✨ Pig City update: seasons, night time, pig personalities and the Pig Stock Exchange!'), 400);
   requestAnimationFrame(loop);
 })();
 </script>
