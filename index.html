@@ -47,6 +47,12 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
 .stage { position: relative; border: 3px solid var(--ink); border-radius: 16px; box-shadow: 0 5px 0 var(--ink); overflow: hidden; background: #8fd3e6; aspect-ratio: 16 / 10.5; touch-action: none; }
 .zoombar { position: absolute; right: 10px; bottom: 10px; display: flex; flex-direction: column; gap: 6px; }
 .zoombar .ibtn { width: 36px; height: 36px; font-size: 18px; padding: 0; }
+.hood { background: #fff; border: 2px solid var(--fleece-deep); border-left-width: 6px; border-radius: 12px; padding: 7px 9px; margin-bottom: 8px; }
+.hoodtop { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; }
+.hoodtop b { font-family: var(--font-display); font-weight: 400; font-size: 17px; }
+.hoodzone { width: 100%; font: inherit; font-size: 13px; font-weight: 700; padding: 3px 6px; margin: 4px 0; border: 2px solid var(--ink); border-radius: 10px; background: #fff; color: var(--ink); }
+.hoodstats { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 12px; font-weight: 800; color: var(--muted); }
+#hoods { max-height: 420px; overflow-y: auto; }
 .stage canvas { display: block; width: 100%; height: 100%; cursor: grab; }
 .toast { position: absolute; left: 50%; top: 10px; transform: translateX(-50%); background: var(--card); border: 2px solid var(--ink); border-radius: 999px; padding: 6px 14px; font-weight: 800; font-size: 14px; box-shadow: 0 3px 0 var(--ink); pointer-events: none; white-space: nowrap; max-width: 92%; overflow: hidden; text-overflow: ellipsis; transition: opacity .3s; }
 .tools { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 8px; }
@@ -276,7 +282,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
         <div class="toast" id="toast" style="opacity:0"></div>
         <div class="banner" id="banner" hidden></div>
         <div class="paused" id="pausedOv" hidden>Paused</div>
-        <div class="zoombar" id="zoombar"><button class="ibtn" id="zIn" title="Zoom in" aria-label="Zoom in">+</button><button class="ibtn" id="zOut" title="Zoom out" aria-label="Zoom out">−</button><button class="ibtn" id="zHome" title="Back to the middle" aria-label="Recenter">⌖</button><button class="ibtn" id="zWalls" title="Walls up / cutaway / down" aria-label="Change wall view" hidden>🧱</button></div>
+        <div class="zoombar" id="zoombar"><button class="ibtn" id="zIn" title="Zoom in" aria-label="Zoom in">+</button><button class="ibtn" id="zOut" title="Zoom out" aria-label="Zoom out">−</button><button class="ibtn" id="zHome" title="Back to the middle" aria-label="Recenter">⌖</button><button class="ibtn" id="zMap" title="Planning overlays: neighborhoods, services, happiness" aria-label="Planning overlays">🗺️</button><button class="ibtn" id="zWalls" title="Walls up / cutaway / down" aria-label="Change wall view" hidden>🧱</button></div>
       </div>
       <div class="panel" id="buildPanel">
         <h2 id="buildTitle">Build</h2>
@@ -320,6 +326,10 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
         <div id="goals"></div>
         <div class="badges" id="badges"></div>
       </div>
+      <div class="panel" id="hoodPanel">
+        <h2>Neighborhoods <span class="tag" id="hoodMap"></span></h2>
+        <div id="hoods"></div>
+      </div>
       <div class="panel">
         <h2>Market</h2>
         <div class="btns" style="margin-top:0">
@@ -353,6 +363,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
       <div class="step"><span class="se">📈</span><span><b>Build Masaki Capital</b> to give pigs jobs and open the PCSE stock exchange.</span></div>
       <div class="step"><span class="se">🏙️</span><span><b>Job City</b> has big businesses. Pigs who work there drive their cars in every morning. Track it all on the <b>📊 Jobs Dashboard</b>.</span></div>
       <div class="step"><span class="se">🏰</span><span>Click a castle and <b>Go inside</b> to decorate. Cozy rooms keep the pigs who live there happy.</span></div>
+      <div class="step"><span class="se">📐</span><span>Open <b>📐 Planning</b> to pave roads, lay sidewalks and draw <b>neighborhoods</b>. Zone them for bonuses and use 🗺️ to see coverage maps.</span></div>
       <div class="step"><span class="se">⏩</span><span>Use <b>❚❚ 1× 2× 3×</b> up top to pause or speed up time. Space bar pauses too.</span></div>
     </div>
     <div class="btns"><button class="btn" id="tutGo">Let's play!</button></div>
@@ -494,12 +505,15 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     citytree: { name: 'Street Tree', ic: '🌳', cat: 'cdecor', cost: 10, desc: 'Shady sidewalk tree. City workers feel happier.', city: true },
     streetlamp: { name: 'Street Lamp', ic: '💡', cat: 'cdecor', cost: 15, desc: 'Lights up the city at night', city: true },
     fountain: { name: 'Fountain', ic: '⛲', cat: 'cdecor', cost: 50, desc: 'A splashy plaza fountain. Big happiness boost.', city: true },
+    road:   { name: 'Road', ic: '🛣️', cat: 'plan', cost: 2, any: true, desc: 'Drag across the map to pave streets (2 🪙 a tile). Bulldoze removes them.' },
+    path:   { name: 'Sidewalk', ic: '🧱', cat: 'plan', cost: 1, any: true, desc: 'Drag to lay brick sidewalks and plazas (1 🪙 a tile)' },
+    zone:   { name: 'Neighborhood', ic: '📐', cat: 'plan', cost: 0, any: true, desc: 'Drag a rectangle to draw a neighborhood, then name and zone it' },
     broom:  { name: 'Broom', ic: '🧹', cat: 'tool', cost: 0, desc: 'Drag across poop in Home Town to sweep it up (1 🪙 each)' },
     upgrade: { name: 'Upgrade', ic: '⬆️', cat: 'tool', cost: 0, desc: 'Click a building to make it fancier' },
     bulldoze: { name: 'Bulldoze', ic: '🚜', cat: 'tool', cost: 0, desc: 'Remove a building, refunds half' }
   };
-  const CATS = [['home', '🏡 Homes & food'], ['biz', '💼 Shops & jobs'], ['help', '🧑‍⚕️ Helpers'], ['decor', '🌷 Decor'], ['tool', '🛠️ Tools']];
-  const CITY_CATS = [['cbiz', '🏢 Businesses'], ['cdecor', '🌳 City decor'], ['tool', '🛠️ Tools']];
+  const CATS = [['home', '🏡 Homes & food'], ['biz', '💼 Shops & jobs'], ['help', '🧑‍⚕️ Helpers'], ['decor', '🌷 Decor'], ['plan', '📐 Planning'], ['tool', '🛠️ Tools']];
+  const CITY_CATS = [['cbiz', '🏢 Businesses'], ['cdecor', '🌳 City decor'], ['plan', '📐 Planning'], ['tool', '🛠️ Tools']];
   const DECOR = { tree: 1, flowers: .6, bench: 1, lantern: 1.2, pond: 2.5, citytree: 1, streetlamp: 1, fountain: 2.5 };
   // ---------- furniture (inside castles) ----------
   const F = {
@@ -638,9 +652,11 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
   const bdayLabel = d => `${SEASONS[Math.floor((d - 1) / SEASON_DAYS)].name} ${((d - 1) % SEASON_DAYS) + 1}`;
 
   // ---------- map ----------
-  const COLS = 24, ROWS = 16, T = 40, W = COLS * T, H = ROWS * T, OW = 640, OH = 440, HOME_ROAD = 12, AVENUE = [16, 17];
+  const COLS = 40, ROWS = 30, T = 40, W = COLS * T, H = ROWS * T, OW = 640, OH = 440, HOME_ROAD = 12, AVENUE = [16, 17];
   const HL_W = HOME_ROAD * T + 13, HL_E = HOME_ROAD * T + 28;
-  const isRoad = (mapName, x, y) => mapName === 'city' ? (ROAD.includes(y) || AVENUE.includes(x)) : y === HOME_ROAD;
+  const roadSets = { home: new Set(), city: new Set() }, pathSets = { home: new Set(), city: new Set() }; let roadVer = 0;
+  const isRoad = (mapName, x, y) => (mapName === 'city' ? (ROAD.includes(y) || AVENUE.includes(x)) : y === HOME_ROAD) || roadSets[mapName].has(x + ',' + y);
+  const isPath = (mapName, x, y) => pathSets[mapName].has(x + ',' + y);
   const canvas = document.getElementById('c');
   let ctx = canvas.getContext('2d');
   function resize() {
@@ -650,7 +666,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
   }
   window.addEventListener('resize', resize);
   const flowers = [];
-  for (let i = 0; i < 260; i++) flowers.push({ x: Math.random() * W, y: Math.random() * H, c: ['#fff', '#ffd6e0', '#fff1a8', '#d8c9f5'][i % 4], k: Math.random() < .5 });
+  for (let i = 0; i < 700; i++) flowers.push({ x: Math.random() * W, y: Math.random() * H, c: ['#fff', '#ffd6e0', '#fff1a8', '#d8c9f5'][i % 4], k: Math.random() < .5 });
 
   // ---------- state ----------
   let G, nextId = 1, view = 'home', insideB = null;
@@ -731,6 +747,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     for (const p of G.pigs) givePersonality(p);
     pickFriends();
     initMarket();
+    initPlanning();
     if (!G.city) { G.city = [{ type: 'office', x: 2, y: 2, t: 0, map: 'city' }]; G.cityNew = true; }
     for (const b of G.city) b.map = 'city';
     G.jd = G.jd || { day: dayNum(), place: {}, pig: {}, total: 0 };
@@ -770,7 +787,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
   function fits(type, x, y, ignore) {
     const n = sz(type);
     if (x < 0 || y < 0 || x + n > COLS || y + n > ROWS) return false;
-    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) if (isRoad(view === 'city' ? 'city' : 'home', x + i, y + j)) return false;
+    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) { const m = view === 'city' ? 'city' : 'home'; if (isRoad(m, x + i, y + j) || isPath(m, x + i, y + j)) return false; }
     for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) if (bl().some(b => b !== ignore && covers(b, x + i, y + j))) return false;
     return true;
   }
@@ -1116,6 +1133,8 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     ptrs.set(e.pointerId, cssPt(e)); dragMoved = false;
     if (view === 'inside' && !isHouse()) return;
     if (tool === 'broom' && view === 'home') { sweeping = true; scoopNear(toWorld(e), 22); return; }
+    if ((tool === 'road' || tool === 'path') && (view === 'home' || view === 'city') && ptrs.size === 1) { paintMode = tool; paintTile(e); return; }
+    if (tool === 'zone' && (view === 'home' || view === 'city') && ptrs.size === 1) { const w = toWorld(e), x = Math.floor(w.x / T), y = Math.floor(w.y / T); zoneDrag = { x0: x, y0: y, x1: x, y1: y }; return; }
     if (ptrs.size === 2) { const [a, b2] = [...ptrs.values()]; pinch0 = { d: Math.hypot(a.x - b2.x, a.y - b2.y), z: cam().z }; drag = null; }
     else { const p = cssPt(e); drag = { x: p.x, y: p.y, cx: cam().x, cy: cam().y }; }
   });
@@ -1124,6 +1143,8 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     if (!ptrs.has(e.pointerId)) return;
     ptrs.set(e.pointerId, cssPt(e));
     if (sweeping) { scoopNear(w, 22); return; }
+    if (paintMode) { paintTile(e); return; }
+    if (zoneDrag) { zoneDrag.x1 = Math.max(0, Math.min(COLS - 1, Math.floor(w.x / T))); zoneDrag.y1 = Math.max(0, Math.min(ROWS - 1, Math.floor(w.y / T))); return; }
     if (pinch0 && ptrs.size === 2) { const [a, b2] = [...ptrs.values()]; cam().z = pinch0.z * Math.hypot(a.x - b2.x, a.y - b2.y) / pinch0.d; clampCam(cam()); dragMoved = true; return; }
     if (drag) {
       const p = cssPt(e), dx = p.x - drag.x, dy = p.y - drag.y;
@@ -1131,7 +1152,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
       if (dragMoved) { const cm = cam(); cm.x = drag.cx - dx / cm.z; cm.y = drag.cy - dy / cm.z; clampCam(cm); canvas.style.cursor = 'grabbing'; }
     }
   });
-  const endPtr = e => { ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch0 = null; if (!ptrs.size) { drag = null; sweeping = false; canvas.style.cursor = ''; } };
+  const endPtr = e => { if (zoneDrag && e.type === 'pointerup') finishZone(); zoneDrag = null; if (paintMode) { paintMode = null; save(); } ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch0 = null; if (!ptrs.size) { drag = null; sweeping = false; canvas.style.cursor = ''; } };
   canvas.addEventListener('pointerup', endPtr); canvas.addEventListener('pointercancel', endPtr);
   canvas.addEventListener('pointerleave', () => { hover = null; });
   function zoomAt(sx, sy, f) {
@@ -1160,9 +1181,9 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     if (isHouse()) { houseClick(cssPt(e)); return; }
     if (view === 'inside') { const wi = { x: w.x / IS, y: w.y / IS }; insideClick(wi, Math.floor(wi.x / T), Math.floor(wi.y / T)); return; }
     const sp = cssPt(e), s = scrToIso(sp.x, sp.y);
-    if (tool === 'broom') return;
+    if (tool === 'broom' || tool === 'road' || tool === 'path' || tool === 'zone') return;
     if (tool === 'bulldoze') {
-      const b = pickBuilding(s) || at(tx, ty); if (!b) return;
+      const b = pickBuilding(s) || at(tx, ty); if (!b) { if (removeRoadAt(mapOfView(), tx, ty)) { popup(tx * T + T / 2, ty * T + 10, 'Cleared!', INK, view); sfx('tap'); hudRes(); save(); } return; }
       if (b.type === 'hutch' && (capacity() - CAP[L(b) - 1]) < G.pigs.length) { toast("Can't remove that castle, your pigs need the room!"); return; }
       for (const q of workersAt(b)) { q.job = null; q.working = false; }
       bl().splice(bl().indexOf(b), 1); if (selBld === b) selBld = null; const refund = Math.floor(B[b.type].cost * [1, 2, 4][L(b) - 1] / 2); G.coins += refund;
@@ -1472,7 +1493,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     $('stage').hidden = !map; $('buildPanel').hidden = !map; $('dash').hidden = v !== 'dash'; $('pcse').hidden = v !== 'pcse';
     $('buildTitle').textContent = v === 'city' ? 'Build downtown 🏙️' : v === 'inside' ? `Decorate ${insideName(insideB)} ${isWork(insideB) ? '🪴' : '🛋️'}` : 'Build';
     drawTabs(); drawTools(); renderBld(); renderCozy();
-    $('zoombar').hidden = v === 'inside' && !isHouse(); $('zWalls').hidden = !isHouse();
+    $('zoombar').hidden = v === 'inside' && !isHouse(); $('zWalls').hidden = !isHouse(); $('zMap').hidden = v === 'inside'; hoodSig = '';
     if (map) { resize(); if ((v === 'home' || v === 'city') && !cams[v].init) { camHome(v); cams[v].init = true; } if (isHouse()) houseCamHome(); }
     if (v === 'city' && G.cityNew) { G.cityNew = false; setTimeout(() => toast('🏙️ Welcome to Job City! Pigs with jobs here drive in around 8am and home after 5pm.'), 200); }
     if (v === 'dash') renderDash(); if (v === 'pcse') { stockSig = ''; renderStocks(); }
@@ -1547,6 +1568,8 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     { id: 'masaki', e: '👔', name: "Masaki's Team", desc: 'Fill both jobs at Masaki Capital', r: 80, f: () => [maxWorkers('bank'), 2] },
     { id: 'commute1', e: '🚗', name: 'Morning Commute', desc: 'A pig drives to work in Job City', r: 30, f: () => [st().commutes || 0, 1] },
     { id: 'cozy10', e: '🛋️', name: 'Home Sweet Home', desc: 'Make a castle room 10 coziness', r: 40, f: () => [Math.max(0, ...G.buildings.filter(b => b.type === 'hutch').map(cozyOf)), 10] },
+    { id: 'hood1', e: '📐', name: 'City Planner', desc: 'Draw your first neighborhood', r: 40, f: () => [st().hoods || 0, 1] },
+    { id: 'road20', e: '🛣️', name: 'Road Crew', desc: 'Pave 20 road tiles', r: 40, f: () => [st().roads || 0, 20] },
     { id: 'trade1', e: '📈', name: 'First Trade', desc: 'Buy a share on the PCSE', r: 30, f: () => [G.mkt.trades, 1] },
     { id: 'party1', e: '🎂', name: 'Party Animal', desc: 'Celebrate a pig birthday', r: 40, f: () => [st().parties, 1] },
     { id: 'hay50', e: '🌾', name: 'Hay Hoarder', desc: 'Have 50 🌾 at once', r: 40, f: () => [Math.floor(G.hay), 50] },
@@ -1559,6 +1582,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     { id: 'year1', e: '🗓️', name: 'A Whole Pig Year', desc: 'Live through all 4 seasons', r: 150, f: () => [Math.min(dayNum() - 1, YEAR), YEAR] },
     { id: 'city6', e: '🏙️', name: 'Rush Hour', desc: 'Have 6 pigs with jobs in Job City', r: 120, f: () => [G.pigs.filter(p => jobOf(p) && jobOf(p).map === 'city').length, 6] },
     { id: 'car1', e: '🏎️', name: 'New Wheels', desc: 'Buy a pig a new car at Zoomies Motors', r: 50, f: () => [st().cars || 0, 1] },
+    { id: 'zones3', e: '🗺️', name: 'Master Plan', desc: 'Have 3 neighborhoods with active zoning bonuses', r: 120, f: () => [new Set([...zoneBonus.keys()].map(b => (zoneOfB(b) || {}).id)).size, 3] },
     { id: 'pop21', e: '🌆', name: 'Pig City', desc: 'Reach 21 pigs', r: 150, f: () => [G.pigs.length, 21] },
     { id: 'pf1000', e: '🏦', name: 'Pig Tycoon', desc: 'Own stocks worth 1,000 🪙', r: 200, f: () => [Math.floor(pfValue()), 1000] },
     { id: 'pop36', e: '🌃', name: 'Pig Metropolis', desc: 'Reach 36 pigs', r: 300, f: () => [G.pigs.length, 36] }
@@ -1874,10 +1898,11 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
 
   // ---------- simulation ----------
   function tick(dt) {
+    refreshZones(dt);
     worldTick(dt); insideTick(dt); houseTick(dt);
     G.time += dt;
     const parks = lvlSum('park') * (evOn('spa') ? 1.5 : 1), vets = lvlSum('vet');
-    const decor = G.buildings.reduce((s, b) => s + (DECOR[b.type] || 0), 0), lanterns = count('lantern');
+    const decor = G.buildings.reduce((s, b) => s + (DECOR[b.type] || 0) * (zoneBonus.get(b) === 'park' ? 2 : 1), 0), lanterns = count('lantern');
     const dark = darkness(), wk = G.weather.k, sn = season().name;
     const cityDecor = (G.city || []).reduce((s, b) => s + (DECOR[b.type] || 0), 0), home = residents(), hourH = hourNow();
     // production (weather, seasons and events change the pace)
@@ -1887,6 +1912,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
       if (b.type === 'hay') wx = (sn === 'Winter' ? .7 : sn === 'Summer' ? 1.15 : 1) * (evOn('hayfest') ? 2 : 1);
       if ((b.type === 'garden' || b.type === 'water') && wk === 'rain') wx = 1.5;
       if (b.type === 'water' && sn === 'Summer' && wk === 'sun') wx = .85;
+      if (zoneBonus.get(b) === 'farm') wx *= 1.25;
       const rt = RATE[b.type] / MULT[L(b) - 1] / wx;
       b.t += dt;
       while (b.t >= rt) {
@@ -1934,6 +1960,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
       const pk = inCity ? 0 : has(p, 'zoomies') ? parks * 2 : parks, dc = has(p, 'fancy') ? dBase * 2 : dBase;
       let jd = .45 / (1 + .5 * pk + .07 * dc) + (inCity ? 0 : (has(p, 'shy') ? .25 : .5) * dirt);
       jd /= 1 + Math.min(.8, .035 * cozyOf(inCity ? jobOf(p) : home.get(p.id)));
+      { const zb = zoneBonus.get(inCity ? jobOf(p) : home.get(p.id)); if ((!inCity && zb === 'res') || (inCity && zb === 'down')) jd *= .8; }
       if (has(p, 'sleepy')) jd *= .75;
       if (dark > .5 && !lanterns && !has(p, 'sleepy')) jd += .08; // dark nights feel a little spooky without lanterns
       if (wk === 'snow' && sn === 'Winter') jd += .05;
@@ -1998,6 +2025,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
             p.workT -= J.every;
             let pay = J.pay * (p.banker && wb.type === 'bank' ? 2 : 1);
             if ((has(p, 'brainy') && wb.type === 'bank') || (has(p, 'fancy') && wb.type === 'salon')) pay = Math.round(pay * 1.5);
+            { const zb = zoneBonus.get(wb); if (zb === 'com' || (zb === 'down' && ['office', 'pcse', 'bank'].includes(wb.type))) pay += 1; if (zb === 'ind') { if (wb.type === 'factory') G.hay += 1; if (wb.type === 'market') G.veg += 1; } }
             G.coins += pay; G.stats.jobPay += pay; logPay(p, wb, pay); if (view === pigMap(p)) sfx('coin');
             popup(p.x, p.y - 22, `+${pay} 🪙 ${J.emoji}`, '#1f2f5c', pigMap(p));
             if (view === 'inside' && insideB === wb) { const s0 = stationOf(wb, p.job.slot); popup(s0.x, s0.y - 34, `+${pay} 🪙`, '#1f2f5c', 'inside'); }
@@ -2027,7 +2055,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
           const fr = friendOf(p), bench = has(p, 'sleepy') && pick(G.buildings.filter(b => b.type === 'bench') .concat([null]));
           if (bench) { p.tx = bench.x * T + T / 2 + (Math.random() - .5) * 10; p.ty = bench.y * T + T - 4; }
           else if (fr && Math.random() < (has(p, 'social') ? .6 : .3)) { p.tx = Math.max(24, Math.min(W - 24, fr.x + (Math.random() - .5) * 40)); p.ty = Math.max(30, Math.min(H - 20, fr.y + (Math.random() - .5) * 30)); }
-          else { p.tx = 24 + Math.random() * (W - 48); p.ty = 30 + Math.random() * (H - 50); }
+          else { const hc = home.get(p.id); if (hc) { const n2 = sz(hc.type); p.tx = Math.max(24, Math.min(W - 24, (hc.x + n2 / 2) * T + (Math.random() - .5) * 11 * T)); p.ty = Math.max(30, Math.min(H - 20, (hc.y + n2 + 1) * T + (Math.random() - .5) * 9 * T)); } else { p.tx = 24 + Math.random() * (W - 48); p.ty = 30 + Math.random() * (H - 50); } }
         }
         else { p.x += dx / d * sp * dt; p.y += dy / d * sp * dt; if (Math.abs(dx) > 1) p.face = dx > 0 ? 1 : -1; }
       }
@@ -3207,7 +3235,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
 
   // ---------- ground (cached per map + season) ----------
   const groundCache = {};
-  const GPAD = 7, NB = 7, GS = 1.5; // bridge length, neighbour-town strip, cache resolution
+  const GPAD = 7, NB = 7, GS = 1; // bridge length, neighbour-town strip, cache resolution
   function groundBounds() { return { x0: -(ROWS + GPAD + NB + 2) * HW, y0: -(GPAD + NB + 4) * HH - 80, x1: (COLS + GPAD + NB + 2) * HW, y1: (COLS + ROWS + GPAD + NB + 4) * HH + 60 }; }
   function buildGround(mapName) {
     const gb = groundBounds(), cv = document.createElement('canvas');
@@ -3280,20 +3308,21 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
       line(IP(O, 0, HOME_ROAD), IP(O, COLS, HOME_ROAD), '#c9c2b4', 2.5); line(IP(O, 0, HOME_ROAD + 1), IP(O, COLS, HOME_ROAD + 1), '#c9c2b4', 2.5);
       // grass tufts + flowers
       flowers.forEach((f, i) => {
-        const tx = Math.floor(f.x / T), ty = Math.floor(f.y / T); if (isRoad('home', tx, ty)) return;
+        const tx = Math.floor(f.x / T), ty = Math.floor(f.y / T); if (isRoad('home', tx, ty) || isPath('home', tx, ty)) return;
         const p = iso(f.x, f.y);
         if (f.k) { c.strokeStyle = si === 3 ? '#b8c9cf' : si === 2 ? '#a9a25a' : '#78b45a'; c.lineWidth = 1.2; c.beginPath(); c.moveTo(p.x, p.y); c.lineTo(p.x - 2, p.y - 5); c.moveTo(p.x, p.y); c.lineTo(p.x + 2, p.y - 5); c.stroke(); }
         else { c.fillStyle = S.flowers[i % 4]; ell(c, p.x, p.y, si === 2 ? 2.6 : 1.8, si === 2 ? 1.3 : 1.4); c.fill(); }
       });
     }
+    drawUserRoads(c, mapName, O);
     // grassy lip on the island edges
     c.strokeStyle = city ? '#bdb6aa' : shade(S.grass, -.2); c.lineWidth = 2.5; { const a = IP(O, 0, ROWS), b2 = IP(O, COLS, ROWS), d2 = IP(O, COLS, 0); c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(b2[0], b2[1]); c.lineTo(d2[0], d2[1]); c.stroke(); }
     return { cv, gb };
   }
   function groundFor(mapName) {
-    const key = mapName + seasonIdx();
-    if (!groundCache[key]) { for (const k in groundCache) if (k.startsWith(mapName)) delete groundCache[k]; groundCache[key] = buildGround(mapName); }
-    return groundCache[key];
+    const key = seasonIdx() + ':' + roadVer, gc = groundCache[mapName], now = performance.now();
+    if (!gc || (gc.key !== key && (now - gc.t > 120 || !paintMode))) groundCache[mapName] = { key, t: now, val: buildGround(mapName) };
+    return groundCache[mapName].val;
   }
   function drawWater(c) {
     const night = darkness(), cityV = view === 'city';
@@ -3588,6 +3617,187 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
   }
   function houseCamHome() { const pl = planOf(insideB), p = { x: (pl.W - pl.H) / 2 * HW, y: (pl.W + pl.H) / 2 * HH - 20 }; cams.inside.x = p.x; cams.inside.y = p.y; cams.inside.z = Math.max(.6, Math.min(1.5, Math.min(vw / ((pl.W + pl.H) * HW + 60), vh / ((pl.W + pl.H) * HH + 120)))); }
 
+  // ================= URBAN PLANNING =================
+  const ZONES = {
+    res:  { e: '🏡', name: 'Residential', col: '#7fc1ea', tip: 'Pigs who live here stay happier when the neighborhood has a park or 3+ decorations.' },
+    farm: { e: '🌾', name: 'Farm', col: '#e0a43a', tip: 'Hay fields, gardens and water towers here work 25% faster.' },
+    com:  { e: '🛍️', name: 'Commercial', col: '#e07a9a', tip: 'Shops and offices here pay +1 🪙 every shift.' },
+    ind:  { e: '🏭', name: 'Industrial', col: '#9a8f80', tip: 'Factories and markets here make extra goods every shift.' },
+    park: { e: '🌳', name: 'Parkland', col: '#5fae48', tip: 'Decorations here count double for happiness.' },
+    down: { e: '🏙️', name: 'Downtown', col: '#a98bd9', tip: 'Offices and the PCSE here pay +1 🪙 every shift, and city workers get happier.' }
+  };
+  const HOOD_NAMES = ['Clover Hill', 'Hay Valley', 'Wheek Heights', 'Pellet Park', 'Carrot Corner', 'Fluffington', 'Popcorn Point', 'Timothy Terrace', 'Mochi Meadows', 'Poke Plaza', 'Toki Town', 'Miso Mile', 'Masaki Square', 'Romaine Row', 'Squeak Street', 'Burrow Bay', 'Cuddle Cove', 'Zoomies Ridge'];
+  let overlay = 0, paintMode = null, zoneDrag = null, groundDirtyT = 0;
+  const OVERLAYS = ['Normal view', 'Neighborhoods', 'Service coverage', 'Happiness map'];
+  function initPlanning() {
+    G.roads = G.roads || { home: [], city: [] }; G.paths = G.paths || { home: [], city: [] }; G.hoods = G.hoods || { home: [], city: [] };
+    for (const m of ['home', 'city']) { roadSets[m] = new Set(G.roads[m]); pathSets[m] = new Set(G.paths[m]); }
+    roadVer++;
+  }
+  const mapOfView = () => view === 'city' ? 'city' : 'home';
+  const hoodsOf = m => (G.hoods && G.hoods[m]) || [];
+  function zoneAt(m, x, y) { for (const h of hoodsOf(m)) if (x >= h.x && x < h.x + h.w && y >= h.y && y < h.y + h.h) return h; return null; }
+  const zoneOfB = b => zoneAt(b.map === 'city' ? 'city' : 'home', b.x, b.y);
+  function hoodStats(m, h) {
+    const list = m === 'city' ? G.city : G.buildings, inside = list.filter(b => b.x >= h.x && b.x < h.x + h.w && b.y >= h.y && b.y < h.y + h.h);
+    const res = residents(), pigs = m === 'home' ? G.pigs.filter(p => { const c0 = res.get(p.id); return c0 && inside.includes(c0); }) : G.pigs.filter(p => { const jb = jobOf(p); return jb && inside.includes(jb); });
+    const joy = pigs.length ? Math.round(pigs.reduce((s, p) => s + Math.min(p.joy, p.food, p.water), 0) / pigs.length) : null;
+    const jobs = inside.filter(b => JOBS[b.type]).reduce((s, b) => s + slotsOf(b), 0), decor = inside.filter(b => DECOR[b.type]).length, parks = inside.filter(b => b.type === 'park').length;
+    const roads = [...roadSets[m]].filter(k => { const [x, y] = k.split(',').map(Number); return x >= h.x && x < h.x + h.w && y >= h.y && y < h.y + h.h; }).length;
+    return { n: inside.length, pigs, joy, jobs, decor, parks, roads, active: zoneActive(h, inside) };
+  }
+  function zoneActive(h, inside) {
+    switch (h.zone) {
+      case 'res': return inside.some(b => b.type === 'park') || inside.filter(b => DECOR[b.type]).length >= 3;
+      case 'farm': return inside.some(b => ['hay', 'garden', 'water'].includes(b.type));
+      case 'com': return inside.some(b => ['cafe', 'salon', 'toys', 'bank', 'sushi', 'dealer', 'market'].includes(b.type));
+      case 'ind': return inside.some(b => ['factory', 'market'].includes(b.type));
+      case 'park': return inside.some(b => DECOR[b.type] || b.type === 'park');
+      case 'down': return inside.some(b => ['office', 'pcse', 'bank'].includes(b.type));
+    }
+    return false;
+  }
+  // cached per tick: which buildings get zoning bonuses
+  let zoneBonus = new Map(), zoneT = 0;
+  function refreshZones(dt) {
+    zoneT -= dt; if (zoneT > 0) return; zoneT = 1;
+    zoneBonus = new Map();
+    for (const m of ['home', 'city']) for (const h of hoodsOf(m)) {
+      const list = m === 'city' ? G.city : G.buildings, inside = list.filter(b => b.x >= h.x && b.x < h.x + h.w && b.y >= h.y && b.y < h.y + h.h);
+      if (!zoneActive(h, inside)) continue;
+      for (const b of inside) zoneBonus.set(b, h.zone);
+    }
+  }
+  function markGround() { roadVer++; }
+  function paintTile(e) {
+    const w = toWorld(e), x = Math.floor(w.x / T), y = Math.floor(w.y / T), m = mapOfView();
+    if (x < 0 || y < 0 || x >= COLS || y >= ROWS) return;
+    const k = x + ',' + y, cost = B[paintMode].cost;
+    if (isRoad(m, x, y) || pathSets[m].has(k) || at(x, y)) return;
+    if (G.coins < cost) { toast(`You need ${cost} 🪙 for each ${B[paintMode].name.toLowerCase()} tile.`); paintMode = null; return; }
+    G.coins -= cost;
+    if (paintMode === 'road') { roadSets[m].add(k); G.roads[m].push(k); G.stats.roads = (G.stats.roads || 0) + 1; } else { pathSets[m].add(k); G.paths[m].push(k); }
+    markGround(); sfx('scoop'); hudRes();
+  }
+  function removeRoadAt(m, x, y) {
+    const k = x + ',' + y;
+    if (roadSets[m].has(k)) { roadSets[m].delete(k); G.roads[m] = G.roads[m].filter(q => q !== k); G.coins += 1; markGround(); return true; }
+    if (pathSets[m].has(k)) { pathSets[m].delete(k); G.paths[m] = G.paths[m].filter(q => q !== k); markGround(); return true; }
+    return false;
+  }
+  function finishZone() {
+    const z = zoneDrag; zoneDrag = null; if (!z) return;
+    const x = Math.max(0, Math.min(z.x0, z.x1)), y = Math.max(0, Math.min(z.y0, z.y1)), w = Math.min(COLS, Math.max(z.x0, z.x1) + 1) - x, h = Math.min(ROWS, Math.max(z.y0, z.y1) + 1) - y;
+    if (w * h < 4) { toast('Drag a bigger rectangle to make a neighborhood (at least 2×2).'); return; }
+    const m = mapOfView(), used = new Set(hoodsOf('home').concat(hoodsOf('city')).map(q => q.name));
+    let name = HOOD_NAMES.find(n => !used.has(n)) || 'District ' + (hoodsOf(m).length + 1);
+    const typed = prompt('Name your new neighborhood:', name); if (typed === null) return; if (typed.trim()) name = typed.trim().slice(0, 22);
+    const list = m === 'city' ? G.city : G.buildings, inside = list.filter(b => b.x >= x && b.x < x + w && b.y >= y && b.y < y + h);
+    const zone = m === 'city' ? (inside.some(b => b.type === 'factory') ? 'ind' : inside.some(b => ['sushi', 'market', 'dealer'].includes(b.type)) ? 'com' : 'down') : inside.some(b => b.type === 'hutch') ? 'res' : inside.some(b => ['hay', 'garden', 'water'].includes(b.type)) ? 'farm' : inside.some(b => JOBS[b.type]) ? 'com' : 'res';
+    G.hoods[m].push({ id: Date.now() % 1e9, name, x, y, w, h, zone });
+    G.stats.hoods = (G.stats.hoods || 0) + 1; sfx('goal'); toast(`📐 ${name} is on the map! Pick its zoning in the Neighborhoods panel.`); hoodSig = ''; zoneT = 0; save();
+  }
+  let hoodSig = '';
+  function renderHoods() {
+    const m = mapOfView(), list = hoodsOf(m);
+    const sig = m + '|' + list.map(h => h.id + h.name + h.zone + h.x + h.y + h.w + h.h).join(';') + '|' + Math.floor((G.time || 0) / 2);
+    if (sig === hoodSig) return; hoodSig = sig;
+    $('hoodMap').textContent = m === 'city' ? 'Job City' : 'Home Town';
+    if (!list.length) { $('hoods').innerHTML = `<p class="small" style="margin-top:0">No neighborhoods in ${m === 'city' ? 'Job City' : 'Home Town'} yet. Open the <b>📐 Planning</b> tab under the map, pick <b>Neighborhood</b>, and drag a rectangle over part of town.</p>`; return; }
+    $('hoods').innerHTML = list.map(h => {
+      const s = hoodStats(m, h), Z = ZONES[h.zone];
+      const opts = Object.entries(ZONES).map(([k, z]) => `<option value="${k}" ${k === h.zone ? 'selected' : ''}>${z.e} ${z.name}</option>`).join('');
+      return `<div class="hood" data-id="${h.id}" style="border-left-color:${Z.col}">
+        <div class="hoodtop"><b>${h.name}</b><span class="tag">${h.w}×${h.h}</span></div>
+        <select class="hoodzone" aria-label="Zoning for ${h.name}">${opts}</select>
+        <div class="hoodstats"><span>🏠 ${s.n} buildings</span><span>🐹 ${s.pigs.length} ${m === 'city' ? 'workers' : 'residents'}</span>${s.joy !== null ? `<span>${s.joy > 60 ? '😊' : s.joy > 30 ? '😐' : '😟'} ${s.joy}% happy</span>` : ''}<span>💼 ${s.jobs} jobs</span><span>🌳 ${s.decor + s.parks} green</span><span>🛣️ ${s.roads} road</span></div>
+        <div class="small" style="margin:4px 0 0">${s.active ? '✅ Zoning bonus active: ' : '⏳ Bonus not active yet: '}${Z.tip}</div>
+        <div class="btns" style="margin-top:6px"><button class="mini" data-act="go">Go there</button><button class="mini" data-act="ren">Rename</button><button class="mini" data-act="del">Remove</button></div></div>`;
+    }).join('');
+  }
+  $('hoods').addEventListener('change', e => { const el = e.target.closest('.hood'); if (!el || !e.target.classList.contains('hoodzone')) return; const h = hoodsOf(mapOfView()).find(q => q.id === +el.dataset.id); if (h) { h.zone = e.target.value; zoneT = 0; hoodSig = ''; sfx('tap'); save(); } });
+  $('hoods').addEventListener('click', e => {
+    const btn = e.target.closest('button[data-act]'), el = e.target.closest('.hood'); if (!btn || !el) return;
+    const m = mapOfView(), h = hoodsOf(m).find(q => q.id === +el.dataset.id); if (!h) return;
+    if (btn.dataset.act === 'go') { if (view !== m) setView(m); const p = iso((h.x + h.w / 2) * T, (h.y + h.h / 2) * T), cm = cam(); cm.x = p.x; cm.y = p.y; clampCam(cm); }
+    if (btn.dataset.act === 'ren') { const n = prompt('New name for ' + h.name + '?', h.name); if (n && n.trim()) h.name = n.trim().slice(0, 22); }
+    if (btn.dataset.act === 'del' && confirm(`Remove the ${h.name} neighborhood? (Buildings stay.)`)) G.hoods[m] = G.hoods[m].filter(q => q !== h);
+    hoodSig = ''; zoneT = 0; sfx('tap'); save();
+  });
+  $('zMap').addEventListener('click', () => { overlay = (overlay + 1) % OVERLAYS.length; toast(`🗺️ ${OVERLAYS[overlay]}`); sfx('tap'); });
+  // ---------- drawing roads, sidewalks, neighborhoods and overlays ----------
+  function drawUserRoads(c, mapName, O) {
+    const city = mapName === 'city', R = roadSets[mapName], P = pathSets[mapName];
+    for (const k of P) {
+      const [x, y] = k.split(',').map(Number);
+      poly(c, [IP(O, x, y), IP(O, x + 1, y), IP(O, x + 1, y + 1), IP(O, x, y + 1)], (x + y) % 2 ? '#d0a882' : '#c99f78', 'rgba(110,70,40,.35)');
+      c.strokeStyle = 'rgba(110,70,40,.3)'; c.lineWidth = .8;
+      for (const f of [.33, .66]) { const a = IP(O, x, y + f), b2 = IP(O, x + 1, y + f); c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(b2[0], b2[1]); c.stroke(); }
+    }
+    const has = (x, y) => isRoad(mapName, x, y);
+    for (const k of R) {
+      const [x, y] = k.split(',').map(Number), E = has(x + 1, y) || has(x - 1, y), N = has(x, y - 1) || has(x, y + 1);
+      const ln = city ? '#f2c94c' : 'rgba(255,255,255,.8)';
+      c.setLineDash([5, 5]); c.lineWidth = 1.3; c.strokeStyle = ln;
+      if (E && !N) { const a = IP(O, x, y + .5), b2 = IP(O, x + 1, y + .5); c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(b2[0], b2[1]); c.stroke(); }
+      if (N && !E) { const a = IP(O, x + .5, y), b2 = IP(O, x + .5, y + 1); c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(b2[0], b2[1]); c.stroke(); }
+      c.setLineDash([]);
+      // curbs where the road meets grass or sidewalk
+      c.strokeStyle = city ? '#bdb6aa' : '#c9c2b4'; c.lineWidth = 2;
+      const curb = (a, b2) => { c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(b2[0], b2[1]); c.stroke(); };
+      if (!has(x, y - 1)) curb(IP(O, x, y), IP(O, x + 1, y)); if (!has(x, y + 1)) curb(IP(O, x, y + 1), IP(O, x + 1, y + 1));
+      if (!has(x - 1, y)) curb(IP(O, x, y), IP(O, x, y + 1)); if (!has(x + 1, y)) curb(IP(O, x + 1, y), IP(O, x + 1, y + 1));
+      if (E && N && has(x + 1, y) + has(x - 1, y) + has(x, y + 1) + has(x, y - 1) >= 3) { c.fillStyle = 'rgba(255,255,255,.55)'; for (let i = 0; i < 4; i++) poly(c, [IP(O, x + .1 + i * .22, y + .05), IP(O, x + .2 + i * .22, y + .05), IP(O, x + .2 + i * .22, y + .2), IP(O, x + .1 + i * .22, y + .2)], 'rgba(255,255,255,.55)', null); }
+    }
+  }
+  function drawHoods(c, mapName) {
+    const O = { x: 0, y: 0 }, list = hoodsOf(mapName), strong = overlay === 1, t = G.time || 0;
+    for (const h of list) {
+      const Z = ZONES[h.zone], pts = [IP(O, h.x, h.y), IP(O, h.x + h.w, h.y), IP(O, h.x + h.w, h.y + h.h), IP(O, h.x, h.y + h.h)];
+      c.save(); c.globalAlpha = strong ? .32 : .12; poly(c, pts, Z.col, null); c.globalAlpha = 1;
+      c.setLineDash([7, 5]); c.lineDashOffset = -t * 6; poly(c, pts, null, Z.col, strong ? 3 : 2); c.restore();
+    }
+    if (zoneDrag) {
+      const x = Math.min(zoneDrag.x0, zoneDrag.x1), y = Math.min(zoneDrag.y0, zoneDrag.y1), w = Math.abs(zoneDrag.x1 - zoneDrag.x0) + 1, h = Math.abs(zoneDrag.y1 - zoneDrag.y0) + 1;
+      poly(c, [IP(O, x, y), IP(O, x + w, y), IP(O, x + w, y + h), IP(O, x, y + h)], 'rgba(233,185,59,.25)', '#e9b93b', 2.5);
+      const [lx, ly] = IP(O, x + w / 2, y + h / 2); c.font = 'bold 12px Nunito, sans-serif'; c.textAlign = 'center'; c.lineWidth = 3; c.strokeStyle = '#fff'; c.strokeText(`${w}×${h}`, lx, ly); c.fillStyle = INK; c.fillText(`${w}×${h}`, lx, ly);
+    }
+  }
+  function drawHoodLabels(c, mapName) {
+    const O = { x: 0, y: 0 };
+    for (const h of hoodsOf(mapName)) {
+      const Z = ZONES[h.zone], [ix, iy] = IP(O, h.x + h.w / 2, h.y + .2, 0), P = isoToScr({ x: ix, y: iy }), x = P.x, y = P.y + 8, txt = `${Z.e} ${h.name}`;
+      if (x < -60 || x > vw + 60 || y < -20 || y > vh + 40) continue;
+      c.font = 'bold 13px Nunito, sans-serif'; const w = c.measureText(txt).width + 18;
+      c.fillStyle = 'rgba(255,255,255,.92)'; rr(c, x - w / 2, y - 30, w, 20, 10); c.fill(); c.strokeStyle = Z.col; c.lineWidth = 2.5; c.stroke();
+      c.fillStyle = INK; c.textAlign = 'center'; c.fillText(txt, x, y - 16);
+    }
+  }
+  const SERVICE = { hospital: ['#e0483f', 7], vet: ['#5fb0a8', 6], park: ['#5fae48', 5], sitter: ['#e07a9a', 6], roomba: ['#8f86d9', 5], fountain: ['#5aa9e0', 4], pond: ['#5aa9e0', 4], office: ['#4b7fb0', 6], pcse: ['#c9a23a', 6], sushi: ['#e0483f', 5] };
+  function drawOverlay(c, mapName) {
+    const O = { x: 0, y: 0 };
+    if (overlay === 2) {
+      c.save(); c.globalCompositeOperation = 'multiply';
+      for (const b of bl()) { const s = SERVICE[b.type]; if (!s) continue; const n = sz(b.type), [x, y] = IP(O, b.x + n / 2, b.y + n / 2), r = s[1] + L(b) - 1; c.fillStyle = s[0]; c.globalAlpha = .18; c.beginPath(); c.ellipse(x, y, r * HW * 1.414, r * HH * 1.414, 0, 0, Math.PI * 2); c.fill(); }
+      c.restore();
+      for (const b of bl()) { const s = SERVICE[b.type]; if (!s) continue; const n = sz(b.type), [x, y] = IP(O, b.x + n / 2, b.y + n / 2), r = s[1] + L(b) - 1; c.strokeStyle = s[0]; c.lineWidth = 2; c.setLineDash([6, 5]); c.beginPath(); c.ellipse(x, y, r * HW * 1.414, r * HH * 1.414, 0, 0, Math.PI * 2); c.stroke(); c.setLineDash([]); }
+    }
+    if (overlay === 3) {
+      c.save(); c.globalCompositeOperation = 'multiply';
+      for (const p of G.pigs) { if (pigMap(p) !== mapName || p.trip || p.state === 'admitted') continue; const m = Math.min(p.joy, p.food, p.water), P = iso(p.x, p.y); const col = m > 60 ? '95,175,72' : m > 30 ? '242,194,48' : '217,69,90'; const g = c.createRadialGradient(P.x, P.y, 0, P.x, P.y, 70); g.addColorStop(0, `rgba(${col},.55)`); g.addColorStop(1, `rgba(${col},0)`); c.fillStyle = g; c.fillRect(P.x - 70, P.y - 70, 140, 140); }
+      c.restore();
+    }
+  }
+  function drawOverlayLegend(c) {
+    if (!overlay) return;
+    const items = overlay === 1 ? Object.values(ZONES).map(z => [z.col, `${z.e} ${z.name}`]) : overlay === 2 ? [['#e0483f', '🏥 Hospital'], ['#5fb0a8', '🩺 Vet'], ['#5fae48', '🛝 Park'], ['#e07a9a', '👩‍🌾 Sitter'], ['#8f86d9', '🤖 Roomba'], ['#4b7fb0', '🏢 Office']] : [['#5faf48', 'Happy'], ['#f2c230', 'Okay'], ['#d9455a', 'Needs help']];
+    c.font = 'bold 11px Nunito, sans-serif'; let y = 12;
+    const w = Math.max(...items.map(i => c.measureText(i[1]).width)) + 34;
+    c.fillStyle = 'rgba(255,255,255,.9)'; rr(c, 10, 8, w, items.length * 18 + 26, 10); c.fill(); c.strokeStyle = INK; c.lineWidth = 1.5; c.stroke();
+    c.fillStyle = INK; c.textAlign = 'left'; c.fillText(`🗺️ ${OVERLAYS[overlay]}`, 18, y + 12); y += 20;
+    for (const [col, txt] of items) { c.fillStyle = col; rr(c, 18, y + 2, 12, 12, 3); c.fill(); c.fillStyle = INK; c.fillText(txt, 36, y + 12); y += 18; }
+  }
+
   function drawSitter(c, st) {
     const P = iso(st.x, st.y), bob = st.act > 0 ? 0 : Math.abs(Math.sin(st.step)) * 1.5;
     c.save(); c.translate(P.x, P.y - bob); c.lineWidth = 1.4; c.strokeStyle = INK;
@@ -3652,11 +3862,13 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     setCamTransform(c);
     const gr = groundFor(view), gb = gr.gb;
     c.drawImage(gr.cv, gb.x0, gb.y0, gb.x1 - gb.x0, gb.y1 - gb.y0);
+    drawHoods(c, view); drawOverlay(c, view);
     if (G.weather.k === 'rain' && view === 'home') { c.fillStyle = 'rgba(90,140,200,.2)'; for (let i = 0; i < 10; i++) { const p = iso(((i * 173 + 60) % W), ((i * 97 + 80) % (HOME_ROAD * T))); ell(c, p.x, p.y, 20, 7); c.fill(); } }
     // build preview
-    if (hover && tool && tool !== 'broom' && hover.x >= 0 && hover.y >= 0 && hover.x < COLS && hover.y < ROWS) {
+    if (hover && (tool === 'road' || tool === 'path' || tool === 'zone') && hover.x >= 0 && hover.y >= 0 && hover.x < COLS && hover.y < ROWS && !zoneDrag) { const m = view; const ok = tool === 'zone' || (!isRoad(m, hover.x, hover.y) && !isPath(m, hover.x, hover.y) && !at(hover.x, hover.y)); footprint(c, hover.x, hover.y, 1, ok ? 'rgba(255,255,255,.5)' : 'rgba(217,69,90,.3)', ok ? '#fff' : '#d9455a'); }
+    else if (hover && tool && tool !== 'broom' && hover.x >= 0 && hover.y >= 0 && hover.x < COLS && hover.y < ROWS) {
       const occ = at(hover.x, hover.y), onB = tool === 'bulldoze' || tool === 'upgrade';
-      const ok = tool === 'bulldoze' ? !!occ : tool === 'upgrade' ? !!occ && L(occ) < 3 && G.coins >= upCost(occ) : fits(tool, hover.x, hover.y) && G.coins >= B[tool].cost && !!B[tool].city === (view === 'city');
+      const ok = tool === 'bulldoze' ? !!occ : tool === 'upgrade' ? !!occ && L(occ) < 3 && G.coins >= upCost(occ) : fits(tool, hover.x, hover.y) && G.coins >= B[tool].cost && (B[tool].any || !!B[tool].city === (view === 'city'));
       const fill = ok ? (tool === 'bulldoze' ? 'rgba(217,69,90,.4)' : tool === 'upgrade' ? 'rgba(233,185,59,.5)' : 'rgba(255,255,255,.5)') : 'rgba(217,69,90,.32)';
       if (onB && occ) footprint(c, occ.x, occ.y, sz(occ.type), fill, '#fff');
       else if (!onB) footprint(c, hover.x, hover.y, sz(tool), fill, ok ? '#fff' : '#d9455a');
@@ -3664,7 +3876,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     // depth-sorted scene
     const items = [], dw = (x, y) => (x + y) / T;
     for (const b of bl()) items.push({ d: b.x + b.y + sz(b.type) - .01, f: () => isoBuilding(c, b, iso(b.x * T, b.y * T)) });
-    if (hover && tool && B[tool] && !['bulldoze', 'upgrade', 'broom'].includes(tool) && fits(tool, hover.x, hover.y) && !!B[tool].city === (view === 'city')) {
+    if (hover && tool && B[tool] && !B[tool].any && !['bulldoze', 'upgrade', 'broom'].includes(tool) && fits(tool, hover.x, hover.y) && !!B[tool].city === (view === 'city')) {
       const hb = { type: tool, x: hover.x, y: hover.y }; items.push({ d: hb.x + hb.y + sz(tool), f: () => { c.globalAlpha = .6; isoBuilding(c, hb, iso(hb.x * T, hb.y * T)); c.globalAlpha = 1; } });
     }
     for (const p of G.pigs) {
@@ -3714,6 +3926,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     if (wk === 'snow') { c.fillStyle = '#fff'; for (const q of drops) { ell(c, q.x, q.y, 1.5 + q.s * 1.5, 1.5 + q.s * 1.5); c.fill(); } }
     for (const q of confetti) { c.globalAlpha = Math.min(1, q.life / .5); c.save(); c.translate(q.x, q.y); c.rotate(q.r); c.fillStyle = q.c; c.fillRect(-3, -1.5, 6, 3); c.restore(); }
     c.globalAlpha = 1;
+    drawHoodLabels(c, view); drawOverlayLegend(c);
   }
 
   // ---------- loop ----------
@@ -3728,7 +3941,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     const dt = Math.min(.1, (t - last) / 1000 || 0); last = t;
     if (!paused) for (let i = 0; i < G.speed; i++) tick(dt);
     panKeys(dt); draw();
-    uiT -= dt; if (uiT <= 0) { uiT = .25; hudRes(); hudList(); renderPig(); syncTools(); hudGoals(); renderBld(); renderStocks(); renderBanner(); renderDash(); }
+    uiT -= dt; if (uiT <= 0) { uiT = .25; hudRes(); hudList(); renderPig(); syncTools(); hudGoals(); renderBld(); renderStocks(); renderBanner(); renderDash(); renderHoods(); }
     saveT -= dt; if (saveT <= 0) { saveT = 5; save(); }
     requestAnimationFrame(loop);
   }
