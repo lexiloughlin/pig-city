@@ -5,6 +5,7 @@ A cozy guinea pig town builder. Build hutches, hay fields, water towers and vegg
 Founders: Toki, Mochi, Poke, Miso Soup and Masaki (who runs Masaki Capital).
 
 **What's in town**
+- 🏙️ An isometric 3D-style town on an island: drag to look around, scroll or pinch to zoom
 - 🌸 Seasons, weather and day/night: rain speeds up gardens, winter slows the hay, lanterns and fireflies light up the night
 - 🐹 Pig personalities: every pig has a trait (Foodie, Sleepy, Zoomies, Brainy…), a favorite snack, a best friend and a birthday party
 - 🏙️ Job City: a downtown map with Wheek Tech HQ, the Hay Factory, Sushi Spot and more. Pigs drive their own cars to work every morning and home after 5pm
