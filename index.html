@@ -518,7 +518,7 @@ body.bigmap #zBig { background: var(--wood-dark); color: #fff; }
     road:   { name: 'Road', ic: '🛣️', cat: 'plan', cost: 2, any: true, desc: 'Drag across the map to pave streets (2 🪙 a tile). Bulldoze removes them.' },
     path:   { name: 'Sidewalk', ic: '🧱', cat: 'plan', cost: 1, any: true, desc: 'Drag to lay brick sidewalks and plazas (1 🪙 a tile)' },
     island: { name: 'Island', ic: '🏝️', cat: 'plan', cost: 150, any: true, desc: 'Drag a rectangle out in the water to raise a new island town (150 🪙)' },
-    bridge: { name: 'Bridge', ic: '🌉', cat: 'plan', cost: 4, any: true, desc: 'Drag across the water to build a bridge between islands (4 🪙 a tile)' },
+    bridge: { name: 'Bridge', ic: '🌉', cat: 'plan', cost: 4, any: true, desc: 'Drag from one shore to another (island to island, or island to town) and the bridge finds its way across the water (4 🪙 a tile)' },
     zone:   { name: 'Neighborhood', ic: '📐', cat: 'plan', cost: 0, any: true, desc: 'Drag a rectangle to draw a neighborhood, then name and zone it' },
     broom:  { name: 'Broom', ic: '🧹', cat: 'tool', cost: 0, desc: 'Drag across poop in Home Town to sweep it up (1 🪙 each)' },
     upgrade: { name: 'Upgrade', ic: '⬆️', cat: 'tool', cost: 0, desc: 'Click a building to make it fancier' },
@@ -894,7 +894,7 @@ body.bigmap #zBig { background: var(--wood-dark); color: #fff; }
     }
     $('toolHint').innerHTML = tool === 'bulldoze' && !hoverTool ? 'Click a building to remove it (you get back half of what you spent).'
       : tool === 'upgrade' && !hoverTool ? 'Click a building to upgrade it: ⭐⭐ Deluxe, then ⭐⭐⭐ Modern. Upgrades look fancier and work better.'
-      : show ? `<b>${B[show].ic} ${B[show].name}</b>${B[show].cost ? ` · ${B[show].cost} 🪙` : ''} · ${B[show].desc}${tool === show && B[show].cost ? (['road', 'path', 'bridge'].includes(show) ? '. Click and drag to paint it, or press Esc to stop.' : '. Click empty grass to place it, or press Esc to stop.') : ''}`
+      : show ? `<b>${B[show].ic} ${B[show].name}</b>${B[show].cost ? ` · ${B[show].cost} 🪙` : ''} · ${B[show].desc}${tool === show && B[show].cost ? (show === 'bridge' ? '. Press Esc to stop.' : ['road', 'path'].includes(show) ? '. Click and drag to paint it, or press Esc to stop.' : '. Click empty grass to place it, or press Esc to stop.') : ''}`
       : tool === 'broom' && !hoverTool ? 'Drag across poop to sweep it up (1 🪙 each). Press Esc when you are done.'
       : view === 'city' ? 'Build businesses on the sidewalks (not the road). Pigs who work here drive in each morning. Click a parked car or pig to check on it.'
       : "Pick something to build, then click an empty patch of grass. Drag the map to look around and scroll (or pinch) to zoom. Click a pig to check on it, or click poop to scoop it.";
@@ -1176,7 +1176,8 @@ body.bigmap #zBig { background: var(--wood-dark); color: #fff; }
     ptrs.set(e.pointerId, cssPt(e)); dragMoved = false;
     if (view === 'inside' && !isHouse()) return;
     if (tool === 'broom' && view === 'home') { sweeping = true; scoopNear(toWorld(e), 22); return; }
-    if ((tool === 'road' || tool === 'path' || tool === 'bridge') && (view === 'home' || view === 'city') && ptrs.size === 1) { paintMode = tool; paintTile(e); return; }
+    if (tool === 'bridge' && (view === 'home' || view === 'city') && ptrs.size === 1) { const w = toWorld(e), x = Math.floor(w.x / T), y = Math.floor(w.y / T); bridgeLine = { s: [x, y], e: [x, y], path: bridgePath(mapOfView(), [x, y], [x, y]) }; return; }
+    if ((tool === 'road' || tool === 'path') && (view === 'home' || view === 'city') && ptrs.size === 1) { paintMode = tool; paintTile(e); return; }
     if ((tool === 'zone' || tool === 'island') && (view === 'home' || view === 'city') && ptrs.size === 1) { const w = toWorld(e), x = Math.floor(w.x / T), y = Math.floor(w.y / T); zoneDrag = { x0: x, y0: y, x1: x, y1: y, kind: tool }; return; }
     if (ptrs.size === 2) { const [a, b2] = [...ptrs.values()]; pinch0 = { d: Math.hypot(a.x - b2.x, a.y - b2.y), z: cam().z }; drag = null; }
     else { const p = cssPt(e); drag = { x: p.x, y: p.y, cx: cam().x, cy: cam().y }; }
@@ -1187,6 +1188,7 @@ body.bigmap #zBig { background: var(--wood-dark); color: #fff; }
     ptrs.set(e.pointerId, cssPt(e));
     if (sweeping) { scoopNear(w, 22); return; }
     if (paintMode) { paintTile(e); return; }
+    if (bridgeLine) { const x = Math.floor(w.x / T), y = Math.floor(w.y / T); if (x !== bridgeLine.e[0] || y !== bridgeLine.e[1]) { bridgeLine.e = [x, y]; bridgeLine.path = bridgePath(mapOfView(), bridgeLine.s, [x, y]); } return; }
     if (zoneDrag) { zoneDrag.x1 = Math.max(WORLD.x0, Math.min(WORLD.x1 - 1, Math.floor(w.x / T))); zoneDrag.y1 = Math.max(WORLD.y0, Math.min(WORLD.y1 - 1, Math.floor(w.y / T))); return; }
     if (pinch0 && ptrs.size === 2) { const [a, b2] = [...ptrs.values()]; cam().z = pinch0.z * Math.hypot(a.x - b2.x, a.y - b2.y) / pinch0.d; clampCam(cam()); dragMoved = true; return; }
     if (drag) {
@@ -1195,7 +1197,7 @@ body.bigmap #zBig { background: var(--wood-dark); color: #fff; }
       if (dragMoved) { const cm = cam(); cm.x = drag.cx - dx / cm.z; cm.y = drag.cy - dy / cm.z; clampCam(cm); canvas.style.cursor = 'grabbing'; }
     }
   });
-  const endPtr = e => { if (zoneDrag && e.type === 'pointerup') finishZone(); zoneDrag = null; if (paintMode) { if (paintMode === 'bridge') bridgeReport(); paintMode = null; lastPaint = null; save(); } ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch0 = null; if (!ptrs.size) { drag = null; sweeping = false; canvas.style.cursor = ''; } };
+  const endPtr = e => { if (bridgeLine) { if (e.type === 'pointerup') buildBridgeLine(); bridgeLine = null; } if (zoneDrag && e.type === 'pointerup') finishZone(); zoneDrag = null; if (paintMode) { if (paintMode === 'bridge') bridgeReport(); paintMode = null; lastPaint = null; save(); } ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch0 = null; if (!ptrs.size) { drag = null; sweeping = false; canvas.style.cursor = ''; } };
   canvas.addEventListener('pointerup', endPtr); canvas.addEventListener('pointercancel', endPtr);
   canvas.addEventListener('pointerleave', () => { hover = null; });
   function zoomAt(sx, sy, f) {
@@ -3901,7 +3903,46 @@ body.bigmap #zBig { background: var(--wood-dark); color: #fff; }
     }
   }
   function markGround() { roadVer++; }
-  let lastPaint = null, bridgeDrag = [];
+  let lastPaint = null, bridgeDrag = [], bridgeLine = null;
+  // bridge tool: drag from one shore to another and the bridge finds its own way across the water
+  function bridgePath(m, s, g) {
+    // land of the island you start on and the one you end on is free to cross; only the water part becomes bridge
+    const lid = r => r ? (r.main ? 'main' : r.id) : null, rs = lid(landRectAt(m, ...s)), rg = lid(landRectAt(m, ...g));
+    const ok = (x, y) => { if (!inWorld(x, y) || inCommute(m, x, y)) return false; const r = lid(landRectAt(m, x, y)); if (r !== null) return r === rs || r === rg; return !roadSets[m].has(x + ',' + y) && !pathSets[m].has(x + ',' + y); };
+    const wet = (x, y) => !isLand(m, x, y);
+    const water = t => t.filter(([x, y]) => wet(x, y));
+    // try a straight or L-shaped bridge first (they look nicest)
+    const tries = [];
+    for (const firstX of [true, false]) {
+      const t = []; let [x, y] = s, good = ok(x, y);
+      while (good && (x !== g[0] || y !== g[1])) { if ((firstX && x !== g[0]) || y === g[1]) x += Math.sign(g[0] - x); else y += Math.sign(g[1] - y); if (!ok(x, y)) good = false; else t.push([x, y]); }
+      if (good) tries.push(water(t));
+    }
+    // fewest bridge tiles over water (0-1 search: land steps are free)
+    const key = (x, y) => x + ',' + y, dist = new Map([[key(...s), 0]]), prev = new Map([[key(...s), null]]), dq = [s]; let best = null;
+    if (ok(...s)) for (let n = 0; dq.length && n < 20000; n++) {
+      const [x, y] = dq.shift(), d = dist.get(key(x, y));
+      if (x === g[0] && y === g[1]) { const t = []; let cur = [x, y]; while (cur && !(cur[0] === s[0] && cur[1] === s[1])) { t.unshift(cur); cur = prev.get(key(...cur)); } best = water(t); break; }
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = x + dx, ny = y + dy, k = key(nx, ny); if (!ok(nx, ny)) continue; const c2 = wet(nx, ny) ? 1 : 0, nd = d + c2; if (dist.has(k) && dist.get(k) <= nd) continue; dist.set(k, nd); prev.set(k, [x, y]); if (c2) dq.push([nx, ny]); else dq.unshift([nx, ny]); }
+    }
+    // use the drawn L shape unless it wastes a lot of tiles
+    const l = tries.sort((a, b) => a.length - b.length)[0];
+    if (l && (!best || l.length <= best.length + 2)) return l;
+    return best;
+  }
+  function buildBridgeLine() {
+    const m = mapOfView(), L = bridgeLine; if (!L) return;
+    if (!L.path) { toast("🌉 Can't build a bridge there. Bridges have to cross open water, and can't go over the highway."); return; }
+    const s0 = L.s;
+    const fresh = (!isLand(m, ...s0) && !isRoad(m, ...s0) && inWorld(...s0) && !bridgeSets[m].has(s0.join(',')) && !inCommute(m, ...s0) ? [s0] : []).concat(L.path).filter(([x, y]) => !bridgeSets[m].has(x + ',' + y));
+    if (!fresh.length) { if (L.path.length) bridgeDrag = L.path.map(t => t.join(',')), bridgeReport(); return; }
+    const cost = fresh.length * B.bridge.cost;
+    if (G.coins < cost) { toast(`That bridge is ${fresh.length} tiles and costs ${cost} 🪙. You have ${Math.floor(G.coins)} 🪙.`); return; }
+    G.coins -= cost;
+    for (const [x, y] of fresh) { const k = x + ',' + y; bridgeSets[m].add(k); G.bridges[m].push(k); G.stats.bridges = (G.stats.bridges || 0) + 1; }
+    bridgeDrag = fresh.concat(L.path).map(t => t.join(','));
+    markGround(); sfx('scoop'); hudRes(); bridgeReport(); save();
+  }
   function paintTile(e) {
     const w = toWorld(e), x = Math.floor(w.x / T), y = Math.floor(w.y / T);
     if (lastPaint && (lastPaint[0] !== x || lastPaint[1] !== y)) {
@@ -4226,7 +4267,8 @@ body.bigmap #zBig { background: var(--wood-dark); color: #fff; }
     drawHoods(c, view); drawOverlay(c, view);
     if (G.weather.k === 'rain' && view === 'home') { c.fillStyle = 'rgba(90,140,200,.2)'; for (let i = 0; i < 10; i++) { const p = iso(((i * 173 + 60) % W), ((i * 97 + 80) % (HOME_ROAD * T))); ell(c, p.x, p.y, 20, 7); c.fill(); } }
     // build preview
-    if (hover && ['road', 'path', 'zone', 'bridge', 'island'].includes(tool) && inWorld(hover.x, hover.y) && !zoneDrag) { const m = view; const ok = tool === 'zone' || tool === 'island' || (!isRoad(m, hover.x, hover.y) && !isPath(m, hover.x, hover.y) && !at(hover.x, hover.y) && (tool === 'bridge' ? !isLand(m, hover.x, hover.y) && !inCommute(m, hover.x, hover.y) : isLand(m, hover.x, hover.y))); footprint(c, hover.x, hover.y, 1, ok ? 'rgba(255,255,255,.5)' : 'rgba(217,69,90,.3)', ok ? '#fff' : '#d9455a'); }
+    if (bridgeLine && (view === 'home' || view === 'city')) { const L = bridgeLine, okc = L.path && G.coins >= L.path.length * B.bridge.cost; for (const [x, y] of (L.path || [L.e])) footprint(c, x, y, 1, okc ? 'rgba(255,255,255,.6)' : 'rgba(217,69,90,.3)', okc ? '#fff' : '#d9455a'); if (L.path && L.path.length) { const [x, y] = L.path[L.path.length - 1], P = iso(x * T + 20, y * T + 20); c.font = 'bold 13px Nunito, sans-serif'; c.textAlign = 'center'; c.lineWidth = 4; c.strokeStyle = '#fff'; const txt = `${L.path.length} tiles · ${L.path.length * B.bridge.cost} 🪙`; c.strokeText(txt, P.x, P.y - 22); c.fillStyle = INK; c.fillText(txt, P.x, P.y - 22); } }
+    else if (hover && ['road', 'path', 'zone', 'bridge', 'island'].includes(tool) && inWorld(hover.x, hover.y) && !zoneDrag) { const m = view; const ok = tool === 'zone' || tool === 'island' || (!isRoad(m, hover.x, hover.y) && !isPath(m, hover.x, hover.y) && !at(hover.x, hover.y) && (tool === 'bridge' ? !isLand(m, hover.x, hover.y) && !inCommute(m, hover.x, hover.y) : isLand(m, hover.x, hover.y))); footprint(c, hover.x, hover.y, 1, ok ? 'rgba(255,255,255,.5)' : 'rgba(217,69,90,.3)', ok ? '#fff' : '#d9455a'); }
     else if (hover && tool && tool !== 'broom' && isLand(view, hover.x, hover.y)) {
       const occ = at(hover.x, hover.y), onB = tool === 'bulldoze' || tool === 'upgrade';
       const ok = tool === 'bulldoze' ? !!occ : tool === 'upgrade' ? !!occ && L(occ) < 3 && G.coins >= upCost(occ) : fits(tool, hover.x, hover.y) && G.coins >= B[tool].cost && (B[tool].any || !!B[tool].city === (view === 'city'));
