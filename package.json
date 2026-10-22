@@ -1,0 +1,25 @@
+{
+  "name": "pig-city",
+  "productName": "Pig City",
+  "version": "1.0.0",
+  "description": "A cozy guinea pig town builder.",
+  "author": "Lexi Loughlin",
+  "license": "UNLICENSED",
+  "private": true,
+  "main": "electron/main.js",
+  "homepage": "https://lexiloughlin.github.io/pig-city/",
+  "scripts": {
+    "start": "electron .",
+    "audit:sandbox": "node scripts/audit-sandbox.js",
+    "pack:dev": "electron-builder --config build/electron-builder.dev.yml --mac dir",
+    "dist:dev": "electron-builder --config build/electron-builder.dev.yml --mac",
+    "prepare:mas": "node scripts/prepare-mas.js",
+    "dist:mas-dev": "node scripts/prepare-mas.js --dev && electron-builder --config build/generated/electron-builder.mas.yml --mac mas-dev",
+    "dist:mas": "npm run audit:sandbox && node scripts/prepare-mas.js && electron-builder --config build/generated/electron-builder.mas.yml --mac mas",
+    "verify:mas": "node scripts/verify-mas.js"
+  },
+  "devDependencies": {
+    "electron": "44.9.3",
+    "electron-builder": "26.15.3"
+  }
+}

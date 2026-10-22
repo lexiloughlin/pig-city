@@ -1,0 +1,9 @@
+node_modules/
+dist/
+build/generated/
+# Apple signing material stays on your Mac, never in the repo
+*.provisionprofile
+*.p12
+*.cer
+build/mas.local.json
+.env

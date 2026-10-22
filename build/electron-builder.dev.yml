@@ -1,0 +1,37 @@
+# Pig City: local development build (installable on your own Mac, not for the App Store)
+#   npm run pack:dev  -> dist/dev/mac-*/Pig City Dev.app   (quick, no installer)
+#   npm run dist:dev  -> dist/dev/Pig City Dev-<version>-universal.dmg
+# Not sandboxed and ad-hoc signed ("-"), so it runs on the Mac that built it.
+# It uses a different bundle id from the store version, so both can be installed side by side
+# and they keep separate save files.
+appId: com.lexiloughlin.pigcity.dev
+productName: Pig City Dev
+copyright: Copyright © 2026 Lexi Loughlin
+directories:
+  output: dist/dev
+  buildResources: build
+files:
+  - index.html
+  - assets/**/*
+  - electron/**/*
+  - package.json
+asar: true
+electronLanguages: [en]
+publish: null            # no update feed: nothing is uploaded anywhere
+mac:
+  category: public.app-category.simulation-games
+  icon: build/icon.png
+  minimumSystemVersion: "12.0"
+  identity: "-"          # ad-hoc signature (set CSC_NAME to an "Apple Development" identity to sign with your own certificate)
+  hardenedRuntime: false
+  gatekeeperAssess: false
+  darkModeSupport: false
+  target:
+    - target: dmg
+      arch: [universal]
+    - target: zip
+      arch: [universal]
+  extendInfo:
+    ITSAppUsesNonExemptEncryption: false
+dmg:
+  title: Pig City Dev

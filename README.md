@@ -25,3 +25,16 @@ Founders: Toki, Mochi, Poke, Miso Soup and Masaki (who runs Masaki Capital).
 - ⏩ Pause / 1× / 2× / 3× speed, sound effects with mute, and a quick how-to-play guide
 
 Play: https://lexiloughlin.github.io/pig-city/
+
+## Mac app
+
+Pig City can also run as a Mac app built with Electron. It comes in two separate builds: a local dev app, and a sandboxed Mac App Store build.
+
+```bash
+npm install
+npm start          # play it in a Mac window
+npm run dist:dev   # build Pig City Dev.dmg for your own Mac
+```
+
+The App Store build, signing, and the remaining Apple account steps are in [docs/MAC_APP_STORE.md](docs/MAC_APP_STORE.md). What changed for the sandbox is in [docs/SANDBOX_AUDIT.md](docs/SANDBOX_AUDIT.md).
+

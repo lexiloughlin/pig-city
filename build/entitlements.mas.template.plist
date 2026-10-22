@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Main app entitlements for the Mac App Store build. __TEAM_ID__ is filled in by scripts/prepare-mas.js -->
+<plist version="1.0">
+<dict>
+  <!-- required for the Mac App Store -->
+  <key>com.apple.security.app-sandbox</key>
+  <true/>
+  <!-- Electron's processes talk to each other through an app group named after your Team ID + bundle id -->
+  <key>com.apple.security.application-groups</key>
+  <array>
+    <string>__TEAM_ID__.com.lexiloughlin.pigcity</string>
+  </array>
+  <!-- Export Town / Import Town: only files the player picks in the save/open panel -->
+  <key>com.apple.security.files.user-selected.read-write</key>
+  <true/>
+  <!-- deliberately NOT requested: network, camera, microphone, location, contacts, downloads folder -->
+</dict>
+</plist>

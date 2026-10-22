@@ -1,0 +1,49 @@
+# Pig City: Mac App Store build (Electron's MAS variant, App Sandbox).
+# Don't build from this file directly: `npm run prepare:mas` fills in your Team ID and writes
+# build/generated/electron-builder.mas.yml + the entitlements, then electron-builder uses that.
+#   npm run dist:mas-dev -> dist/mas-dev/...  sandboxed build you can run on your registered Mac (development profile)
+#   npm run dist:mas     -> dist/mas/Pig City-<version>-universal.pkg  for App Store Connect (NOT uploaded by these scripts)
+appId: com.lexiloughlin.pigcity
+productName: Pig City
+copyright: Copyright © 2026 Lexi Loughlin
+directories:
+  output: __OUTPUT__
+  buildResources: build
+files:
+  - index.html
+  - assets/**/*
+  - electron/**/*
+  - package.json
+asar: true
+electronLanguages: [en]
+publish: null            # App Store handles updates: no update feed, no auto-updater
+mac:
+  category: public.app-category.simulation-games
+  icon: build/icon.png
+  minimumSystemVersion: "12.0"
+  darkModeSupport: false
+  extendInfo:
+    ElectronTeamID: __TEAM_ID__
+    ITSAppUsesNonExemptEncryption: false
+    LSApplicationCategoryType: public.app-category.simulation-games
+    NSHumanReadableCopyright: Copyright © 2026 Lexi Loughlin
+mas:
+  type: distribution
+  hardenedRuntime: false
+  entitlements: build/generated/entitlements.mas.plist
+  entitlementsInherit: build/entitlements.mas.inherit.plist
+  entitlementsLoginHelper: build/entitlements.mas.loginhelper.plist
+  provisioningProfile: build/embedded.provisionprofile
+  target:
+    - target: mas
+      arch: [universal]
+masDev:
+  type: development
+  hardenedRuntime: false
+  entitlements: build/generated/entitlements.mas.plist
+  entitlementsInherit: build/entitlements.mas.inherit.plist
+  entitlementsLoginHelper: build/entitlements.mas.loginhelper.plist
+  provisioningProfile: build/dev.provisionprofile
+  target:
+    - target: mas-dev
+      arch: [universal]

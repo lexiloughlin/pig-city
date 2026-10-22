@@ -1,0 +1,25 @@
+# Builds the local development app (Pig City Dev) on a GitHub-hosted Mac.
+# It only runs when you start it yourself (Actions tab > "Mac dev build" > Run workflow).
+# The .dmg is kept as a workflow artifact for 14 days. Nothing is sent to Apple or the App Store.
+name: Mac dev build
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run audit:sandbox
+      - run: npm run dist:dev
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pig-city-dev-mac
+          path: dist/dev/*.dmg
+          retention-days: 14

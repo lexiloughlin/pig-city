@@ -4,9 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Pig City</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chewy&family=Nunito:wght@400;700;800&display=swap">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; media-src 'self' data: blob:; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'">
 <style>
+/* fonts ship with the game (no network needed, works inside the Mac App Store sandbox) */
+@font-face { font-family: 'Chewy'; font-style: normal; font-weight: 400; font-display: swap; src: url(assets/fonts/chewy-latin-400-normal.woff2) format('woff2'); }
+@font-face { font-family: 'Nunito'; font-style: normal; font-weight: 400; font-display: swap; src: url(assets/fonts/nunito-latin-400-normal.woff2) format('woff2'); }
+@font-face { font-family: 'Nunito'; font-style: normal; font-weight: 700; font-display: swap; src: url(assets/fonts/nunito-latin-700-normal.woff2) format('woff2'); }
+@font-face { font-family: 'Nunito'; font-style: normal; font-weight: 800; font-display: swap; src: url(assets/fonts/nunito-latin-800-normal.woff2) format('woff2'); }
 :root {
   --fleece: #f7dfe2;
   --fleece-deep: #efc9cf;
@@ -361,11 +365,20 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
         <h2>How it works</h2>
         <p class="small" style="margin-top:0">Pigs eat 🌾 and drink 💧 on their own, so keep the fields and water towers going. Happy pigs earn 🪙, and every pig has a personality, a favorite snack, a best friend and a birthday. Seasons change every 3 days: rain helps gardens and water towers, winter slows the hay. Grown-up pigs can work at the Café, Salon, Toy Shop or Masaki Capital, and once Masaki Capital opens you can trade pig stocks. Click any building to upgrade it. Your town saves automatically.</p>
         <div class="btns"><button class="btn ghost" id="helpBtn2">How to play</button><button class="btn ghost" id="resetBtn">Start a new town</button></div>
+        <div class="btns" style="margin-top:8px"><button class="btn ghost" id="exportBtn" title="Save a copy of your town to a file">💾 Export town</button><button class="btn ghost" id="importBtn" title="Load a town from a file you exported">📂 Import town</button></div>
+        <input type="file" id="importFile" accept=".pigcity,.json,application/json" hidden>
       </div>
     </div>
   </div>
 </div>
 
+<div class="overlay" id="askBox" hidden>
+  <form class="panel" role="dialog" aria-modal="true" aria-labelledby="askTitle" id="askForm" style="max-width:420px">
+    <h2 id="askTitle" style="margin-top:0"></h2>
+    <input type="text" id="askInput" maxlength="22" autocomplete="off" style="width:100%;font:inherit;font-size:18px;padding:8px 12px;border:2px solid var(--ink);border-radius:12px;box-sizing:border-box">
+    <div class="btns" style="margin-top:14px;justify-content:flex-end"><button type="button" class="btn ghost" id="askNo">Cancel</button><button type="submit" class="btn" id="askYes">OK</button></div>
+  </form>
+</div>
 <div class="overlay" id="tutorial" hidden>
   <div class="panel" role="dialog" aria-modal="true" aria-labelledby="tutTitle">
     <h2 id="tutTitle">Welcome, Mayor! 🐹</h2>
@@ -770,14 +783,49 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     }
   }
   function gauss() { let u = 0, v = 0; while (!u) u = Math.random(); while (!v) v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
+  // ---------- in-game dialogs (the Mac app can't use the browser's prompt box) ----------
+  function ask({ title, text = null, max = 22, yes = 'OK', no = 'Cancel' }) {
+    return new Promise(done => {
+      const box = $('askBox'), inp = $('askInput'), form = $('askForm'), prevPause = paused;
+      $('askTitle').textContent = title; inp.hidden = text === null; inp.value = text || ''; inp.maxLength = max;
+      $('askYes').textContent = yes; $('askNo').textContent = no; $('askNo').hidden = no === null;
+      box.hidden = false; paused = true; setTimeout(() => (text === null ? $('askYes') : inp).focus(), 30); if (text !== null) inp.select();
+      const finish = v => { box.hidden = true; paused = prevPause; form.onsubmit = null; $('askNo').onclick = null; box.onkeydown = null; box.onclick = null; done(v); };
+      form.onsubmit = e => { e.preventDefault(); finish(text === null ? true : inp.value); };
+      $('askNo').onclick = () => finish(text === null ? false : null);
+      box.onkeydown = e => { if (e.key === 'Escape') { e.stopPropagation(); finish(text === null ? false : null); } };
+      box.onclick = e => { if (e.target === box) finish(text === null ? false : null); };
+    });
+  }
+  const askText = (title, text, max = 22) => ask({ title, text: text || '', max });
+  const askYes = (title, yes = 'Yes') => ask({ title, yes, no: 'Cancel' });
+  const tellBox = title => ask({ title, yes: 'OK', no: null });
+
+  // ---------- saving ----------
+  // The browser keeps the town in localStorage. The Mac app also keeps a real save file in its own
+  // container (Application Support), through window.pigDesktop from the app's preload script.
+  const desk = window.pigDesktop || null;
+  let saveLocked = false; // true while an imported town is being loaded, so the old town can't overwrite it
+  function readSaveText() {
+    let txt = null;
+    if (desk) { try { txt = desk.loadSave(); } catch (e) {} }
+    if (!txt) { try { txt = localStorage.getItem('pigcity-v1'); } catch (e) {} }
+    return txt;
+  }
+  const validTown = s => s && typeof s === 'object' && Array.isArray(s.pigs) && Array.isArray(s.buildings);
   function load() {
     try {
-      const s = JSON.parse(localStorage.getItem('pigcity-v1') || 'null');
+      const s = JSON.parse(readSaveText() || 'null');
       if (s && Array.isArray(s.pigs)) { G = s; nextId = Math.max(0, ...G.pigs.map(p => p.id)) + 1; return; }
     } catch (e) {}
     G = newTown();
   }
-  function save() { try { localStorage.setItem('pigcity-v1', JSON.stringify(G)); } catch (e) {} }
+  function save() {
+    if (saveLocked) return;
+    let txt; try { txt = JSON.stringify(G); } catch (e) { return; }
+    try { localStorage.setItem('pigcity-v1', txt); } catch (e) {}
+    if (desk) { try { desk.writeSave(txt); } catch (e) {} }
+  }
   function initExtras(fresh) {
     G.prod = G.prod || {};
     for (const p of G.pigs) if (p.name === 'Masaki' && p.age >= 999 && p.skin && p.skin.suit) p.banker = true;
@@ -1080,19 +1128,48 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     G.stats.cars = (G.stats.cars || 0) + 1; G.mkt.st.ZOOM.shock += .6; sfx('goal');
     toast(`${p.name} drove off the lot in a ${carName(p.car)}! 🚗✨`); renderPig(true); hudRes(); save();
   });
-  $('renameBtn').addEventListener('click', () => {
+  $('renameBtn').addEventListener('click', async () => {
     const p = G.pigs.find(q => q.id === selected); if (!p) return;
-    const n = prompt('New name for ' + p.name + '?', p.name);
+    const n = await askText('New name for ' + p.name + '?', p.name, 16);
     if (n && n.trim()) { p.name = n.trim().slice(0, 16); renderPig(true); listSig = ''; save(); }
   });
   const buy = (cost, k, n) => () => { if (G.coins < cost) return; G.coins -= cost; G[k] += n; hudRes(); syncTools(); };
   $('buyHay').addEventListener('click', buy(10, 'hay', 5));
   $('buyWater').addEventListener('click', buy(6, 'water', 5));
   $('buyVeg').addEventListener('click', buy(12, 'veg', 3));
-  $('resetBtn').addEventListener('click', () => {
-    if (!confirm('Start a brand new town? Your current town will be gone.')) return;
+  $('resetBtn').addEventListener('click', async () => {
+    if (!(await askYes('Start a brand new town? Your current town will be gone. (Tip: 💾 Export town first to keep a copy.)', 'Start over'))) return;
     G = newTown(); initExtras(true); syncBaby(); stockSig = "x"; drops.length = 0; selBld = null; confetti.length = 0; selected = null; listSig = ''; jobSig = ''; save(); hudRes(); renderPig(); syncTools(); toast('A fresh start! Welcome to your new town.');
   });
+
+  // ---------- export / import a town file ----------
+  const townFileName = () => `${(G.townName || 'Pig City').replace(/[^\w -]+/g, '').trim() || 'Pig City'} ${new Date().toISOString().slice(0, 10)}.pigcity`;
+  $('exportBtn').addEventListener('click', async () => {
+    save(); const txt = JSON.stringify({ pigcity: 1, saved: new Date().toISOString(), town: G });
+    if (desk) { const r = await desk.exportTown(townFileName(), txt); if (r && r.ok) toast('💾 Town saved to ' + r.name); else if (r && r.error) toast('Could not save the file: ' + r.error); return; }
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([txt], { type: 'application/json' })); a.download = townFileName(); document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    toast('💾 Town exported! Look in your Downloads folder.');
+  });
+  async function importText(txt) {
+    let s = null; try { const j = JSON.parse(txt); s = j && j.pigcity && j.town ? j.town : j; } catch (e) {}
+    if (!validTown(s)) { await tellBox("That file isn't a Pig City town. Pick a file you made with 💾 Export town."); return; }
+    if (!(await askYes(`Load the town with ${s.pigs.length} pigs and ${s.buildings.length} buildings? Your current town will be replaced. (Export it first if you want to keep it.)`, 'Load town'))) return;
+    const out = JSON.stringify(s);
+    try { localStorage.setItem('pigcity-v1', out); } catch (e) {}
+    if (desk) { try { desk.writeSave(out, true); } catch (e) {} }
+    saveLocked = true; location.reload();
+  }
+  $('importBtn').addEventListener('click', async () => {
+    if (desk) { const r = await desk.importTown(); if (r && r.text) importText(r.text); else if (r && r.error) toast('Could not open the file: ' + r.error); return; }
+    $('importFile').value = ''; $('importFile').click();
+  });
+  // Mac app menu (File > Export/Import, View > Big Map, Help) and save-before-close
+  if (desk) {
+    desk.onMenu(a => { if (a === 'export') $('exportBtn').click(); else if (a === 'import') $('importBtn').click(); else if (a === 'bigmap') $('zBig').click(); else if (a === 'help') $('helpBtn2').click(); });
+    desk.onFlush(() => save());
+  }
+  window.addEventListener('pagehide', () => save());
+  $('importFile').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; if (!f) return; if (f.size > 20e6) { toast('That file is too big to be a Pig City town.'); return; } f.text().then(importText); });
 
   // ---------- upgrades ----------
   let selBld = null;
@@ -1273,6 +1350,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     selBld = b || null; renderBld();
   });
   window.addEventListener('keydown', e => {
+    if (!$('askBox').hidden) return; // typing in a name box
     if (e.key === 'Escape') { if (!$('tutorial').hidden) closeTut(); if (builder) { if (moving) { moving = null; sfx('tap'); } else setBuilder(false); return; } tool = null; syncTools(); }
     if ((e.key === 'b' || e.key === 'B') && (view === 'home' || view === 'city') && !/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)) setBuilder(!builder);
     if ((e.key === 'r' || e.key === 'R') && isHouse() && !/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)) turnPlacing();
@@ -3394,7 +3472,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   function kindInfo(kind, loose, render) {
     let k = kinds.get(kind); if (k) return k;
     const P = loose, w = Math.ceil(P.l + P.r), h = Math.ceil(P.t + P.b), cv = document.createElement('canvas'); cv.width = w; cv.height = h;
-    const cx = cv.getContext('2d'), t0 = G.time, snap = tt => { G.time = tt; cx.setTransform(1, 0, 0, 1, 0, 0); cx.clearRect(0, 0, w, h); render(cx, { x: P.l, y: P.t }); return cx.getImageData(0, 0, w, h).data; };
+    const cx = cv.getContext('2d', { willReadFrequently: true }), t0 = G.time, snap = tt => { G.time = tt; cx.setTransform(1, 0, 0, 1, 0, 0); cx.clearRect(0, 0, w, h); render(cx, { x: P.l, y: P.t }); return cx.getImageData(0, 0, w, h).data; };
     let a = null, anim = false, x0 = w, y0 = h, x1 = 0, y1 = 0;
     const grow = d => { for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (d[(y * w + x) * 4 + 3]) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; } };
     try { a = snap(.13); grow(a); for (const tt of [.71, 1.9, 3.3, 5.2]) { const d = snap(tt); grow(d); if (!anim) for (let i = 3; i < d.length; i += 4) if (d[i] !== a[i] || d[i - 1] !== a[i - 1]) { anim = true; break; } } }
@@ -4105,14 +4183,14 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     if (bridgeSets[m].has(k)) { bridgeSets[m].delete(k); G.bridges[m] = G.bridges[m].filter(q => q !== k); G.coins += 2; markGround(); return true; }
     return false;
   }
-  function finishZone() {
+  async function finishZone() {
     const z = zoneDrag; zoneDrag = null; if (!z) return;
     const x = Math.min(z.x0, z.x1), y = Math.min(z.y0, z.y1), w = Math.max(z.x0, z.x1) + 1 - x, h = Math.max(z.y0, z.y1) + 1 - y;
     if (z.kind === 'island') { finishIsland(x, y, w, h); return; }
     if (w * h < 4) { toast('Drag a bigger rectangle to make a neighborhood (at least 2×2).'); return; }
     const m = mapOfView(), used = new Set(hoodsOf('home').concat(hoodsOf('city')).map(q => q.name));
     let name = HOOD_NAMES.find(n => !used.has(n)) || 'District ' + (hoodsOf(m).length + 1);
-    const typed = prompt('Name your new neighborhood:', name); if (typed === null) return; if (typed.trim()) name = typed.trim().slice(0, 22);
+    const typed = await askText('Name your new neighborhood:', name); if (typed === null) return; if (typed.trim()) name = typed.trim().slice(0, 22);
     const list = m === 'city' ? G.city : G.buildings, inside = list.filter(b => b.x >= x && b.x < x + w && b.y >= y && b.y < y + h);
     const zone = m === 'city' ? (inside.some(b => b.type === 'factory') ? 'ind' : inside.some(b => ['sushi', 'market', 'dealer'].includes(b.type)) ? 'com' : 'down') : inside.some(b => b.type === 'hutch') ? 'res' : inside.some(b => ['hay', 'garden', 'water'].includes(b.type)) ? 'farm' : inside.some(b => JOBS[b.type]) ? 'com' : 'res';
     G.hoods[m].push({ id: Date.now() % 1e9, name, x, y, w, h, zone });
@@ -4137,13 +4215,13 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     }).join('');
   }
   $('hoods').addEventListener('change', e => { const el = e.target.closest('.hood'); if (!el || !e.target.classList.contains('hoodzone')) return; const h = hoodsOf(mapOfView()).find(q => q.id === +el.dataset.id); if (h) { h.zone = e.target.value; zoneT = 0; hoodSig = ''; sfx('tap'); save(); } });
-  $('hoods').addEventListener('click', e => {
+  $('hoods').addEventListener('click', async e => {
     const btn = e.target.closest('button[data-act]'), el = e.target.closest('.hood'); if (!btn || !el) return;
     const m = mapOfView(), h = hoodsOf(m).find(q => q.id === +el.dataset.id); if (!h) return;
     if (btn.dataset.act === 'go') { if (view !== m) setView(m); const p = iso((h.x + h.w / 2) * T, (h.y + h.h / 2) * T), cm = cam(); cm.x = p.x; cm.y = p.y; clampCam(cm); }
-    if (btn.dataset.act === 'ren') { const n = prompt('New name for ' + h.name + '?', h.name); if (n && n.trim()) h.name = n.trim().slice(0, 22); }
-    if (btn.dataset.act === 'del' && h.island) { const isl = islandsOf(m).find(q => q.id === h.island); if (isl && confirm(`Sink ${h.name} back into the sea? You get half the coins back.`)) removeIsland(m, isl); }
-    else if (btn.dataset.act === 'del' && confirm(`Remove the ${h.name} neighborhood? (Buildings stay.)`)) G.hoods[m] = G.hoods[m].filter(q => q !== h);
+    if (btn.dataset.act === 'ren') { const n = await askText('New name for ' + h.name + '?', h.name); if (n && n.trim()) h.name = n.trim().slice(0, 22); }
+    if (btn.dataset.act === 'del' && h.island) { const isl = islandsOf(m).find(q => q.id === h.island); if (isl && await askYes(`Sink ${h.name} back into the sea? You get half the coins back.`, 'Sink it')) removeIsland(m, isl); }
+    else if (btn.dataset.act === 'del' && await askYes(`Remove the ${h.name} neighborhood? (Buildings stay.)`, 'Remove')) G.hoods[m] = G.hoods[m].filter(q => q !== h);
     hoodSig = ''; zoneT = 0; sfx('tap'); save();
   });
   $('zMap').addEventListener('click', () => { overlay = (overlay + 1) % OVERLAYS.length; toast(`🗺️ ${OVERLAYS[overlay]}`); sfx('tap'); });
@@ -4301,7 +4379,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
       c.setLineDash([5, 5]); c.strokeStyle = '#fff'; c.lineWidth = 1.3; { const a = alongU ? IP(O, x, y + .5) : IP(O, x + .5, y), b2 = alongU ? IP(O, x + 1, y + .5) : IP(O, x + .5, y + 1); c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(b2[0], b2[1]); c.stroke(); } c.setLineDash([]);
     }
   }
-  function finishIsland(x, y, w, h) {
+  async function finishIsland(x, y, w, h) {
     const m = mapOfView(), r = { x, y, w, h };
     if (w < 5 || h < 5) { toast('Islands need to be at least 5×5 tiles. Drag a bigger rectangle.'); return; }
     if (w > 24 || h > 24) { toast('That island is too big. Keep it to 24×24 tiles or smaller.'); return; }
@@ -4310,7 +4388,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     if (G.coins < B.island.cost) { toast(`You need ${B.island.cost} 🪙 to raise a new island.`); return; }
     const used = new Set(hoodsOf('home').concat(hoodsOf('city')).map(q => q.name));
     let name = ['Carrot Isle', 'Hay Harbor', 'Pellet Point', 'Clover Key', 'Wheek Island', 'Popcorn Bay', 'Mochi Atoll', 'Timothy Shores', 'Squeak Cay', 'Fluff Reef'].find(n => !used.has(n)) || 'New Town';
-    const typed = prompt('Name your new island town:', name); if (typed === null) return; if (typed.trim()) name = typed.trim().slice(0, 22);
+    const typed = await askText('Name your new island town:', name); if (typed === null) return; if (typed.trim()) name = typed.trim().slice(0, 22);
     G.coins -= B.island.cost; const id = Date.now() % 1e9;
     G.islands[m].push({ id, name, x, y, w, h });
     G.hoods[m].push({ id: id + 1, name, x, y, w, h, zone: m === 'city' ? 'down' : 'res', island: id });
