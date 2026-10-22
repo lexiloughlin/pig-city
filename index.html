@@ -276,7 +276,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
         <div class="toast" id="toast" style="opacity:0"></div>
         <div class="banner" id="banner" hidden></div>
         <div class="paused" id="pausedOv" hidden>Paused</div>
-        <div class="zoombar" id="zoombar"><button class="ibtn" id="zIn" title="Zoom in" aria-label="Zoom in">+</button><button class="ibtn" id="zOut" title="Zoom out" aria-label="Zoom out">−</button><button class="ibtn" id="zHome" title="Back to the middle of town" aria-label="Recenter">⌖</button></div>
+        <div class="zoombar" id="zoombar"><button class="ibtn" id="zIn" title="Zoom in" aria-label="Zoom in">+</button><button class="ibtn" id="zOut" title="Zoom out" aria-label="Zoom out">−</button><button class="ibtn" id="zHome" title="Back to the middle" aria-label="Recenter">⌖</button><button class="ibtn" id="zWalls" title="Walls up / cutaway / down" aria-label="Change wall view" hidden>🧱</button></div>
       </div>
       <div class="panel" id="buildPanel">
         <h2 id="buildTitle">Build</h2>
@@ -514,7 +514,16 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     toybox:  { name: 'Toy Box', ic: '🧸', cat: 'floor', cost: 12, cozy: 2 },
     plant:   { name: 'House Plant', ic: '🪴', cat: 'floor', cost: 8, cozy: 1 },
     lamp:    { name: 'Floor Lamp', ic: '💡', cat: 'floor', cost: 12, cozy: 1 },
-    rug:     { name: 'Rug', ic: '🟥', cat: 'floor', cost: 10, cozy: 1, w: 3, under: true },
+    rug:     { name: 'Rug', ic: '🟥', cat: 'floor', cost: 10, cozy: 1, w: 2, d: 2, under: true },
+    bookshelf: { name: 'Bookshelf', ic: '📚', cat: 'floor', cost: 18, cozy: 2, house: true },
+    dresser: { name: 'Dresser', ic: '🪞', cat: 'floor', cost: 16, cozy: 1, house: true },
+    chair:   { name: 'Chair', ic: '🪑', cat: 'floor', cost: 6, cozy: 1, house: true },
+    nightstand: { name: 'Nightstand', ic: '🕯️', cat: 'floor', cost: 9, cozy: 1, house: true },
+    fridge:  { name: 'Fridge', ic: '🧊', cat: 'kitchen', cost: 30, cozy: 2, house: true },
+    stove:   { name: 'Stove', ic: '🍳', cat: 'kitchen', cost: 25, cozy: 2, house: true },
+    counter: { name: 'Counter', ic: '🟫', cat: 'kitchen', cost: 10, cozy: 1, house: true },
+    sink:    { name: 'Sink', ic: '🚰', cat: 'kitchen', cost: 12, cozy: 1, house: true },
+    bathtub: { name: 'Bathtub', ic: '🛁', cat: 'kitchen', cost: 28, cozy: 3, w: 2, house: true },
     painting: { name: 'Pig Portrait', ic: '🖼️', cat: 'wall', cost: 15, cozy: 1 },
     window:  { name: 'Window', ic: '🪟', cat: 'wall', cost: 10, cozy: 1 },
     clock:   { name: 'Clock', ic: '🕰️', cat: 'wall', cost: 8, cozy: 1 },
@@ -784,8 +793,9 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     [...tabsEl.children].forEach(t => t.setAttribute('aria-selected', t.dataset.c === cat ? 'true' : 'false'));
     toolsEl.innerHTML = '';
     if (view === 'inside' && cat === 'style') {
-      const R = insideB.room, box = document.createElement('div'); box.style.gridColumn = '1 / -1';
-      box.innerHTML = `<p class="small" style="margin:0 0 6px"><b>Wallpaper</b></p><div class="swatches" id="sw-wall"></div><p class="small" style="margin:10px 0 6px"><b>Floor</b></p><div class="swatches" id="sw-floor"></div>`;
+      const HS = isHouse() ? ensureHouse(insideB) : null;
+      const R = HS ? (HS.style[HS.sel] = HS.style[HS.sel] || { wall: 0, floor: 0 }) : insideB.room, box = document.createElement('div'); box.style.gridColumn = '1 / -1';
+      box.innerHTML = (HS ? `<p class="small" style="margin:0 0 8px">Decorating the <b>${HS.sel}</b>. Click any room in the house to switch rooms.</p>` : '') + `<p class="small" style="margin:0 0 6px"><b>Wallpaper</b></p><div class="swatches" id="sw-wall"></div><p class="small" style="margin:10px 0 6px"><b>Floor</b></p><div class="swatches" id="sw-floor"></div>`;
       toolsEl.appendChild(box);
       const mk = (id, list, key) => list.forEach(([col, name], i) => {
         const s = document.createElement('button'); s.className = 'swatch'; s.style.background = col; s.style.color = (key === 'wall' && i === 5) || (key === 'floor' && i === 6) ? '#fff' : INK; s.textContent = name;
@@ -798,7 +808,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
       return;
     }
     const defs = view === 'inside' ? F : B;
-    Object.entries(defs).filter(([, b]) => b.cat === cat).forEach(([k, b]) => {
+    Object.entries(defs).filter(([, b]) => b.cat === cat && !(b.house && view === 'inside' && !isHouse())).forEach(([k, b]) => {
       const el = document.createElement('button');
       el.className = 'tool'; el.dataset.k = k; el.setAttribute('aria-pressed', 'false'); el.title = b.desc || `Coziness +${b.cozy}`;
       el.innerHTML = `<span class="ic" aria-hidden="true">${b.ic}</span><b>${b.name}</b>${b.cost ? `<span class="cost">${b.cost} 🪙</span>` : '<span class="cost">free</span>'}`;
@@ -819,7 +829,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     const show = (hoverTool && TD(hoverTool) ? hoverTool : null) || (tool && TD(tool) ? tool : null);
     if (view === 'inside') {
       $('toolHint').innerHTML = show ? (show === 'remove' ? 'Click furniture to put it away (you get half the coins back).' : `<b>${F[show].ic} ${F[show].name}</b> · ${F[show].cost} 🪙 · Coziness +${F[show].cozy}${F[show].cat === 'wall' ? ' · goes on the wall' : ''}${F[show].w > 1 ? ` · ${F[show].w} tiles wide` : ''}`)
-        : 'Pick furniture, then click the room to place it. Cozier rooms keep the pigs who live here happier. Click a pig to check on it.';
+        : isHouse() ? 'Pick furniture, then click a floor tile to place it. Drag to look around, scroll to zoom, and press 🧱 to switch between walls up, cutaway and down.' : 'Pick furniture, then click the room to place it. Cozier rooms keep the pigs who live here happier. Click a pig to check on it.';
       return;
     }
     $('toolHint').innerHTML = tool === 'bulldoze' && !hoverTool ? 'Click a building to remove it (you get back half of what you spent).'
@@ -1063,7 +1073,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
   const cssPt = e => { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
   function toWorld(e) {
     const r = canvas.getBoundingClientRect();
-    if (view === 'inside') return { x: (e.clientX - r.left) / r.width * OW, y: (e.clientY - r.top) / r.height * OH };
+    if (view === 'inside' && !isHouse()) return { x: (e.clientX - r.left) / r.width * OW, y: (e.clientY - r.top) / r.height * OH };
     const p = cssPt(e); return isoToWorld(scrToIso(p.x, p.y));
   }
   const depthOf = b => (b.x + b.y + sz(b.type)) * HH;
@@ -1104,13 +1114,13 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
   canvas.addEventListener('pointerdown', e => {
     try { canvas.setPointerCapture(e.pointerId); } catch (x) {}
     ptrs.set(e.pointerId, cssPt(e)); dragMoved = false;
-    if (view === 'inside') return;
+    if (view === 'inside' && !isHouse()) return;
     if (tool === 'broom' && view === 'home') { sweeping = true; scoopNear(toWorld(e), 22); return; }
     if (ptrs.size === 2) { const [a, b2] = [...ptrs.values()]; pinch0 = { d: Math.hypot(a.x - b2.x, a.y - b2.y), z: cam().z }; drag = null; }
     else { const p = cssPt(e); drag = { x: p.x, y: p.y, cx: cam().x, cy: cam().y }; }
   });
   canvas.addEventListener('pointermove', e => {
-    const w = toWorld(e), k = view === 'inside' ? IS : 1; hover = { x: Math.floor(w.x / T / k), y: Math.floor(w.y / T / k) };
+    const w = toWorld(e), k = view === 'inside' && !isHouse() ? IS : 1; hover = { x: Math.floor(w.x / T / k), y: Math.floor(w.y / T / k) };
     if (!ptrs.has(e.pointerId)) return;
     ptrs.set(e.pointerId, cssPt(e));
     if (sweeping) { scoopNear(w, 22); return; }
@@ -1128,14 +1138,15 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     const cm = cam(), before = scrToIso(sx, sy); cm.z *= f; clampCam(cm);
     const after = scrToIso(sx, sy); cm.x += before.x - after.x; cm.y += before.y - after.y; clampCam(cm);
   }
-  canvas.addEventListener('wheel', e => { if (view === 'inside') return; e.preventDefault(); const p = cssPt(e); zoomAt(p.x, p.y, Math.exp(-e.deltaY * .0015)); }, { passive: false });
+  canvas.addEventListener('wheel', e => { if (view === 'inside' && !isHouse()) return; e.preventDefault(); const p = cssPt(e); zoomAt(p.x, p.y, Math.exp(-e.deltaY * .0015)); }, { passive: false });
   $('zIn').addEventListener('click', () => { zoomAt(vw / 2, vh / 2, 1.25); sfx('tap'); });
   $('zOut').addEventListener('click', () => { zoomAt(vw / 2, vh / 2, .8); sfx('tap'); });
-  $('zHome').addEventListener('click', () => { camHome(view); sfx('tap'); });
+  $('zHome').addEventListener('click', () => { if (isHouse()) houseCamHome(); else camHome(view); sfx('tap'); });
+  $('zWalls').addEventListener('click', () => { wallMode = (wallMode + 1) % 3; toast(`🧱 ${WALL_MODES[wallMode]}`); sfx('tap'); });
   const keysDown = new Set();
   window.addEventListener('keyup', e => keysDown.delete(e.key.toLowerCase()));
   function panKeys(dt) {
-    if (view !== 'home' && view !== 'city') return;
+    if (view !== 'home' && view !== 'city' && !isHouse()) return;
     const cm = cam(), sp = 420 * dt / cm.z;
     if (keysDown.has('arrowleft') || keysDown.has('a')) cm.x -= sp;
     if (keysDown.has('arrowright') || keysDown.has('d')) cm.x += sp;
@@ -1146,6 +1157,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
   canvas.addEventListener('click', e => {
     if (dragMoved) { dragMoved = false; return; }
     const w = toWorld(e), tx = Math.floor(w.x / T), ty = Math.floor(w.y / T);
+    if (isHouse()) { houseClick(cssPt(e)); return; }
     if (view === 'inside') { const wi = { x: w.x / IS, y: w.y / IS }; insideClick(wi, Math.floor(wi.x / T), Math.floor(wi.y / T)); return; }
     const sp = cssPt(e), s = scrToIso(sp.x, sp.y);
     if (tool === 'broom') return;
@@ -1183,9 +1195,9 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
   window.addEventListener('keydown', e => {
     if (e.key === 'Escape') { if (!$('tutorial').hidden) closeTut(); tool = null; syncTools(); }
     if (e.key === ' ' && !/INPUT|SELECT|TEXTAREA|BUTTON/.test(document.activeElement.tagName)) { e.preventDefault(); paused = !paused; syncSpeed(); }
-    if (!/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName) && /^(arrow(left|right|up|down)|[wasd])$/.test(e.key.toLowerCase()) && (view === 'home' || view === 'city')) { keysDown.add(e.key.toLowerCase()); if (e.key.startsWith('Arrow')) e.preventDefault(); }
-    if ((e.key === '+' || e.key === '=') && (view === 'home' || view === 'city')) zoomAt(vw / 2, vh / 2, 1.2);
-    if (e.key === '-' && (view === 'home' || view === 'city')) zoomAt(vw / 2, vh / 2, .83);
+    if (!/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName) && /^(arrow(left|right|up|down)|[wasd])$/.test(e.key.toLowerCase()) && (view === 'home' || view === 'city' || isHouse())) { keysDown.add(e.key.toLowerCase()); if (e.key.startsWith('Arrow')) e.preventDefault(); }
+    if ((e.key === '+' || e.key === '=') && (view === 'home' || view === 'city' || isHouse())) zoomAt(vw / 2, vh / 2, 1.2);
+    if (e.key === '-' && (view === 'home' || view === 'city' || isHouse())) zoomAt(vw / 2, vh / 2, .83);
   });
 
   // ---------- inside a castle ----------
@@ -1433,11 +1445,12 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     if (view !== 'inside' || !insideB) { el.hidden = true; return; }
     const cz = cozyOf(insideB), stars = Math.min(5, Math.floor(cz / 6));
     el.hidden = false;
+    if (isHouse()) { el.innerHTML = `Coziness ${'★'.repeat(stars)}${'☆'.repeat(5 - stars)} (${cz}) · ${planOf(insideB).rooms.length} rooms · residents' joy drains ${Math.round(100 - 100 / (1 + Math.min(.8, .035 * cz)))}% slower`; return; }
     el.innerHTML = `${isWork(insideB) ? 'Workplace comfort' : 'Coziness'} ${'★'.repeat(stars)}${'☆'.repeat(5 - stars)} (${cz}) · ${isWork(insideB) ? 'workers' : 'residents'}' joy drains ${Math.round(100 - 100 / (1 + Math.min(.8, .035 * cz)))}% slower`;
   }
 
   // ---------- views ----------
-  const curCats = () => view === 'city' ? CITY_CATS : view === 'inside' ? IN_CATS : CATS;
+  const curCats = () => view === 'city' ? CITY_CATS : view === 'inside' ? (insideB && insideB.type === 'hutch' ? HOUSE_CATS : IN_CATS) : CATS;
   const TD = k => view === 'inside' ? F[k] : B[k];
   function drawTabs() {
     tabsEl.innerHTML = '';
@@ -1459,13 +1472,13 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     $('stage').hidden = !map; $('buildPanel').hidden = !map; $('dash').hidden = v !== 'dash'; $('pcse').hidden = v !== 'pcse';
     $('buildTitle').textContent = v === 'city' ? 'Build downtown 🏙️' : v === 'inside' ? `Decorate ${insideName(insideB)} ${isWork(insideB) ? '🪴' : '🛋️'}` : 'Build';
     drawTabs(); drawTools(); renderBld(); renderCozy();
-    $('zoombar').hidden = v === 'inside';
-    if (map) { resize(); if ((v === 'home' || v === 'city') && !cams[v].init) { camHome(v); cams[v].init = true; } }
+    $('zoombar').hidden = v === 'inside' && !isHouse(); $('zWalls').hidden = !isHouse();
+    if (map) { resize(); if ((v === 'home' || v === 'city') && !cams[v].init) { camHome(v); cams[v].init = true; } if (isHouse()) houseCamHome(); }
     if (v === 'city' && G.cityNew) { G.cityNew = false; setTimeout(() => toast('🏙️ Welcome to Job City! Pigs with jobs here drive in around 8am and home after 5pm.'), 200); }
     if (v === 'dash') renderDash(); if (v === 'pcse') { stockSig = ''; renderStocks(); }
   }
   const insideName = b => { if (b.type !== 'hutch') return lvName(b); const i = G.buildings.filter(q => q.type === 'hutch').indexOf(b); return `${lvName(b)} #${i + 1}`; };
-  function goInside(b) { if (!b.room) b.room = Object.assign({ items: [] }, WORKPLACES[b.type] || { wall: 0, floor: 0 }); insideB = b; insidePigs.clear(); setView('inside'); sfx('wheek'); }
+  function goInside(b) { if (b.type === 'hutch') ensureHouse(b); housePigs.clear(); if (!b.room) b.room = Object.assign({ items: [] }, WORKPLACES[b.type] || { wall: 0, floor: 0 }); insideB = b; insidePigs.clear(); setView('inside'); sfx('wheek'); }
   document.querySelectorAll('.vtab').forEach(b => b.addEventListener('click', () => { setView(b.dataset.v); sfx('tap'); }));
   $('goInBtn').addEventListener('click', () => { if (canEnter(selBld)) goInside(selBld); });
 
@@ -1853,7 +1866,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     for (const p of G.pigs) { while (castles[ci] && n >= CAP[L(castles[ci]) - 1]) { ci++; n = 0; } if (!castles[ci]) break; map.set(p.id, castles[ci]); n++; }
     return map;
   }
-  const cozyOf = b => b && b.room ? b.room.items.reduce((s, it) => s + (F[it.k] ? F[it.k].cozy : 0), 0) : 0;
+  const cozyOf = b => { const its = b && (b.type === 'hutch' && b.house ? b.house.items : b.room ? b.room.items : null); return its ? its.reduce((s, it) => s + (F[it.k] ? F[it.k].cozy : 0), 0) : 0; };
   function logPay(p, b, pay) {
     const J = G.jd; J.total += pay; J.pig[p.id] = (J.pig[p.id] || 0) + pay;
     const k = (b.map === 'city' ? '🏙️ ' : '🏡 ') + JOBS[b.type].place; J.place[k] = (J.place[k] || 0) + pay;
@@ -1861,7 +1874,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
 
   // ---------- simulation ----------
   function tick(dt) {
-    worldTick(dt); insideTick(dt);
+    worldTick(dt); insideTick(dt); houseTick(dt);
     G.time += dt;
     const parks = lvlSum('park') * (evOn('spa') ? 1.5 : 1), vets = lvlSum('vet');
     const decor = G.buildings.reduce((s, b) => s + (DECOR[b.type] || 0), 0), lanterns = count('lantern');
@@ -3180,7 +3193,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
 
   // ---------- camera ----------
   let vw = 640, vh = 440, dprNow = 1;
-  const cams = { home: { x: 0, y: 0, z: .9 }, city: { x: 0, y: 0, z: .9 } };
+  const cams = { home: { x: 0, y: 0, z: .9 }, city: { x: 0, y: 0, z: .9 }, inside: { x: 0, y: 0, z: 1 } };
   const cam = () => cams[view] || cams.home;
   function camHome(v) { const c0 = cams[v], p = iso(9 * T, 6.5 * T); c0.x = p.x; c0.y = p.y; c0.z = Math.max(.5, Math.min(1, vw / 980)); }
   function clampCam(cm) {
@@ -3294,6 +3307,287 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     }
   }
 
+  // ================= SIMS-STYLE HOUSES (inside Pig Castles) =================
+  const PLANS = {
+    1: { W: 12, H: 9, rooms: [['Living Room', 0, 0, 6, 5], ['Kitchen', 6, 0, 6, 4], ['Bedroom', 0, 5, 6, 4], ['Bathroom', 6, 4, 3, 5], ['Playroom', 9, 4, 3, 5]] },
+    2: { W: 14, H: 10, rooms: [['Living Room', 0, 0, 6, 5], ['Kitchen', 6, 0, 4, 4], ['Bathroom', 10, 0, 4, 4], ['Bedroom', 0, 5, 6, 5], ['Playroom', 6, 4, 8, 6]] },
+    3: { W: 16, H: 11, rooms: [['Living Room', 0, 0, 6, 5], ['Kitchen', 6, 0, 5, 4], ['Dining Room', 11, 0, 5, 4], ['Bedroom', 0, 5, 6, 6], ['Bathroom', 6, 4, 4, 3], ['Media Room', 6, 7, 4, 4], ['Playroom', 10, 4, 6, 7]] }
+  };
+  const ROOM_STYLE = { 'Living Room': [0, 0], Kitchen: [3, 1], Bedroom: [4, 2], Bathroom: [2, 1], Playroom: [1, 3], 'Dining Room': [3, 0], 'Media Room': [5, 6] };
+  const HOUSE_CATS = [['floor', '🛋️ Furniture'], ['kitchen', '🍳 Kitchen & bath'], ['wall', '🖼️ Wall decor'], ['style', '🎨 Rooms'], ['tool', '🛠️ Tools']];
+  const WALL_H = [6, 14, 60], WALL_MODES = ['Walls down', 'Cutaway', 'Walls up'];
+  const isHouse = () => view === 'inside' && insideB && insideB.type === 'hutch';
+  const planCache = {};
+  function planOf(b) {
+    const lv = L(b); if (planCache[lv]) return planCache[lv];
+    const P = PLANS[lv], rooms = P.rooms.map(([name, x, y, w, h]) => ({ name, x, y, w, h }));
+    const doors = [];
+    for (const a of rooms) for (const r of rooms) {
+      if (a === r) continue;
+      if (a.x + a.w === r.x) { const v0 = Math.max(a.y, r.y), v1 = Math.min(a.y + a.h, r.y + r.h); if (v1 - v0 >= 1) doors.push({ dir: 'v', k: r.x, s: Math.floor((v0 + v1 - 1) / 2), a, b: r }); }
+      if (a.y + a.h === r.y) { const u0 = Math.max(a.x, r.x), u1 = Math.min(a.x + a.w, r.x + r.w); if (u1 - u0 >= 1) doors.push({ dir: 'u', k: r.y, s: Math.floor((u0 + u1 - 1) / 2), a, b: r }); }
+    }
+    const front = rooms.find(r => r.y + r.h === P.H && r.x + r.w === P.W) || rooms[rooms.length - 1];
+    const entry = { dir: 'u', k: P.H, s: front.x + Math.floor(front.w / 2), a: front, b: null };
+    // wall pieces, one tile long each; the visible face belongs to the room on the +u / +v side
+    const segs = [];
+    const isDoor = (dir, k, s) => doors.some(d => d.dir === dir && d.k === k && d.s === s) || (entry.dir === dir && entry.k === k && entry.s === s);
+    const add = (dir, k, s, face) => { if (segs.some(q => q.dir === dir && q.k === k && q.s === s)) return; segs.push({ dir, k, s, face, back: k === 0, door: isDoor(dir, k, s) }); };
+    for (const r of rooms) {
+      for (let u = r.x; u < r.x + r.w; u++) add('u', r.y, u, r);
+      for (let v = r.y; v < r.y + r.h; v++) add('v', r.x, v, r);
+    }
+    for (const r of rooms) {
+      if (r.y + r.h === P.H) for (let u = r.x; u < r.x + r.w; u++) add('u', P.H, u, null);
+      if (r.x + r.w === P.W) for (let v = r.y; v < r.y + r.h; v++) add('v', P.W, v, null);
+    }
+    return (planCache[lv] = { W: P.W, H: P.H, rooms, doors, entry, segs });
+  }
+  const roomAt = (pl, x, y) => pl.rooms.find(r => x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h);
+  function ensureHouse(b) {
+    if (b.house) return b.house;
+    const H = b.house = { items: [], style: {}, sel: 'Living Room' };
+    for (const [n, s] of Object.entries(ROOM_STYLE)) H.style[n] = { wall: s[0], floor: s[1] };
+    // move anything bought for the old one-room interior into the living room
+    if (b.room) {
+      H.style['Living Room'] = { wall: b.room.wall || 0, floor: b.room.floor || 0 };
+      let fx = 0, wx = 0;
+      for (const it of b.room.items) {
+        const d = F[it.k]; if (!d) continue;
+        if (d.cat === 'wall') { const w = d.w || 1; if (wx + w <= 6) { H.items.push({ k: it.k, x: wx, y: 0, wall: 'u' }); wx += w; } else G.coins += d.cost; }
+        else { const w = d.w || 1, dd = d.d || 1; let placed = false;
+          for (let y = 0; y < 5 && !placed; y++) for (let x = 0; x + w <= 6 && !placed; x++) if (houseFits(b, it.k, x, y)) { H.items.push({ k: it.k, x, y }); placed = true; }
+          if (!placed) G.coins += d.cost; }
+      }
+    }
+    return H;
+  }
+  const fDims = k => ({ w: F[k].w || 1, d: F[k].d || 1 });
+  function houseItemAt(b, x, y, under) {
+    const its = b.house.items;
+    for (let i = its.length - 1; i >= 0; i--) { const it = its[i]; if (it.wall) continue; const { w, d } = fDims(it.k); if (x >= it.x && x < it.x + w && y >= it.y && y < it.y + d && (under === undefined || !!F[it.k].under === under)) return it; }
+    return null;
+  }
+  function houseFits(b, k, x, y) {
+    const pl = planOf(b), { w, d } = fDims(k), r = roomAt(pl, x, y);
+    if (!r || x + w > r.x + r.w || y + d > r.y + r.h) return false;
+    for (let i = 0; i < w; i++) for (let j = 0; j < d; j++) if (houseItemAt(b, x + i, y + j, !!F[k].under)) return false;
+    return true;
+  }
+  // wall decor hangs on a room's back walls (the ones you can see)
+  function wallSpot(b, k, x, y) {
+    const pl = planOf(b), r = roomAt(pl, x, y), w = F[k].w || 1; if (!r) return null;
+    const tryU = () => y === r.y && x + w <= r.x + r.w ? { wall: 'u', x, y: r.y } : null;
+    const tryV = () => x === r.x && y + w <= r.y + r.h ? { wall: 'v', x: r.x, y } : null;
+    const s = tryU() || tryV(); if (!s) return null;
+    for (let i = 0; i < w; i++) {
+      const pos = s.wall === 'u' ? s.x + i : s.y + i, k2 = s.wall === 'u' ? s.y : s.x;
+      if (pl.segs.some(q => q.dir === s.wall && q.k === k2 && q.s === pos && q.door)) return null;
+      if (b.house.items.some(o => o.wall === s.wall && (s.wall === 'u' ? o.y === k2 && pos >= o.x && pos < o.x + (F[o.k].w || 1) : o.x === k2 && pos >= o.y && pos < o.y + (F[o.k].w || 1)))) return null;
+    }
+    return s;
+  }
+  // ---------- furniture art (isometric) ----------
+  function isoFurn(c, it, o, ghost) {
+    const k = it.k, x = it.x, y = it.y, { w, d } = fDims(k), t = G.time || 0, night = darkness() > .4;
+    c.save(); c.lineJoin = 'round';
+    switch (k) {
+      case 'rug': poly(c, [IP(o, x + .1, y + .1), IP(o, x + w - .1, y + .1), IP(o, x + w - .1, y + d - .1), IP(o, x + .1, y + d - .1)], '#c96a85', EDGE); poly(c, [IP(o, x + .3, y + .3), IP(o, x + w - .3, y + .3), IP(o, x + w - .3, y + d - .3), IP(o, x + .3, y + d - .3)], null, '#ffd36b', 2); break;
+      case 'bed': box(c, o, x + .1, y + .15, w - .2, .7, 0, 7, '#a77c4c'); box(c, o, x + .15, y + .2, w - .3, .6, 7, 5, '#9fd3f2', { top: '#bfe3f7' }); box(c, o, x + .2, y + .25, .4, .5, 12, 4, '#fff'); box(c, o, x + .05, y + .15, .1, .7, 0, 22, '#8a5a34'); break;
+      case 'hidey': box(c, o, x + .15, y + .15, .7, .7, 0, 14, '#d9ad3c'); gableV(c, o, x + .15, y + .15, .7, .7, 14, 9, '#c99a3c', '#d9ad3c'); qL(c, o, y + .85, x + .38, x + .62, 0, 9, '#3b2a1a'); break;
+      case 'hayrack': box(c, o, x + .2, y + .3, .6, .4, 0, 16, '#a77c4c'); box(c, o, x + .22, y + .32, .56, .36, 16, 5, '#ecc55a'); for (let i = 1; i < 5; i++) qL(c, o, y + .7, x + .2 + i * .12, x + .23 + i * .12, 2, 15, '#ecc55a'); break;
+      case 'bottle': box(c, o, x + .4, y + .4, .2, .2, 0, 4, '#bdbdbd'); cyl(c, o, x + .5, y + .5, .1, 4, 18, '#7fc1ea'); break;
+      case 'tunnel': box(c, o, x + .1, y + .25, w - .2, .5, 0, 11, '#7fc1ea'); for (let i = 1; i < 6; i++) qL(c, o, y + .75, x + .1 + i * .3, x + .14 + i * .3, 0, 11, 'rgba(255,255,255,.55)'); qR(c, o, x + w - .1, y + .35, y + .65, 1, 9, '#2f3440'); break;
+      case 'couch': box(c, o, x + .1, y + .2, w - .2, .65, 0, 9, '#a98bd9'); box(c, o, x + .1, y + .15, w - .2, .2, 9, 10, '#a98bd9'); box(c, o, x + .1, y + .2, .2, .65, 9, 5, '#9a7bd0'); box(c, o, x + w - .3, y + .2, .2, .65, 9, 5, '#9a7bd0'); box(c, o, x + .35, y + .35, .55, .45, 9, 3, '#c4adeb'); box(c, o, x + 1.1, y + .35, .55, .45, 9, 3, '#c4adeb'); break;
+      case 'tv': box(c, o, x + .15, y + .3, .7, .4, 0, 10, '#8a5a34'); box(c, o, x + .2, y + .4, .6, .08, 10, 18, '#2f3440'); qL(c, o, y + .48, x + .24, x + .76, 12, 26, ['#9fe0ff', '#ffd36b', '#f4a3b8', '#9cc65a'][Math.floor(t / 2) % 4]); break;
+      case 'table': for (const [a, b2] of [[.25, .25], [.7, .25], [.25, .7], [.7, .7]]) box(c, o, x + a, y + b2, .05, .05, 0, 11, '#8a5a34'); box(c, o, x + .15, y + .15, .7, .7, 11, 3, '#c99a5b'); { const [px, py] = IP(o, x + .5, y + .5, 14); c.font = '10px sans-serif'; c.textAlign = 'center'; c.fillText('🥕', px - 5, py); c.fillText('🍓', px + 5, py + 2); } break;
+      case 'toybox': box(c, o, x + .2, y + .25, .6, .5, 0, 11, '#e0483f'); qL(c, o, y + .75, x + .2, x + .8, 5, 7, '#f2b134'); { const [px, py] = IP(o, x + .5, y + .5, 13); c.font = '10px sans-serif'; c.textAlign = 'center'; c.fillText('🧸', px - 3, py); } break;
+      case 'plant': cyl(c, o, x + .5, y + .5, .15, 0, 9, '#c96d2c'); { const [px, py] = IP(o, x + .5, y + .5, 9); c.fillStyle = '#5fae48'; for (const [a, b2, r] of [[-5, -6, 6], [5, -6, 6], [0, -12, 7]]) { ell(c, px + a, py + b2, r, r * .8); c.fill(); c.strokeStyle = EDGE; c.stroke(); } } break;
+      case 'lamp': box(c, o, x + .4, y + .4, .2, .2, 0, 2, '#3b2a1a'); box(c, o, x + .47, y + .47, .06, .06, 2, 26, '#3b2a1a'); cone(c, o, x + .5, y + .5, .2, 26, 12, night ? '#ffe08a' : '#f3d9a0'); break;
+      case 'fridge': box(c, o, x + .12, y + .12, .76, .76, 0, 44, '#f4f6f8'); qL(c, o, y + .88, x + .14, x + .86, 30, 31, '#bdbdbd'); qL(c, o, y + .88, x + .7, x + .74, 34, 40, '#9aa3ac'); qL(c, o, y + .88, x + .7, x + .74, 12, 24, '#9aa3ac'); { const [px, py] = IP(o, x + .4, y + .88, 20); c.font = '7px sans-serif'; c.textAlign = 'center'; c.fillText('🥕', px, py); } break;
+      case 'stove': box(c, o, x + .05, y + .05, .9, .9, 0, 18, '#e8eef4', { top: '#2f3440' }); for (const [a, b2] of [[.3, .3], [.7, .3], [.3, .7], [.7, .7]]) { const [px, py] = IP(o, x + a, y + b2, 18); c.strokeStyle = night || Math.sin(t + a * 9) > .3 ? '#ff6b4a' : '#7a838c'; c.lineWidth = 1.2; c.beginPath(); c.ellipse(px, py, 5, 2.5, 0, 0, Math.PI * 2); c.stroke(); } qL(c, o, y + .95, x + .15, x + .85, 3, 13, '#2f3440'); break;
+      case 'counter': box(c, o, x + .02, y + .05, .96, .9, 0, 16, '#c99a5b', { top: '#f4f1ea' }); qL(c, o, y + .95, x + .1, x + .48, 2, 13, '#b48450', true); qL(c, o, y + .95, x + .52, x + .9, 2, 13, '#b48450', true); break;
+      case 'sink': box(c, o, x + .05, y + .05, .9, .9, 0, 16, '#f4f6f8', { top: '#f4f6f8' }); poly(c, [IP(o, x + .25, y + .25, 16), IP(o, x + .75, y + .25, 16), IP(o, x + .75, y + .75, 16), IP(o, x + .25, y + .75, 16)], '#9fd3f2', EDGE); box(c, o, x + .45, y + .12, .1, .1, 16, 8, '#bdbdbd'); break;
+      case 'bathtub': box(c, o, x + .08, y + .1, w - .16, .8, 0, 13, '#fbf8f0'); poly(c, [IP(o, x + .2, y + .2, 13), IP(o, x + w - .2, y + .2, 13), IP(o, x + w - .2, y + .8, 13), IP(o, x + .2, y + .8, 13)], '#7fc1ea', EDGE); { const [px, py] = IP(o, x + 1, y + .5, 14); c.fillStyle = '#fff'; for (let i = 0; i < 5; i++) { ell(c, px - 10 + i * 5, py + Math.sin(t * 2 + i) * 1.2, 3, 2); c.fill(); } } break;
+      case 'bookshelf': box(c, o, x + .1, y + .1, .8, .4, 0, 40, '#8a5a34'); for (let s = 0; s < 4; s++) for (let i = 0; i < 5; i++) qL(c, o, y + .5, x + .14 + i * .14, x + .24 + i * .14, 3 + s * 9, 9 + s * 9 - (i % 2), ['#e0483f', '#5aa9e0', '#f2b134', '#6fae3e', '#a98bd9'][(i + s) % 5]); break;
+      case 'dresser': box(c, o, x + .12, y + .2, .76, .6, 0, 20, '#c99a5b'); for (let i = 0; i < 3; i++) { qL(c, o, y + .8, x + .16, x + .84, 2 + i * 6, 6 + i * 6, '#b48450', true); qL(c, o, y + .8, x + .46, x + .54, 4 + i * 6, 5 + i * 6, '#e9b93b'); } { const [px, py] = IP(o, x + .5, y + .45, 20); c.font = '10px sans-serif'; c.textAlign = 'center'; c.fillText('🪞', px, py - 2); } break;
+      case 'chair': box(c, o, x + .3, y + .3, .4, .4, 0, 9, '#c99a5b'); box(c, o, x + .3, y + .3, .4, .08, 9, 12, '#a77c4c'); break;
+      case 'nightstand': box(c, o, x + .25, y + .25, .5, .5, 0, 12, '#a77c4c'); { const [px, py] = IP(o, x + .5, y + .5, 12); c.fillStyle = night ? '#ffe08a' : '#f3d9a0'; ell(c, px, py - 5, 4, 3); c.fill(); c.strokeStyle = EDGE; c.stroke(); } break;
+    }
+    c.restore();
+  }
+  function wallFurn(c, it, o, h) {
+    const k = it.k, w = F[k].w || 1, t = G.time || 0, z0 = 22, z1 = 44;
+    if (h < z1) return; // wall is cut down, decor is hidden like in the Sims
+    const q = (a0, a1, b0, b1, fill, st) => it.wall === 'u' ? qL(c, o, it.y + .07, it.x + a0, it.x + a1, b0, b1, fill, st) : qR(c, o, it.x + .07, it.y + a0, it.y + a1, b0, b1, fill, st);
+    const P = (a, z) => it.wall === 'u' ? IP(o, it.x + a, it.y + .07, z) : IP(o, it.x + .07, it.y + a, z);
+    switch (k) {
+      case 'painting': q(.2, .8, z0, z1, '#c9a23a', true); q(.27, .73, z0 + 3, z1 - 3, '#f7dfe2'); { const [px, py] = P(.5, z0 + 11); c.save(); c.translate(px, py); c.scale(.17, .17); drawPig(c, FOUNDERS[(it.x + it.y) % FOUNDERS.length].skin); c.restore(); } break;
+      case 'window': { const sky = darkness() > .5 ? '#1f2f5c' : seasonIdx() === 3 ? '#cfe0ee' : '#9fd3f2'; q(.15, .85, z0 - 4, z1 + 4, '#fff', true); q(.22, .78, z0, z1, sky); q(.48, .52, z0, z1, '#fff'); q(.22, .78, (z0 + z1) / 2 - 1, (z0 + z1) / 2 + 1, '#fff'); break; }
+      case 'clock': { const [px, py] = P(.5, 33); c.fillStyle = '#fff'; ell(c, px, py, 7, 7); c.fill(); c.strokeStyle = INK; c.lineWidth = 1.2; c.stroke(); const hh = hourNow(); c.beginPath(); c.moveTo(px, py); c.lineTo(px + Math.sin(hh / 6 * Math.PI) * 4, py - Math.cos(hh / 6 * Math.PI) * 4); c.moveTo(px, py); c.lineTo(px + Math.sin(hh * 2 * Math.PI) * 6, py - Math.cos(hh * 2 * Math.PI) * 6); c.stroke(); break; }
+      case 'shelf': q(.1, w - .1, 28, 30, '#a77c4c', true); for (let i = 0; i < 7; i++) q(.2 + i * .23, .32 + i * .23, 30, 38 - (i % 3), ['#e0483f', '#5aa9e0', '#f2b134', '#6fae3e', '#a98bd9'][i % 5]); break;
+      case 'lights': for (let i = 0; i <= 12; i++) { const a = .1 + i / 12 * (w - .2), sag = 4 * (i / 12) * (1 - i / 12) * 8, [px, py] = P(a, 46 - sag); c.fillStyle = ['#ffd36b', '#f4a3b8', '#9fe0ff', '#c4f0a0'][i % 4]; c.globalAlpha = .6 + .4 * Math.sin(t * 3 + i); ell(c, px, py, 2.2, 2.2); c.fill(); } c.globalAlpha = 1; break;
+    }
+  }
+  // ---------- pigs moving through the house ----------
+  const housePigs = new Map();
+  function houseResidents(all) { if (!insideB) return []; const r = residents(); return G.pigs.filter(p => r.get(p.id) === insideB && (all || (!p.trip && pigMap(p) === 'home' && p.state !== 'admitted'))); }
+  function roomPath(pl, from, to) {
+    if (from === to) return [];
+    const prev = new Map([[from, null]]), q = [from];
+    while (q.length) { const r = q.shift(); if (r === to) break; for (const d of pl.doors) { const n = d.a === r ? d.b : d.b === r ? d.a : null; if (n && !prev.has(n)) { prev.set(n, { r, d }); q.push(n); } } }
+    if (!prev.has(to)) return [];
+    const pts = []; let cur = to;
+    while (prev.get(cur)) {
+      const { r, d } = prev.get(cur), mid = d.s + .5, into = cur === d.b ? 1 : -1;
+      const a = d.dir === 'v' ? [d.k - .45 * into, mid] : [mid, d.k - .45 * into], b2 = d.dir === 'v' ? [d.k + .45 * into, mid] : [mid, d.k + .45 * into];
+      pts.unshift(a, b2); cur = r;
+    }
+    return pts;
+  }
+  function houseTick(dt) {
+    if (!isHouse()) return;
+    const pl = planOf(insideB), H = ensureHouse(insideB), dk = darkness();
+    const beds = H.items.filter(i => i.k === 'bed' || i.k === 'hidey' || i.k === 'couch');
+    const spots = []; for (const b of beds) { const { w } = fDims(b.k); for (let i = 0; i < (b.k === 'hidey' ? 1 : w); i++) spots.push([b.x + i + .5, b.y + .55]); }
+    houseResidents().forEach((p, idx) => {
+      let s = housePigs.get(p.id);
+      if (!s) { const e = pl.entry; s = { u: e.s + .5, v: pl.H - .5, path: [], wait: Math.random() * 2, face: 1 }; housePigs.set(p.id, s); }
+      const sleepy = dk > .6 || p.nap > 0;
+      if (sleepy && !s.sleep && spots[idx]) { s.sleep = true; const tgt = spots[idx], r0 = roomAt(pl, Math.floor(s.u), Math.floor(s.v)), r1 = roomAt(pl, Math.floor(tgt[0]), Math.floor(tgt[1])); s.path = roomPath(pl, r0, r1).concat([tgt]); }
+      if (!sleepy && s.sleep) { s.sleep = false; s.path = []; s.wait = .5; }
+      if (s.path.length) {
+        const [tu, tv] = s.path[0], du = tu - s.u, dv = tv - s.v, d = Math.hypot(du, dv), sp = 1.4 * dt;
+        if (Math.abs(du - dv) > .02) s.face = du - dv > 0 ? 1 : -1;
+        if (d <= sp) { s.u = tu; s.v = tv; s.path.shift(); } else { s.u += du / d * sp; s.v += dv / d * sp; }
+        s.moving = true; return;
+      }
+      s.moving = false;
+      if (s.sleep) return;
+      s.wait -= dt;
+      if (s.wait <= 0) {
+        s.wait = 2 + Math.random() * 4;
+        const r1 = pick(pl.rooms), r0 = roomAt(pl, Math.floor(s.u), Math.floor(s.v)) || pl.rooms[0];
+        const fav = H.items.filter(i => !i.wall && roomAt(pl, i.x, i.y) === r1 && i.k !== 'rug');
+        const tgt = fav.length && Math.random() < .6 ? (() => { const f = pick(fav); return [f.x + .5 + (Math.random() - .5) * .3, f.y + (fDims(f.k).d) + .25]; })() : [r1.x + .5 + Math.random() * (r1.w - 1), r1.y + .5 + Math.random() * (r1.h - 1)];
+        tgt[0] = Math.max(r1.x + .3, Math.min(r1.x + r1.w - .3, tgt[0])); tgt[1] = Math.max(r1.y + .3, Math.min(r1.y + r1.h - .3, tgt[1]));
+        s.path = roomPath(pl, r0, r1).concat([tgt]);
+      }
+    });
+  }
+  // ---------- drawing the house ----------
+  let wallMode = 1;
+  function drawHouse(c) {
+    const b = insideB, pl = planOf(b), H = ensureHouse(b), o = { x: 0, y: 0 }, t = G.time || 0, dk = darkness();
+    c.setTransform(dprNow, 0, 0, dprNow, 0, 0);
+    const g = c.createLinearGradient(0, 0, 0, vh); g.addColorStop(0, '#a8d371'); g.addColorStop(1, '#8cc45e'); c.fillStyle = g; c.fillRect(0, 0, vw, vh);
+    setCamTransform(c);
+    // lawn + path to the front door
+    poly(c, [IP(o, -2, -2), IP(o, pl.W + 2, -2), IP(o, pl.W + 2, pl.H + 3), IP(o, -2, pl.H + 3)], shade(season().grass, -.04), null);
+    poly(c, [IP(o, pl.entry.s + .2, pl.H), IP(o, pl.entry.s + .8, pl.H), IP(o, pl.entry.s + .8, pl.H + 3), IP(o, pl.entry.s + .2, pl.H + 3)], '#d9c9a8', EDGE);
+    for (let i = 0; i < 40; i++) { const u = -1.8 + (i * 7.3) % (pl.W + 3.6), v = (i % 2 ? pl.H + .5 + (i * 3.1) % 2.3 : -1.8 + (i * 1.7) % 1.5); const [px, py] = IP(o, u, v); c.fillStyle = ['#fff', '#ffd6e0', '#fff1a8'][i % 3]; ell(c, px, py, 1.8, 1.3); c.fill(); }
+    // foundation
+    const D = 10;
+    poly(c, [IP(o, 0, pl.H), IP(o, pl.W, pl.H), [IP(o, pl.W, pl.H)[0], IP(o, pl.W, pl.H)[1] + D], [IP(o, 0, pl.H)[0], IP(o, 0, pl.H)[1] + D]], '#bdb6aa', EDGE);
+    poly(c, [IP(o, pl.W, 0), IP(o, pl.W, pl.H), [IP(o, pl.W, pl.H)[0], IP(o, pl.W, pl.H)[1] + D], [IP(o, pl.W, 0)[0], IP(o, pl.W, 0)[1] + D]], '#9a9387', EDGE);
+    // floors, room by room
+    for (const r of pl.rooms) {
+      const st = H.style[r.name] || { wall: 0, floor: 0 }, fc = FLOORS[st.floor][0];
+      for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) {
+        const alt = st.floor === 1 || st.floor === 5 ? ((x + y) % 2 ? .07 : -.03) : ((x * 7 + y * 3) % 5) * .012;
+        poly(c, [IP(o, x, y), IP(o, x + 1, y), IP(o, x + 1, y + 1), IP(o, x, y + 1)], shade(fc, alt), 'rgba(0,0,0,.06)');
+        if (st.floor === 0) for (const f of [.33, .66]) { const a = IP(o, x, y + f), b2 = IP(o, x + 1, y + f); c.strokeStyle = 'rgba(80,50,20,.18)'; c.lineWidth = 1; c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(b2[0], b2[1]); c.stroke(); }
+        if (st.floor === 2 || st.floor === 6) { c.fillStyle = 'rgba(255,255,255,.14)'; const [px, py] = IP(o, x + .5, y + .5); ell(c, px - 4, py, 1, 1); c.fill(); ell(c, px + 5, py + 2, 1, 1); c.fill(); }
+        if (st.floor === 3) { c.strokeStyle = 'rgba(160,120,40,.5)'; c.lineWidth = 1; const [px, py] = IP(o, x + .5, y + .5); c.beginPath(); c.moveTo(px - 8, py); c.lineTo(px + 2, py - 3); c.moveTo(px, py + 4); c.lineTo(px + 9, py + 1); c.stroke(); }
+      }
+      if (H.sel === r.name && cat === 'style') poly(c, [IP(o, r.x + .05, r.y + .05), IP(o, r.x + r.w - .05, r.y + .05), IP(o, r.x + r.w - .05, r.y + r.h - .05), IP(o, r.x + .05, r.y + r.h - .05)], 'rgba(233,185,59,.18)', '#e9b93b', 2.5);
+      const [lx, ly] = IP(o, r.x + r.w / 2, r.y + r.h / 2); c.font = 'bold 10px Nunito, sans-serif'; c.textAlign = 'center'; c.fillStyle = 'rgba(59,42,26,.28)'; c.fillText(r.name.toUpperCase(), lx, ly + 4);
+    }
+    // rugs lie flat under everything
+    for (const it of H.items) if (!it.wall && F[it.k].under) isoFurn(c, it, o);
+    // hover preview
+    if (hover && tool) {
+      if (tool === 'remove') { const it = houseItemAt(b, hover.x, hover.y); if (it) { const { w, d } = fDims(it.k); poly(c, [IP(o, it.x, it.y), IP(o, it.x + w, it.y), IP(o, it.x + w, it.y + d), IP(o, it.x, it.y + d)], 'rgba(217,69,90,.35)', '#d9455a', 2); } }
+      else if (F[tool] && F[tool].cat !== 'wall') { const ok = houseFits(b, tool, hover.x, hover.y) && G.coins >= F[tool].cost, { w, d } = fDims(tool); poly(c, [IP(o, hover.x, hover.y), IP(o, hover.x + w, hover.y), IP(o, hover.x + w, hover.y + d), IP(o, hover.x, hover.y + d)], ok ? 'rgba(255,255,255,.45)' : 'rgba(217,69,90,.3)', ok ? '#fff' : '#d9455a', 2); }
+    }
+    // walls, furniture and pigs, sorted back to front
+    const items = [];
+    const wh = sg => sg.back ? WALL_H[2] : WALL_H[wallMode];
+    for (const sg of pl.segs) {
+      const h = wh(sg), r = sg.face, st = r ? H.style[r.name] : null, face = r ? WALLS[st.wall][0] : '#e6dccb', ext = '#d9cfbf';
+      items.push({ d: sg.k + sg.s + .5, f: () => {
+        if (sg.door) { const hh = Math.min(h, 40); if (h > 30) { if (sg.dir === 'u') { box(c, o, sg.s, sg.k - .06, .1, .12, 0, h, ext); box(c, o, sg.s + .9, sg.k - .06, .1, .12, 0, h, ext); box(c, o, sg.s, sg.k - .06, 1, .12, hh, h - hh, face, { left: shade(face, -.04) }); } else { box(c, o, sg.k - .06, sg.s, .12, .1, 0, h, ext); box(c, o, sg.k - .06, sg.s + .9, .12, .1, 0, h, ext); box(c, o, sg.k - .06, sg.s, .12, 1, hh, h - hh, face, { right: shade(face, -.14) }); } } return; }
+        const top = h <= WALL_H[1] ? '#5c4a3a' : '#f4ede0';
+        if (sg.dir === 'u') { box(c, o, sg.s, sg.k - .06, 1, .12, 0, h, face, { left: r ? shade(face, -.03) : ext, right: shade(ext, -.2), top }); if (r) qL(c, o, sg.k + .06, sg.s, sg.s + 1, 0, 3, '#8a5a34'); }
+        else { box(c, o, sg.k - .06, sg.s, .12, 1, 0, h, face, { right: r ? shade(face, -.14) : shade(ext, -.16), left: shade(ext, -.06), top }); if (r) qR(c, o, sg.k + .06, sg.s, sg.s + 1, 0, 3, '#7b5236'); }
+        // built-in windows on the outer back walls
+        if (sg.back && h > 40 && sg.s % 3 === 1) { const sky = dk > .5 ? '#1f2f5c' : '#bfe3f7'; if (sg.dir === 'u') { qL(c, o, sg.k + .07, sg.s + .2, sg.s + .8, 18, 44, '#fff', true); qL(c, o, sg.k + .07, sg.s + .26, sg.s + .74, 21, 41, sky); } else { qR(c, o, sg.k + .07, sg.s + .2, sg.s + .8, 18, 44, '#fff', true); qR(c, o, sg.k + .07, sg.s + .26, sg.s + .74, 21, 41, sky); } }
+        // decor hanging on this wall piece
+        for (const it of H.items) if (it.wall === sg.dir && (sg.dir === 'u' ? it.y === sg.k && it.x === sg.s : it.x === sg.k && it.y === sg.s)) wallFurn(c, it, o, h);
+      } });
+    }
+    for (const it of H.items) if (!it.wall && !F[it.k].under) { const { w, d } = fDims(it.k); items.push({ d: it.x + it.y + (w + d) / 2 - .05, f: () => isoFurn(c, it, o) }); }
+    if (hover && tool && F[tool] && F[tool].cat !== 'wall' && tool !== 'remove' && !F[tool].under && houseFits(b, tool, hover.x, hover.y)) { const { w, d } = fDims(tool); items.push({ d: hover.x + hover.y + (w + d) / 2 - .05, f: () => { c.globalAlpha = .55; isoFurn(c, { k: tool, x: hover.x, y: hover.y }, o); c.globalAlpha = 1; } }); }
+    if (hover && tool && F[tool] && F[tool].cat === 'wall') { const sp = wallSpot(b, tool, hover.x, hover.y); if (sp) items.push({ d: 999, f: () => { c.globalAlpha = .6; wallFurn(c, Object.assign({ k: tool }, sp), o, 99); c.globalAlpha = 1; } }); }
+    for (const p of houseResidents()) {
+      const s = housePigs.get(p.id); if (!s) continue;
+      items.push({ d: s.u + s.v, f: () => {
+        const [px, py] = IP(o, s.u, s.v), sc = p.age < 90 ? .3 : .42, bob = s.moving ? Math.abs(Math.sin(t * 10 + p.id)) * 1.5 : 0;
+        c.save(); c.translate(px, py - bob); c.fillStyle = 'rgba(0,0,0,.14)'; ell(c, 1, 9 + bob, 14, 3.5); c.fill();
+        if (p.id === selected) { c.strokeStyle = '#fff'; c.lineWidth = 2.5; ell(c, 0, 9 + bob, 18, 6); c.stroke(); }
+        c.scale(s.face * sc, sc); drawPig(c, p.skin, { sleep: s.sleep && !s.path.length }); c.restore();
+        c.textAlign = 'center';
+        if (s.sleep && !s.path.length) { c.font = '11px Chewy, sans-serif'; c.fillStyle = '#1f2f5c'; const k2 = (t * .8 + p.id) % 1; c.globalAlpha = 1 - k2; c.fillText('z', px + 9 + k2 * 6, py - 12 - k2 * 10); c.fillText('Z', px + 14 + k2 * 4, py - 21 - k2 * 8); c.globalAlpha = 1; }
+        else if (p.id === selected || !s.moving) { c.font = 'bold 9px Nunito, sans-serif'; c.lineWidth = 3; c.strokeStyle = 'rgba(255,255,255,.85)'; c.strokeText(p.name, px, py - 16); c.fillStyle = INK; c.fillText(p.name, px, py - 16); }
+      } });
+    }
+    items.sort((a, b2) => a.d - b2.d).forEach(i => i.f());
+    // night
+    if (dk > 0) {
+      c.setTransform(dprNow, 0, 0, dprNow, 0, 0); c.fillStyle = `rgba(22,26,64,${.4 * dk})`; c.fillRect(0, 0, vw, vh);
+      setCamTransform(c); c.save(); c.globalCompositeOperation = 'lighter';
+      const glow = (x, y, r, a, col = '255,200,110') => { const g2 = c.createRadialGradient(x, y, 0, x, y, r); g2.addColorStop(0, `rgba(${col},${a})`); g2.addColorStop(1, `rgba(${col},0)`); c.fillStyle = g2; c.fillRect(x - r, y - r, r * 2, r * 2); };
+      for (const it of H.items) { const { w, d } = fDims(it.k), [px, py] = it.wall ? (it.wall === 'u' ? IP(o, it.x + w / 2, it.y, 40) : IP(o, it.x, it.y + w / 2, 40)) : IP(o, it.x + w / 2, it.y + d / 2, 20);
+        if (it.k === 'lamp' || it.k === 'nightstand') glow(px, py - 14, 90, .55 * dk); if (it.k === 'lights') glow(px, py, 100, .4 * dk, '255,220,240'); if (it.k === 'tv') glow(px, py, 60, .35 * dk, '170,220,255'); if (it.k === 'stove') glow(px, py, 40, .25 * dk, '255,140,90'); }
+      for (const r of pl.rooms) { const [px, py] = IP(o, r.x + r.w / 2, r.y + r.h / 2, 30); glow(px, py, 70, .14 * dk); }
+      c.restore();
+    }
+    // popups + confetti
+    setCamTransform(c); c.textAlign = 'center'; c.font = '13px Chewy, "Comic Sans MS", sans-serif';
+    for (const q of popups) { if (q.map !== 'inside' && q.map !== 'any') continue; const P = q.map === 'inside' ? { x: q.x, y: q.y } : iso(q.x, q.y); c.globalAlpha = Math.min(1, q.life / .4); c.lineWidth = 3.5; c.strokeStyle = '#fff'; c.strokeText(q.text, P.x, P.y); c.fillStyle = q.color; c.fillText(q.text, P.x, P.y); }
+    c.globalAlpha = 1; c.setTransform(dprNow, 0, 0, dprNow, 0, 0);
+    const away = houseResidents(true).filter(p => !houseResidents().includes(p));
+    if (away.length) { c.font = 'bold 12px Nunito, sans-serif'; c.textAlign = 'left'; const txt = 'Out right now: ' + away.map(p => p.name + (p.trip || pigMap(p) === 'city' ? ' 🚗' : p.state ? ' 🏥' : '')).join(', '); const w = c.measureText(txt).width; c.fillStyle = 'rgba(255,255,255,.88)'; rr(c, 8, vh - 30, w + 16, 22, 8); c.fill(); c.fillStyle = INK; c.fillText(txt, 16, vh - 15); }
+    for (const q of confetti) { c.globalAlpha = Math.min(1, q.life / .5); c.save(); c.translate(q.x, q.y); c.rotate(q.r); c.fillStyle = q.c; c.fillRect(-3, -1.5, 6, 3); c.restore(); }
+    c.globalAlpha = 1;
+  }
+  function houseClick(sp) {
+    const b = insideB, H = ensureHouse(b), pl = planOf(b), s = scrToIso(sp.x, sp.y), wpt = isoToWorld(s), tx = Math.floor(wpt.x / T), ty = Math.floor(wpt.y / T), o = { x: 0, y: 0 };
+    const pop = (u, v, txt, col) => { const [px, py] = IP(o, u, v, 30); popup(px, py, txt, col, 'inside'); };
+    if (cat === 'style') { const r = roomAt(pl, tx, ty); if (r) { H.sel = r.name; sfx('tap'); drawTools(); } return; }
+    if (tool === 'remove') {
+      let it = null, bd = 18;
+      for (const q of H.items) if (q.wall) { const w = F[q.k].w || 1, [px, py] = q.wall === 'u' ? IP(o, q.x + w / 2, q.y, 33) : IP(o, q.x, q.y + w / 2, 33), dd = Math.hypot(px - s.x, py - s.y); if (dd < bd) { bd = dd; it = q; } }
+      it = it || houseItemAt(b, tx, ty, false) || houseItemAt(b, tx, ty, true); if (!it) return;
+      H.items.splice(H.items.indexOf(it), 1); const back = Math.floor(F[it.k].cost / 2); G.coins += back;
+      pop(tx + .5, ty + .5, `+${back} 🪙`, INK); sfx('tap'); hudRes(); syncTools(); renderCozy(); save(); return;
+    }
+    if (tool && F[tool]) {
+      const d = F[tool];
+      if (G.coins < d.cost) { toast(`You need ${d.cost} 🪙 for a ${d.name}.`); return; }
+      let placed;
+      if (d.cat === 'wall') { const spt = wallSpot(b, tool, tx, ty); if (!spt) { toast('Wall decor goes on a back wall: click a floor tile right next to the top-left or top-right wall of a room.'); return; } placed = Object.assign({ k: tool }, spt); }
+      else { if (!houseFits(b, tool, tx, ty)) { toast('That doesn\'t fit there. Furniture has to stay inside one room and not overlap.'); return; } placed = { k: tool, x: tx, y: ty }; }
+      G.coins -= d.cost; H.items.push(placed); G.stats.furn = (G.stats.furn || 0) + 1; sfx('build');
+      pop(tx + .5, ty + .5, `Cozy! +${d.cozy} 🛋️`, '#c96a85');
+      hudRes(); syncTools(); renderCozy(); save(); return;
+    }
+    let best = null, bd = 18;
+    for (const p of houseResidents()) { const st = housePigs.get(p.id); if (!st) continue; const [px, py] = IP(o, st.u, st.v), dd = Math.hypot(px - s.x, py - 8 - s.y); if (dd < bd) { bd = dd; best = p; } }
+    if (best) { selected = best.id; best.hop = .4; const st = housePigs.get(best.id); pop(st.u, st.v, '♥', '#e07a9a'); renderPig(true); listSig = ''; sfx('wheek'); }
+  }
+  function houseCamHome() { const pl = planOf(insideB), p = { x: (pl.W - pl.H) / 2 * HW, y: (pl.W + pl.H) / 2 * HH - 20 }; cams.inside.x = p.x; cams.inside.y = p.y; cams.inside.z = Math.max(.6, Math.min(1.5, Math.min(vw / ((pl.W + pl.H) * HW + 60), vh / ((pl.W + pl.H) * HH + 120)))); }
+
   function drawSitter(c, st) {
     const P = iso(st.x, st.y), bob = st.act > 0 ? 0 : Math.abs(Math.sin(st.step)) * 1.5;
     c.save(); c.translate(P.x, P.y - bob); c.lineWidth = 1.4; c.strokeStyle = INK;
@@ -3351,6 +3645,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
   function draw() {
     const c = ctx;
     if (view === 'dash' || view === 'pcse') return;
+    if (isHouse()) { drawHouse(c); return; }
     if (view === 'inside') { c.setTransform(canvas.width / OW, 0, 0, canvas.height / OH, 0, 0); drawInside(c); return; }
     c.setTransform(dprNow, 0, 0, dprNow, 0, 0);
     drawWater(c);

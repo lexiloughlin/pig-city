@@ -13,6 +13,7 @@ Founders: Toki, Mochi, Poke, Miso Soup and Masaki (who runs Masaki Capital).
 - 📈 PCSE (Pig City Stock Exchange): trade six pig companies with big charts, a ticker tape, a portfolio donut and a newswire
 - 🏢 Go inside every Job City business: coder desks at Wheek Tech, a hay conveyor belt, a sushi conveyor, a car showroom and a PCSE trading floor with the live market board
 - 🌉 The bridge links Home Town and Job City, so you can watch pigs drive between towns
+- 🏡 Sims-style houses: every castle has real rooms (living room, kitchen, bedroom, bathroom, playroom) with walls up / cutaway / down, per-room wallpaper and floors, kitchen and bath furniture, and pigs who walk room to room and sleep in their beds
 - 🏰 Castle interiors: go inside any castle, pick wallpaper and floors, and place beds, hidey huts, couches and fairy lights. Cozy rooms keep pigs happy, and they sleep in their beds at night
 - 🎺 Town events like the Hay Festival, Pig Parade and Market Boom
 - ⏩ Pause / 1× / 2× / 3× speed, sound effects with mute, and a quick how-to-play guide
