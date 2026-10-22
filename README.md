@@ -5,6 +5,7 @@ A cozy guinea pig town builder. Build hutches, hay fields, water towers and vegg
 Founders: Toki, Mochi, Poke, Miso Soup and Masaki (who runs Masaki Capital).
 
 **What's in town**
+- 🏝️ Build new island towns out in the water and connect them with bridges (pigs on unconnected islands take a little boat)
 - 📐 Urban planning on 40×30 maps: pave your own roads and sidewalks, draw neighborhoods and zone them (Residential, Farm, Commercial, Industrial, Parkland, Downtown) for bonuses, and check service-coverage and happiness overlays
 - 🏙️ An isometric 3D-style town on an island: drag to look around, scroll or pinch to zoom
 - 🌸 Seasons, weather and day/night: rain speeds up gardens, winter slows the hay, lanterns and fireflies light up the night

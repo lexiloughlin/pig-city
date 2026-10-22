@@ -508,6 +508,8 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     fountain: { name: 'Fountain', ic: '⛲', cat: 'cdecor', cost: 50, desc: 'A splashy plaza fountain. Big happiness boost.', city: true },
     road:   { name: 'Road', ic: '🛣️', cat: 'plan', cost: 2, any: true, desc: 'Drag across the map to pave streets (2 🪙 a tile). Bulldoze removes them.' },
     path:   { name: 'Sidewalk', ic: '🧱', cat: 'plan', cost: 1, any: true, desc: 'Drag to lay brick sidewalks and plazas (1 🪙 a tile)' },
+    island: { name: 'Island', ic: '🏝️', cat: 'plan', cost: 150, any: true, desc: 'Drag a rectangle out in the water to raise a new island town (150 🪙)' },
+    bridge: { name: 'Bridge', ic: '🌉', cat: 'plan', cost: 4, any: true, desc: 'Drag across the water to build a bridge between islands (4 🪙 a tile)' },
     zone:   { name: 'Neighborhood', ic: '📐', cat: 'plan', cost: 0, any: true, desc: 'Drag a rectangle to draw a neighborhood, then name and zone it' },
     broom:  { name: 'Broom', ic: '🧹', cat: 'tool', cost: 0, desc: 'Drag across poop in Home Town to sweep it up (1 🪙 each)' },
     upgrade: { name: 'Upgrade', ic: '⬆️', cat: 'tool', cost: 0, desc: 'Click a building to make it fancier' },
@@ -656,7 +658,15 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
   const COLS = 40, ROWS = 30, T = 40, W = COLS * T, H = ROWS * T, OW = 640, OH = 440, HOME_ROAD = 12, AVENUE = [16, 17];
   const HL_W = HOME_ROAD * T + 13, HL_E = HOME_ROAD * T + 28;
   const roadSets = { home: new Set(), city: new Set() }, pathSets = { home: new Set(), city: new Set() }; let roadVer = 0;
-  const isRoad = (mapName, x, y) => (mapName === 'city' ? (ROAD.includes(y) || AVENUE.includes(x)) : y === HOME_ROAD) || roadSets[mapName].has(x + ',' + y);
+  const bridgeSets = { home: new Set(), city: new Set() };
+  const WORLD = { x0: -16, y0: -16, x1: COLS + 16, y1: ROWS + 16 };
+  const inWorld = (x, y) => x >= WORLD.x0 && x < WORLD.x1 && y >= WORLD.y0 && y < WORLD.y1;
+  const islandsOf = m => (G && G.islands && G.islands[m]) || [];
+  const landRects = m => [{ x: 0, y: 0, w: COLS, h: ROWS, main: true }].concat(islandsOf(m));
+  const landRectAt = (m, x, y) => landRects(m).find(r => x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h) || null;
+  const isLand = (m, x, y) => !!landRectAt(m, x, y);
+  const onMain = (x, y) => x >= 0 && x < COLS && y >= 0 && y < ROWS;
+  const isRoad = (mapName, x, y) => (mapName === 'city' ? ((ROAD.includes(y) && x >= 0 && x < COLS) || (AVENUE.includes(x) && y >= 0 && y < ROWS)) : (y === HOME_ROAD && x >= 0 && x < COLS)) || roadSets[mapName].has(x + ',' + y) || bridgeSets[mapName].has(x + ',' + y);
   const isPath = (mapName, x, y) => pathSets[mapName].has(x + ',' + y);
   const canvas = document.getElementById('c');
   let ctx = canvas.getContext('2d');
@@ -787,8 +797,8 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
   }
   const workSpot = (b, slot) => { const n = sz(b.type); return { x: b.x * T + 7 + (slot % 3) * (n * T - 14) / 2, y: (b.y + n) * T + 7 + Math.floor(slot / 3) * 10 }; };
   function fits(type, x, y, ignore) {
-    const n = sz(type);
-    if (x < 0 || y < 0 || x + n > COLS || y + n > ROWS) return false;
+    const n = sz(type), mm = view === 'city' ? 'city' : 'home', lr = landRectAt(mm, x, y);
+    if (!lr || x + n > lr.x + lr.w || y + n > lr.y + lr.h) return false;
     for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) { const m = view === 'city' ? 'city' : 'home'; if (isRoad(m, x + i, y + j) || isPath(m, x + i, y + j)) return false; }
     for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) if (bl().some(b => b !== ignore && covers(b, x + i, y + j))) return false;
     return true;
@@ -1135,8 +1145,8 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     ptrs.set(e.pointerId, cssPt(e)); dragMoved = false;
     if (view === 'inside' && !isHouse()) return;
     if (tool === 'broom' && view === 'home') { sweeping = true; scoopNear(toWorld(e), 22); return; }
-    if ((tool === 'road' || tool === 'path') && (view === 'home' || view === 'city') && ptrs.size === 1) { paintMode = tool; paintTile(e); return; }
-    if (tool === 'zone' && (view === 'home' || view === 'city') && ptrs.size === 1) { const w = toWorld(e), x = Math.floor(w.x / T), y = Math.floor(w.y / T); zoneDrag = { x0: x, y0: y, x1: x, y1: y }; return; }
+    if ((tool === 'road' || tool === 'path' || tool === 'bridge') && (view === 'home' || view === 'city') && ptrs.size === 1) { paintMode = tool; paintTile(e); return; }
+    if ((tool === 'zone' || tool === 'island') && (view === 'home' || view === 'city') && ptrs.size === 1) { const w = toWorld(e), x = Math.floor(w.x / T), y = Math.floor(w.y / T); zoneDrag = { x0: x, y0: y, x1: x, y1: y, kind: tool }; return; }
     if (ptrs.size === 2) { const [a, b2] = [...ptrs.values()]; pinch0 = { d: Math.hypot(a.x - b2.x, a.y - b2.y), z: cam().z }; drag = null; }
     else { const p = cssPt(e); drag = { x: p.x, y: p.y, cx: cam().x, cy: cam().y }; }
   });
@@ -1146,7 +1156,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     ptrs.set(e.pointerId, cssPt(e));
     if (sweeping) { scoopNear(w, 22); return; }
     if (paintMode) { paintTile(e); return; }
-    if (zoneDrag) { zoneDrag.x1 = Math.max(0, Math.min(COLS - 1, Math.floor(w.x / T))); zoneDrag.y1 = Math.max(0, Math.min(ROWS - 1, Math.floor(w.y / T))); return; }
+    if (zoneDrag) { zoneDrag.x1 = Math.max(WORLD.x0, Math.min(WORLD.x1 - 1, Math.floor(w.x / T))); zoneDrag.y1 = Math.max(WORLD.y0, Math.min(WORLD.y1 - 1, Math.floor(w.y / T))); return; }
     if (pinch0 && ptrs.size === 2) { const [a, b2] = [...ptrs.values()]; cam().z = pinch0.z * Math.hypot(a.x - b2.x, a.y - b2.y) / pinch0.d; clampCam(cam()); dragMoved = true; return; }
     if (drag) {
       const p = cssPt(e), dx = p.x - drag.x, dy = p.y - drag.y;
@@ -1183,7 +1193,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     if (isHouse()) { houseClick(cssPt(e)); return; }
     if (view === 'inside') { const wi = { x: w.x / IS, y: w.y / IS }; insideClick(wi, Math.floor(wi.x / T), Math.floor(wi.y / T)); return; }
     const sp = cssPt(e), s = scrToIso(sp.x, sp.y);
-    if (tool === 'broom' || tool === 'road' || tool === 'path' || tool === 'zone') return;
+    if (tool === 'broom' || tool === 'road' || tool === 'path' || tool === 'zone' || tool === 'bridge' || tool === 'island') return;
     if (tool === 'bulldoze') {
       const b = pickBuilding(s) || at(tx, ty); if (!b) { if (removeRoadAt(mapOfView(), tx, ty)) { popup(tx * T + T / 2, ty * T + 10, 'Cleared!', INK, view); sfx('tap'); hudRes(); save(); } return; }
       if (b.type === 'hutch' && (capacity() - CAP[L(b) - 1]) < G.pigs.length) { toast("Can't remove that castle, your pigs need the room!"); return; }
@@ -1571,6 +1581,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     { id: 'commute1', e: '🚗', name: 'Morning Commute', desc: 'A pig drives to work in Job City', r: 30, f: () => [st().commutes || 0, 1] },
     { id: 'cozy10', e: '🛋️', name: 'Home Sweet Home', desc: 'Make a castle room 10 coziness', r: 40, f: () => [Math.max(0, ...G.buildings.filter(b => b.type === 'hutch').map(cozyOf)), 10] },
     { id: 'hood1', e: '📐', name: 'City Planner', desc: 'Draw your first neighborhood', r: 40, f: () => [st().hoods || 0, 1] },
+    { id: 'island1', e: '🏝️', name: 'Island Life', desc: 'Raise a new island and connect it with a bridge', r: 80, f: () => [Math.min(st().islands || 0, 1) + Math.min(st().bridges || 0, 1), 2] },
     { id: 'road20', e: '🛣️', name: 'Road Crew', desc: 'Pave 20 road tiles', r: 40, f: () => [st().roads || 0, 20] },
     { id: 'trade1', e: '📈', name: 'First Trade', desc: 'Buy a share on the PCSE', r: 30, f: () => [G.mkt.trades, 1] },
     { id: 'party1', e: '🎂', name: 'Party Animal', desc: 'Celebrate a pig birthday', r: 40, f: () => [st().parties, 1] },
@@ -1859,17 +1870,20 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
   }
   function startCommute(p, wb) {
     const pk = parkSpot(wb, p.job.slot); p.park = pk;
+    const rh = roadRoute('home', { x: p.x, y: p.y }, { x: (COLS - 1) * T + 20, y: HOME_ROAD * T + 20 }), rc = roadRoute('city', { x: 20, y: ROAD[ROAD.length - 1] * T + 20 }, pk);
     p.trip = { to: 'city', i: 0, j: 1, x: p.x, y: p.y, dir: 1, legs: [
-      { map: 'home', pts: [[p.x, p.y], [p.x, HL_E], [W + (GPAD + NB) * T, HL_E]] },
-      { map: 'city', pts: [[-(GPAD + 4) * T, LANE_E], [pk.x, LANE_E], [pk.x, pk.y]] }] };
+      { map: 'home', pts: rh ? [[p.x, p.y], ...rh, [W + (GPAD + NB) * T, HL_E]] : [[p.x, p.y], [p.x, HL_E], [W + (GPAD + NB) * T, HL_E]] },
+      { map: 'city', pts: rc ? [[-(GPAD + 4) * T, LANE_E], ...rc, [pk.x, pk.y]] : [[-(GPAD + 4) * T, LANE_E], [pk.x, LANE_E], [pk.x, pk.y]] }] };
     p.nap = 0; p.working = false;
   }
   function startHome(p) {
     const pk = p.park || { x: p.x, y: CURB_N };
-    const hy = 60 + Math.random() * (HOME_ROAD * T - 100), hx = 120 + Math.random() * (W - 240);
+    const hc = residents().get(p.id), n2 = hc ? sz(hc.type) : 1;
+    const hx = hc ? (hc.x + n2 / 2) * T : 120 + Math.random() * (W - 240), hy = hc ? (hc.y + n2) * T + 16 : 60 + Math.random() * (HOME_ROAD * T - 100);
+    const rc = roadRoute('city', pk, { x: 20, y: ROAD[0] * T + 20 }), rh = roadRoute('home', { x: (COLS - 1) * T + 20, y: HOME_ROAD * T + 20 }, { x: hx, y: hy });
     p.trip = { to: 'home', i: 0, j: 1, x: pk.x, y: pk.y, dir: -1, legs: [
-      { map: 'city', pts: [[pk.x, pk.y], [pk.x, LANE_W], [-(GPAD + NB) * T, LANE_W]] },
-      { map: 'home', pts: [[W + (GPAD + 4) * T, HL_W], [hx, HL_W], [hx, hy]] }] };
+      { map: 'city', pts: rc ? [[pk.x, pk.y], ...rc, [-(GPAD + NB) * T, LANE_W]] : [[pk.x, pk.y], [pk.x, LANE_W], [-(GPAD + NB) * T, LANE_W]] },
+      { map: 'home', pts: rh ? [[W + (GPAD + 4) * T, HL_W], ...rh, [hx, hy]] : [[W + (GPAD + 4) * T, HL_W], [hx, HL_W], [hx, hy]] }] };
     p.working = false;
   }
   function driveTick(p, dt) {
@@ -2057,7 +2071,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
           const fr = friendOf(p), bench = has(p, 'sleepy') && pick(G.buildings.filter(b => b.type === 'bench') .concat([null]));
           if (bench) { p.tx = bench.x * T + T / 2 + (Math.random() - .5) * 10; p.ty = bench.y * T + T - 4; }
           else if (fr && Math.random() < (has(p, 'social') ? .6 : .3)) { p.tx = Math.max(24, Math.min(W - 24, fr.x + (Math.random() - .5) * 40)); p.ty = Math.max(30, Math.min(H - 20, fr.y + (Math.random() - .5) * 30)); }
-          else { const hc = home.get(p.id); if (hc) { const n2 = sz(hc.type); p.tx = Math.max(24, Math.min(W - 24, (hc.x + n2 / 2) * T + (Math.random() - .5) * 11 * T)); p.ty = Math.max(30, Math.min(H - 20, (hc.y + n2 + 1) * T + (Math.random() - .5) * 9 * T)); } else { p.tx = 24 + Math.random() * (W - 48); p.ty = 30 + Math.random() * (H - 50); } }
+          else { const hc = home.get(p.id); if (hc) { const n2 = sz(hc.type); const lr = landRectAt('home', hc.x, hc.y) || { x: 0, y: 0, w: COLS, h: ROWS }; p.tx = Math.max(lr.x * T + 16, Math.min((lr.x + lr.w) * T - 16, (hc.x + n2 / 2) * T + (Math.random() - .5) * 11 * T)); p.ty = Math.max(lr.y * T + 20, Math.min((lr.y + lr.h) * T - 12, (hc.y + n2 + 1) * T + (Math.random() - .5) * 9 * T)); } else { p.tx = 24 + Math.random() * (W - 48); p.ty = 30 + Math.random() * (H - 50); } }
         }
         else { p.x += dx / d * sp * dt; p.y += dy / d * sp * dt; if (Math.abs(dx) > 1) p.face = dx > 0 ? 1 : -1; }
       }
@@ -2125,7 +2139,8 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     roombas.length = Math.min(roombas.length, docks.length);
     roombas.forEach((rb, i) => {
       let tx, ty, best = Infinity;
-      for (const q of G.poops) { const d = (q.x - rb.x) ** 2 + (q.y - rb.y) ** 2; if (d < best) { best = d; tx = q.x; ty = q.y; } }
+      const dr = landRectAt('home', docks[i].x, docks[i].y);
+      for (const q of G.poops) { if (dr && !inRect(dr, Math.floor(q.x / T), Math.floor(q.y / T))) continue; const d = (q.x - rb.x) ** 2 + (q.y - rb.y) ** 2; if (d < best) { best = d; tx = q.x; ty = q.y; } }
       if (tx === undefined) { const d = docks[i]; tx = d.x * T + T / 2; ty = d.y * T + T / 2 + 4; }
       const dx = tx - rb.x, dy = ty - rb.y, dist = Math.hypot(dx, dy);
       if (dist > 1) { const sp = Math.min(dist, 55 * [1, 1.4, 1.8][L(docks[i]) - 1] * dt); rb.x += dx / dist * sp; rb.y += dy / dist * sp; rb.dir = { x: dx / dist, y: dy / dist }; }
@@ -3297,7 +3312,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
   const cam = () => cams[view] || cams.home;
   function camHome(v) { const c0 = cams[v], p = iso(9 * T, 6.5 * T); c0.x = p.x; c0.y = p.y; c0.z = Math.max(.5, Math.min(1, vw / 980)); }
   function clampCam(cm) {
-    const xs = [-(ROWS + GPAD + 2) * HW, (COLS + GPAD + 2) * HW], ys = [-(GPAD + 2) * HH, (COLS + ROWS + GPAD) * HH];
+    const gbc = groundBounds(), xs = [gbc.x0 + 2 * HW, gbc.x1 - 2 * HW], ys = [gbc.y0 + 120, gbc.y1 - 60];
     cm.x = Math.max(xs[0], Math.min(xs[1], cm.x)); cm.y = Math.max(ys[0], Math.min(ys[1], cm.y)); cm.z = Math.max(.4, Math.min(2.2, cm.z));
   }
   const scrToIso = (sx, sy) => { const cm = cam(); return { x: (sx - vw / 2) / cm.z + cm.x, y: (sy - vh / 2) / cm.z + cm.y }; };
@@ -3308,12 +3323,19 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
   // ---------- ground (cached per map + season) ----------
   const groundCache = {};
   const GPAD = 7, NB = 7, GS = 1; // bridge length, neighbour-town strip, cache resolution
-  function groundBounds() { return { x0: -(ROWS + GPAD + NB + 2) * HW, y0: -(GPAD + NB + 4) * HH - 80, x1: (COLS + GPAD + NB + 2) * HW, y1: (COLS + ROWS + GPAD + NB + 4) * HH + 60 }; }
+  function groundBounds(m = view === 'city' ? 'city' : 'home') {
+    const rs = landRects(m).concat([commuteZone(m)]); let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
+    for (const r of rs) for (const [u, v] of [[r.x, r.y], [r.x + r.w, r.y], [r.x, r.y + r.h], [r.x + r.w, r.y + r.h]]) { const px = (u - v) * HW, py = (u + v) * HH; x0 = Math.min(x0, px); x1 = Math.max(x1, px); y0 = Math.min(y0, py); y1 = Math.max(y1, py); }
+    for (const k of bridgeSets[m]) { const [u, v] = k.split(',').map(Number), px = (u - v) * HW, py = (u + v) * HH; x0 = Math.min(x0, px - HW); x1 = Math.max(x1, px + HW); y0 = Math.min(y0, py); y1 = Math.max(y1, py + 2 * HH); }
+    return { x0: x0 - 3 * HW, x1: x1 + 3 * HW, y0: y0 - 160, y1: y1 + 80 };
+  }
   function buildGround(mapName) {
-    const gb = groundBounds(), cv = document.createElement('canvas');
+    const gb = groundBounds(mapName), cv = document.createElement('canvas');
     cv.width = Math.ceil((gb.x1 - gb.x0) * GS); cv.height = Math.ceil((gb.y1 - gb.y0) * GS);
     const c = cv.getContext('2d'); c.setTransform(GS, 0, 0, GS, -gb.x0 * GS, -gb.y0 * GS);
     const S = season(), si = seasonIdx(), city = mapName === 'city', O = { x: 0, y: 0 };
+    const extra = islandsOf(mapName).slice().sort((a, b) => (a.x + a.w + a.y + a.h) - (b.x + b.w + b.y + b.h)), MAINF = COLS + ROWS;
+    for (const r of extra) if (r.x + r.w + r.y + r.h < MAINF) drawIsland(c, O, r, city, S, si);
     // island cliffs
     const D = 34, cl = city ? '#d9c9b4' : '#c98f6b', cl2 = city ? '#bfae98' : '#a8735a';
     poly(c, [IP(O, 0, ROWS), IP(O, COLS, ROWS), [IP(O, COLS, ROWS)[0], IP(O, COLS, ROWS)[1] + D], [IP(O, 0, ROWS)[0], IP(O, 0, ROWS)[1] + D]], cl, 'rgba(40,28,18,.35)');
@@ -3386,6 +3408,8 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
         else { c.fillStyle = S.flowers[i % 4]; ell(c, p.x, p.y, si === 2 ? 2.6 : 1.8, si === 2 ? 1.3 : 1.4); c.fill(); }
       });
     }
+    for (const r of extra) if (r.x + r.w + r.y + r.h >= MAINF) drawIsland(c, O, r, city, S, si);
+    drawBridges(c, mapName, O);
     drawUserRoads(c, mapName, O);
     // grassy lip on the island edges
     c.strokeStyle = city ? '#bdb6aa' : shade(S.grass, -.2); c.lineWidth = 2.5; { const a = IP(O, 0, ROWS), b2 = IP(O, COLS, ROWS), d2 = IP(O, COLS, 0); c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(b2[0], b2[1]); c.lineTo(d2[0], d2[1]); c.stroke(); }
@@ -3703,7 +3727,8 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
   const OVERLAYS = ['Normal view', 'Neighborhoods', 'Service coverage', 'Happiness map'];
   function initPlanning() {
     G.roads = G.roads || { home: [], city: [] }; G.paths = G.paths || { home: [], city: [] }; G.hoods = G.hoods || { home: [], city: [] };
-    for (const m of ['home', 'city']) { roadSets[m] = new Set(G.roads[m]); pathSets[m] = new Set(G.paths[m]); }
+    G.islands = G.islands || { home: [], city: [] }; G.bridges = G.bridges || { home: [], city: [] };
+    for (const m of ['home', 'city']) { roadSets[m] = new Set(G.roads[m]); pathSets[m] = new Set(G.paths[m]); bridgeSets[m] = new Set(G.bridges[m]); }
     roadVer++;
   }
   const mapOfView = () => view === 'city' ? 'city' : 'home';
@@ -3743,23 +3768,26 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
   function markGround() { roadVer++; }
   function paintTile(e) {
     const w = toWorld(e), x = Math.floor(w.x / T), y = Math.floor(w.y / T), m = mapOfView();
-    if (x < 0 || y < 0 || x >= COLS || y >= ROWS) return;
+    if (!inWorld(x, y)) return;
     const k = x + ',' + y, cost = B[paintMode].cost;
     if (isRoad(m, x, y) || pathSets[m].has(k) || at(x, y)) return;
+    if (paintMode === 'bridge' ? (isLand(m, x, y) || inCommute(m, x, y)) : !isLand(m, x, y)) return;
     if (G.coins < cost) { toast(`You need ${cost} 🪙 for each ${B[paintMode].name.toLowerCase()} tile.`); paintMode = null; return; }
     G.coins -= cost;
-    if (paintMode === 'road') { roadSets[m].add(k); G.roads[m].push(k); G.stats.roads = (G.stats.roads || 0) + 1; } else { pathSets[m].add(k); G.paths[m].push(k); }
+    if (paintMode === 'road') { roadSets[m].add(k); G.roads[m].push(k); G.stats.roads = (G.stats.roads || 0) + 1; } else if (paintMode === 'bridge') { bridgeSets[m].add(k); G.bridges[m].push(k); G.stats.bridges = (G.stats.bridges || 0) + 1; } else { pathSets[m].add(k); G.paths[m].push(k); }
     markGround(); sfx('scoop'); hudRes();
   }
   function removeRoadAt(m, x, y) {
     const k = x + ',' + y;
     if (roadSets[m].has(k)) { roadSets[m].delete(k); G.roads[m] = G.roads[m].filter(q => q !== k); G.coins += 1; markGround(); return true; }
     if (pathSets[m].has(k)) { pathSets[m].delete(k); G.paths[m] = G.paths[m].filter(q => q !== k); markGround(); return true; }
+    if (bridgeSets[m].has(k)) { bridgeSets[m].delete(k); G.bridges[m] = G.bridges[m].filter(q => q !== k); G.coins += 2; markGround(); return true; }
     return false;
   }
   function finishZone() {
     const z = zoneDrag; zoneDrag = null; if (!z) return;
-    const x = Math.max(0, Math.min(z.x0, z.x1)), y = Math.max(0, Math.min(z.y0, z.y1)), w = Math.min(COLS, Math.max(z.x0, z.x1) + 1) - x, h = Math.min(ROWS, Math.max(z.y0, z.y1) + 1) - y;
+    const x = Math.min(z.x0, z.x1), y = Math.min(z.y0, z.y1), w = Math.max(z.x0, z.x1) + 1 - x, h = Math.max(z.y0, z.y1) + 1 - y;
+    if (z.kind === 'island') { finishIsland(x, y, w, h); return; }
     if (w * h < 4) { toast('Drag a bigger rectangle to make a neighborhood (at least 2×2).'); return; }
     const m = mapOfView(), used = new Set(hoodsOf('home').concat(hoodsOf('city')).map(q => q.name));
     let name = HOOD_NAMES.find(n => !used.has(n)) || 'District ' + (hoodsOf(m).length + 1);
@@ -3780,11 +3808,11 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
       const s = hoodStats(m, h), Z = ZONES[h.zone];
       const opts = Object.entries(ZONES).map(([k, z]) => `<option value="${k}" ${k === h.zone ? 'selected' : ''}>${z.e} ${z.name}</option>`).join('');
       return `<div class="hood" data-id="${h.id}" style="border-left-color:${Z.col}">
-        <div class="hoodtop"><b>${h.name}</b><span class="tag">${h.w}×${h.h}</span></div>
+        <div class="hoodtop"><b>${h.island ? '🏝️ ' : ''}${h.name}</b><span class="tag">${h.island ? 'island · ' : ''}${h.w}×${h.h}</span></div>
         <select class="hoodzone" aria-label="Zoning for ${h.name}">${opts}</select>
         <div class="hoodstats"><span>🏠 ${s.n} buildings</span><span>🐹 ${s.pigs.length} ${m === 'city' ? 'workers' : 'residents'}</span>${s.joy !== null ? `<span>${s.joy > 60 ? '😊' : s.joy > 30 ? '😐' : '😟'} ${s.joy}% happy</span>` : ''}<span>💼 ${s.jobs} jobs</span><span>🌳 ${s.decor + s.parks} green</span><span>🛣️ ${s.roads} road</span></div>
         <div class="small" style="margin:4px 0 0">${s.active ? '✅ Zoning bonus active: ' : '⏳ Bonus not active yet: '}${Z.tip}</div>
-        <div class="btns" style="margin-top:6px"><button class="mini" data-act="go">Go there</button><button class="mini" data-act="ren">Rename</button><button class="mini" data-act="del">Remove</button></div></div>`;
+        <div class="btns" style="margin-top:6px"><button class="mini" data-act="go">Go there</button><button class="mini" data-act="ren">Rename</button><button class="mini" data-act="del">${h.island ? 'Sink island' : 'Remove'}</button></div></div>`;
     }).join('');
   }
   $('hoods').addEventListener('change', e => { const el = e.target.closest('.hood'); if (!el || !e.target.classList.contains('hoodzone')) return; const h = hoodsOf(mapOfView()).find(q => q.id === +el.dataset.id); if (h) { h.zone = e.target.value; zoneT = 0; hoodSig = ''; sfx('tap'); save(); } });
@@ -3793,7 +3821,8 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     const m = mapOfView(), h = hoodsOf(m).find(q => q.id === +el.dataset.id); if (!h) return;
     if (btn.dataset.act === 'go') { if (view !== m) setView(m); const p = iso((h.x + h.w / 2) * T, (h.y + h.h / 2) * T), cm = cam(); cm.x = p.x; cm.y = p.y; clampCam(cm); }
     if (btn.dataset.act === 'ren') { const n = prompt('New name for ' + h.name + '?', h.name); if (n && n.trim()) h.name = n.trim().slice(0, 22); }
-    if (btn.dataset.act === 'del' && confirm(`Remove the ${h.name} neighborhood? (Buildings stay.)`)) G.hoods[m] = G.hoods[m].filter(q => q !== h);
+    if (btn.dataset.act === 'del' && h.island) { const isl = islandsOf(m).find(q => q.id === h.island); if (isl && confirm(`Sink ${h.name} back into the sea? You get half the coins back.`)) removeIsland(m, isl); }
+    else if (btn.dataset.act === 'del' && confirm(`Remove the ${h.name} neighborhood? (Buildings stay.)`)) G.hoods[m] = G.hoods[m].filter(q => q !== h);
     hoodSig = ''; zoneT = 0; sfx('tap'); save();
   });
   $('zMap').addEventListener('click', () => { overlay = (overlay + 1) % OVERLAYS.length; toast(`🗺️ ${OVERLAYS[overlay]}`); sfx('tap'); });
@@ -3831,7 +3860,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     }
     if (zoneDrag) {
       const x = Math.min(zoneDrag.x0, zoneDrag.x1), y = Math.min(zoneDrag.y0, zoneDrag.y1), w = Math.abs(zoneDrag.x1 - zoneDrag.x0) + 1, h = Math.abs(zoneDrag.y1 - zoneDrag.y0) + 1;
-      poly(c, [IP(O, x, y), IP(O, x + w, y), IP(O, x + w, y + h), IP(O, x, y + h)], 'rgba(233,185,59,.25)', '#e9b93b', 2.5);
+      poly(c, [IP(O, x, y), IP(O, x + w, y), IP(O, x + w, y + h), IP(O, x, y + h)], zoneDrag.kind === 'island' ? 'rgba(182,221,143,.6)' : 'rgba(233,185,59,.25)', zoneDrag.kind === 'island' ? '#5f8f2e' : '#e9b93b', 2.5);
       const [lx, ly] = IP(O, x + w / 2, y + h / 2); c.font = 'bold 12px Nunito, sans-serif'; c.textAlign = 'center'; c.lineWidth = 3; c.strokeStyle = '#fff'; c.strokeText(`${w}×${h}`, lx, ly); c.fillStyle = INK; c.fillText(`${w}×${h}`, lx, ly);
     }
   }
@@ -3868,6 +3897,95 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     c.fillStyle = 'rgba(255,255,255,.9)'; rr(c, 10, 8, w, items.length * 18 + 26, 10); c.fill(); c.strokeStyle = INK; c.lineWidth = 1.5; c.stroke();
     c.fillStyle = INK; c.textAlign = 'left'; c.fillText(`🗺️ ${OVERLAYS[overlay]}`, 18, y + 12); y += 20;
     for (const [col, txt] of items) { c.fillStyle = col; rr(c, 18, y + 2, 12, 12, 3); c.fill(); c.fillStyle = INK; c.fillText(txt, 36, y + 12); y += 18; }
+  }
+
+  // ================= ISLANDS & BRIDGES =================
+  function commuteZone(m) { return m === 'city' ? { x: -(GPAD + NB), y: ROAD[0] - 7, w: GPAD + NB, h: ROAD.length + 12 } : { x: COLS, y: HOME_ROAD - 7, w: GPAD + NB, h: 13 }; }
+  const inRect = (r, x, y) => x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h;
+  const inCommute = (m, x, y) => inRect(commuteZone(m), x, y);
+  const rectsHit = (a, b, gap = 0) => a.x - gap < b.x + b.w && b.x - gap < a.x + a.w && a.y - gap < b.y + b.h && b.y - gap < a.y + a.h;
+  const isWater = (m, x, y) => !isLand(m, x, y) && !isRoad(m, x, y) && !inCommute(m, x, y);
+  // shortest drive along roads and bridges (tile centres, in world px), or null when there is no road link
+  function nearestRoad(m, tx, ty, rad = 5) {
+    let best = null, bd = 1e9;
+    for (let dy = -rad; dy <= rad; dy++) for (let dx = -rad; dx <= rad; dx++) { const x = tx + dx, y = ty + dy; if (!isRoad(m, x, y)) continue; const d = dx * dx + dy * dy; if (d < bd) { bd = d; best = [x, y]; } }
+    return best;
+  }
+  function roadRoute(m, from, to) {
+    const s = nearestRoad(m, Math.floor(from.x / T), Math.floor(from.y / T)), g = nearestRoad(m, Math.floor(to.x / T), Math.floor(to.y / T));
+    if (!s || !g) return null;
+    const key = (x, y) => x + ',' + y, prev = new Map([[key(s[0], s[1]), null]]), q = [s]; let found = false;
+    for (let qi = 0; qi < q.length && qi < 6000; qi++) {
+      const [x, y] = q[qi]; if (x === g[0] && y === g[1]) { found = true; break; }
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = x + dx, ny = y + dy, k = key(nx, ny); if (prev.has(k) || !isRoad(m, nx, ny) || !inWorld(nx, ny)) continue; prev.set(k, [x, y]); q.push([nx, ny]); }
+    }
+    if (!found) return null;
+    const tiles = []; let cur = g; while (cur) { tiles.unshift(cur); cur = prev.get(key(cur[0], cur[1])); }
+    const pts = [];
+    tiles.forEach((tl, i) => { const a = tiles[i - 1], b = tiles[i + 1]; if (!a || !b || (a[0] - tl[0]) !== (tl[0] - b[0]) || (a[1] - tl[1]) !== (tl[1] - b[1])) pts.push([tl[0] * T + 20, tl[1] * T + 20]); });
+    return pts;
+  }
+  function drawBoat(c, x, y, dir, car, skin) {
+    const t = G.time || 0, bob = Math.sin(t * 3 + x * .05) * 1.2;
+    c.save(); c.translate(x, y + bob); c.scale(dir, 1); c.lineJoin = 'round';
+    c.strokeStyle = 'rgba(255,255,255,.8)'; c.lineWidth = 1.4; for (let i = 1; i < 3; i++) { c.beginPath(); c.moveTo(-14 - i * 6, 2 + i); c.quadraticCurveTo(-18 - i * 6, -1, -22 - i * 6, 2 + i); c.stroke(); }
+    if (skin) { c.fillStyle = skin.head || skin.base; ell(c, 0, -10, 5, 4.6); c.fill(); c.strokeStyle = EDGE; c.lineWidth = 1; c.stroke(); c.fillStyle = '#0b0809'; ell(c, 2.3, -10.5, .9, .9); c.fill(); }
+    c.fillStyle = car.c; c.beginPath(); c.moveTo(-15, -6); c.lineTo(16, -6); c.quadraticCurveTo(14, 3, 8, 4); c.lineTo(-11, 4); c.quadraticCurveTo(-15, 1, -15, -6); c.closePath(); c.fill(); c.strokeStyle = EDGE; c.lineWidth = 1.3; c.stroke();
+    c.fillStyle = '#fffaf2'; c.fillRect(-13, -3.5, 27, 2.2);
+    c.restore();
+  }
+  function drawIsland(c, O, r, city, S, si) {
+    const D = 30, cl = city ? '#d9c9b4' : '#c98f6b', cl2 = city ? '#bfae98' : '#a8735a', x1 = r.x + r.w, y1 = r.y + r.h;
+    poly(c, [IP(O, r.x, y1), IP(O, x1, y1), [IP(O, x1, y1)[0], IP(O, x1, y1)[1] + D], [IP(O, r.x, y1)[0], IP(O, r.x, y1)[1] + D]], cl, 'rgba(40,28,18,.35)');
+    poly(c, [IP(O, x1, r.y), IP(O, x1, y1), [IP(O, x1, y1)[0], IP(O, x1, y1)[1] + D], [IP(O, x1, r.y)[0], IP(O, x1, r.y)[1] + D]], cl2, 'rgba(40,28,18,.35)');
+    const m = city ? 'city' : 'home';
+    for (let y = r.y; y < y1; y++) for (let x = r.x; x < x1; x++) {
+      const road = isRoad(m, x, y), n = ((x * 73856093) ^ (y * 19349663)) & 15;
+      const col = road ? (city ? '#a39fbd' : '#bdb8d2') : city ? (si === 3 ? ((x + y) % 2 ? '#eef3f5' : '#e7edf0') : ((x + y) % 2 ? '#f3e8d8' : '#eee1cf')) : shade(S.grass, (x + y) % 2 ? .05 : -.02 + (n & 7) * .006);
+      poly(c, [IP(O, x, y), IP(O, x + 1, y), IP(O, x + 1, y + 1), IP(O, x, y + 1)], col, road ? 'rgba(0,0,0,.08)' : city ? 'rgba(120,105,90,.18)' : 'rgba(255,255,255,.07)');
+      if (!city && !road && !isPath(m, x, y) && n < 5) { const [px, py] = IP(O, x + .3 + (n % 3) * .2, y + .3 + (n % 2) * .3); if (n < 2) { c.fillStyle = S.flowers[n % 4]; ell(c, px, py, 1.8, 1.4); c.fill(); } else { c.strokeStyle = si === 3 ? '#b8c9cf' : '#78b45a'; c.lineWidth = 1.2; c.beginPath(); c.moveTo(px, py); c.lineTo(px - 2, py - 5); c.moveTo(px, py); c.lineTo(px + 2, py - 5); c.stroke(); } }
+    }
+    c.strokeStyle = city ? '#bdb6aa' : shade(S.grass, -.2); c.lineWidth = 2.5; { const a = IP(O, r.x, y1), b2 = IP(O, x1, y1), d2 = IP(O, x1, r.y); c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(b2[0], b2[1]); c.lineTo(d2[0], d2[1]); c.stroke(); }
+  }
+  function drawBridges(c, m, O) {
+    const keys = [...bridgeSets[m]].map(k => k.split(',').map(Number)).sort((a, b) => (a[0] + a[1]) - (b[0] + b[1]));
+    const conn = (x, y) => isRoad(m, x, y) || isLand(m, x, y);
+    for (const [x, y] of keys) {
+      const alongU = conn(x + 1, y) || conn(x - 1, y) || !(conn(x, y + 1) || conn(x, y - 1));
+      const [px, py] = IP(O, x + .5, y + .5); c.fillStyle = '#c9c3dd'; c.fillRect(px - 3, py, 6, 26); c.strokeStyle = EDGE; c.lineWidth = 1; c.strokeRect(px - 3, py, 6, 26);
+      poly(c, [IP(O, x, y), IP(O, x + 1, y), IP(O, x + 1, y + 1), IP(O, x, y + 1)], '#a39fbd', 'rgba(0,0,0,.1)');
+      const front = alongU ? [IP(O, x, y + 1), IP(O, x + 1, y + 1)] : [IP(O, x + 1, y), IP(O, x + 1, y + 1)];
+      poly(c, [front[0], front[1], [front[1][0], front[1][1] + 5], [front[0][0], front[0][1] + 5]], '#8c88a8', EDGE, 1);
+      c.strokeStyle = '#fffaf2'; c.lineWidth = 2.5;
+      const rails = alongU ? [[IP(O, x, y, 6), IP(O, x + 1, y, 6)], [IP(O, x, y + 1, 6), IP(O, x + 1, y + 1, 6)]] : [[IP(O, x, y, 6), IP(O, x, y + 1, 6)], [IP(O, x + 1, y, 6), IP(O, x + 1, y + 1, 6)]];
+      const skip = alongU ? [isRoad(m, x, y - 1), isRoad(m, x, y + 1)] : [isRoad(m, x - 1, y), isRoad(m, x + 1, y)];
+      rails.forEach(([a, b2], i) => { if (skip[i]) return; c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(b2[0], b2[1]); c.stroke(); });
+      c.setLineDash([5, 5]); c.strokeStyle = '#fff'; c.lineWidth = 1.3; { const a = alongU ? IP(O, x, y + .5) : IP(O, x + .5, y), b2 = alongU ? IP(O, x + 1, y + .5) : IP(O, x + .5, y + 1); c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(b2[0], b2[1]); c.stroke(); } c.setLineDash([]);
+    }
+  }
+  function finishIsland(x, y, w, h) {
+    const m = mapOfView(), r = { x, y, w, h };
+    if (w < 5 || h < 5) { toast('Islands need to be at least 5×5 tiles. Drag a bigger rectangle.'); return; }
+    if (w > 24 || h > 24) { toast('That island is too big. Keep it to 24×24 tiles or smaller.'); return; }
+    if (landRects(m).some(q => rectsHit(q, r, 1)) || rectsHit(commuteZone(m), r, 1)) { toast('Islands have to sit out in open water, with at least one tile of water around them.'); return; }
+    if (x < WORLD.x0 || y < WORLD.y0 || x + w > WORLD.x1 || y + h > WORLD.y1) { toast("That's too far out to sea. Build a little closer to town."); return; }
+    if (G.coins < B.island.cost) { toast(`You need ${B.island.cost} 🪙 to raise a new island.`); return; }
+    const used = new Set(hoodsOf('home').concat(hoodsOf('city')).map(q => q.name));
+    let name = ['Carrot Isle', 'Hay Harbor', 'Pellet Point', 'Clover Key', 'Wheek Island', 'Popcorn Bay', 'Mochi Atoll', 'Timothy Shores', 'Squeak Cay', 'Fluff Reef'].find(n => !used.has(n)) || 'New Town';
+    const typed = prompt('Name your new island town:', name); if (typed === null) return; if (typed.trim()) name = typed.trim().slice(0, 22);
+    G.coins -= B.island.cost; const id = Date.now() % 1e9;
+    G.islands[m].push({ id, name, x, y, w, h });
+    G.hoods[m].push({ id: id + 1, name, x, y, w, h, zone: m === 'city' ? 'down' : 'res', island: id });
+    G.stats.islands = (G.stats.islands || 0) + 1; markGround(); hoodSig = ''; zoneT = 0; sfx('goal'); celebrate(); hudRes(); save();
+    toast(`🏝️ ${name} rose out of the sea! Use 🌉 Bridge to connect it to town.`);
+  }
+  function removeIsland(m, isl) {
+    const list = m === 'city' ? G.city : G.buildings;
+    if (list.some(b => inRect(isl, b.x, b.y))) { toast('Move or bulldoze the buildings on this island first.'); return false; }
+    G.islands[m] = G.islands[m].filter(q => q !== isl); G.hoods[m] = G.hoods[m].filter(q => q.island !== isl.id);
+    for (const k of [...roadSets[m]]) { const [x, y] = k.split(',').map(Number); if (inRect(isl, x, y)) roadSets[m].delete(k); } G.roads[m] = [...roadSets[m]];
+    for (const k of [...pathSets[m]]) { const [x, y] = k.split(',').map(Number); if (inRect(isl, x, y)) pathSets[m].delete(k); } G.paths[m] = [...pathSets[m]];
+    G.coins += Math.floor(B.island.cost / 2); markGround(); hoodSig = ''; save(); return true;
   }
 
   function drawSitter(c, st) {
@@ -3937,8 +4055,8 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     drawHoods(c, view); drawOverlay(c, view);
     if (G.weather.k === 'rain' && view === 'home') { c.fillStyle = 'rgba(90,140,200,.2)'; for (let i = 0; i < 10; i++) { const p = iso(((i * 173 + 60) % W), ((i * 97 + 80) % (HOME_ROAD * T))); ell(c, p.x, p.y, 20, 7); c.fill(); } }
     // build preview
-    if (hover && (tool === 'road' || tool === 'path' || tool === 'zone') && hover.x >= 0 && hover.y >= 0 && hover.x < COLS && hover.y < ROWS && !zoneDrag) { const m = view; const ok = tool === 'zone' || (!isRoad(m, hover.x, hover.y) && !isPath(m, hover.x, hover.y) && !at(hover.x, hover.y)); footprint(c, hover.x, hover.y, 1, ok ? 'rgba(255,255,255,.5)' : 'rgba(217,69,90,.3)', ok ? '#fff' : '#d9455a'); }
-    else if (hover && tool && tool !== 'broom' && hover.x >= 0 && hover.y >= 0 && hover.x < COLS && hover.y < ROWS) {
+    if (hover && ['road', 'path', 'zone', 'bridge', 'island'].includes(tool) && inWorld(hover.x, hover.y) && !zoneDrag) { const m = view; const ok = tool === 'zone' || tool === 'island' || (!isRoad(m, hover.x, hover.y) && !isPath(m, hover.x, hover.y) && !at(hover.x, hover.y) && (tool === 'bridge' ? !isLand(m, hover.x, hover.y) && !inCommute(m, hover.x, hover.y) : isLand(m, hover.x, hover.y))); footprint(c, hover.x, hover.y, 1, ok ? 'rgba(255,255,255,.5)' : 'rgba(217,69,90,.3)', ok ? '#fff' : '#d9455a'); }
+    else if (hover && tool && tool !== 'broom' && isLand(view, hover.x, hover.y)) {
       const occ = at(hover.x, hover.y), onB = tool === 'bulldoze' || tool === 'upgrade';
       const ok = tool === 'bulldoze' ? !!occ : tool === 'upgrade' ? !!occ && L(occ) < 3 && G.coins >= upCost(occ) : fits(tool, hover.x, hover.y) && G.coins >= B[tool].cost && (B[tool].any || !!B[tool].city === (view === 'city'));
       const fill = ok ? (tool === 'bulldoze' ? 'rgba(217,69,90,.4)' : tool === 'upgrade' ? 'rgba(233,185,59,.5)' : 'rgba(255,255,255,.5)') : 'rgba(217,69,90,.32)';
@@ -3952,7 +4070,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
       const hb = { type: tool, x: hover.x, y: hover.y }; items.push({ d: hb.x + hb.y + sz(tool), f: () => { c.globalAlpha = .6; isoBuilding(c, hb, iso(hb.x * T, hb.y * T)); c.globalAlpha = 1; } });
     }
     for (const p of G.pigs) {
-      if (p.trip && pigMap(p) === view) { const tr = p.trip, P = iso(tr.x, tr.y), u = tr.x / T, far = view === 'home' ? u - (COLS + GPAD + 2) : -(GPAD + 2) - u, al = Math.max(0, Math.min(1, 1 - far / 4)); if (al > 0) items.push({ d: dw(tr.x, tr.y), f: () => { c.globalAlpha = al; drawCar(c, P.x, P.y, tr.dir, p.car, p.skin, true, tr.spin); c.globalAlpha = 1; } }); }
+      if (p.trip && pigMap(p) === view) { const tr = p.trip, P = iso(tr.x, tr.y), u = tr.x / T, far = view === 'home' ? u - (COLS + GPAD + 2) : -(GPAD + 2) - u, al = Math.max(0, Math.min(1, 1 - far / 4)); if (al > 0) items.push({ d: dw(tr.x, tr.y), f: () => { c.globalAlpha = al; if (isWater(view, Math.floor(tr.x / T), Math.floor(tr.y / T))) drawBoat(c, P.x, P.y, tr.dir, p.car, p.skin); else drawCar(c, P.x, P.y, tr.dir, p.car, p.skin, true, tr.spin); c.globalAlpha = 1; } }); }
       else if (view === 'city' && !p.trip && pigMap(p) === 'city' && p.park) { const P = iso(p.park.x, p.park.y); items.push({ d: dw(p.park.x, p.park.y), f: () => drawCar(c, P.x, P.y, p.park.y < 240 ? -1 : 1, p.car, p.skin, false) }); }
     }
     if (view === 'home') {
