@@ -132,7 +132,66 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
 .mini:disabled { opacity: .35; cursor: not-allowed; }
 .pf { display: flex; justify-content: space-between; font-size: 13px; font-weight: 800; margin-bottom: 6px; font-variant-numeric: tabular-nums; }
 .news { font-size: 12px; background: #eef3ff; border: 1.5px dashed #1f2f5c; border-radius: 10px; padding: 5px 8px; margin-top: 6px; color: #1f2f5c; font-weight: 700; }
+/* ---- PCSE ---- */
+.pcse-head { display: flex; justify-content: space-between; align-items: end; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+.pcse-idx { display: flex; align-items: baseline; gap: 8px; background: #1f2f5c; color: #fff; border: 2px solid var(--ink); border-radius: 12px; padding: 4px 12px; }
+.pcse-idx .tag { color: #c9d4f2; } .pcse-idx b { font-family: var(--font-display); font-weight: 400; font-size: 24px; font-variant-numeric: tabular-nums; }
+.pcse-idx .up { color: #8fe07a; } .pcse-idx .down { color: #ff9aa8; }
+.tape { overflow: hidden; background: #1f2f5c; border: 2px solid var(--ink); border-radius: 10px; margin-bottom: 10px; white-space: nowrap; }
+.tape-in { display: inline-block; padding: 5px 0; color: #fff; font-weight: 800; font-size: 13px; animation: tape 26s linear infinite; font-variant-numeric: tabular-nums; }
+.tape-in span { margin: 0 18px; } .tape-in .up { color: #8fe07a; } .tape-in .down { color: #ff9aa8; }
+@keyframes tape { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) { .tape-in { animation: none; } }
+.pcse-main { display: grid; grid-template-columns: minmax(0, 1fr) 230px; gap: 10px; margin-bottom: 10px; }
+@media (max-width: 760px) { .pcse-main { grid-template-columns: 1fr; } }
+.bighead { display: flex; justify-content: space-between; align-items: start; gap: 8px; }
+.bighead b { font-family: var(--font-display); font-weight: 400; font-size: 26px; }
+.bigpx { text-align: right; font-family: var(--font-display); font-size: 26px; font-variant-numeric: tabular-nums; line-height: 1.05; }
+.bigpx small { font-family: var(--font-body); font-size: 13px; font-weight: 800; display: block; }
+#bigChart { width: 100%; height: auto; aspect-ratio: 900 / 340; display: block; margin: 6px 0; }
+#pieChart { width: 150px; height: 150px; display: block; margin: 4px auto 6px; }
+.tradebar { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+.tradebar .mini { padding: 3px 11px; font-size: 13px; }
+.stock { cursor: pointer; }
+.stock.sel { border-color: var(--ink); box-shadow: 0 3px 0 var(--ink); }
+.hrow { display: grid; grid-template-columns: 12px 1fr auto; gap: 6px; align-items: center; font-size: 12px; font-weight: 800; margin: 3px 0; font-variant-numeric: tabular-nums; }
+.hrow i { width: 12px; height: 12px; border-radius: 3px; display: block; }
+.nitem { font-size: 13px; padding: 5px 0; border-bottom: 1px dashed var(--fleece-deep); color: #1f2f5c; }
+.nitem:last-child { border-bottom: 0; }
+.nitem .tag { margin-right: 6px; }
+/* ---- v3: views, dashboard ---- */
+.viewtabs { display: flex; gap: 6px; flex-wrap: wrap; }
+.vtab { font-family: var(--font-display); font-size: 18px; border: 3px solid var(--ink); background: var(--card); color: var(--ink); border-radius: 14px 14px 6px 6px; padding: 4px 14px; cursor: pointer; box-shadow: 0 3px 0 var(--ink); }
+.vtab[aria-selected="true"] { background: var(--wood-dark); color: #fff; }
+.vtab.inside { background: #fff3e2; }
+.vtab.inside[aria-selected="true"] { background: #c96a85; }
+.dash h2 { margin-bottom: 4px; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; margin: 6px 0 12px; }
+.kpi { background: #fff; border: 2px solid var(--fleece-deep); border-radius: 14px; padding: 8px 10px; }
+.kpi .kv { font-family: var(--font-display); font-size: 28px; line-height: 1; font-variant-numeric: tabular-nums; }
+.kpi .kl { font-size: 12px; font-weight: 800; color: var(--muted); margin-top: 4px; }
+.dgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+@media (max-width: 700px) { .dgrid { grid-template-columns: 1fr; } }
+.dcard { background: #fff; border: 2px solid var(--fleece-deep); border-radius: 14px; padding: 8px 10px; min-width: 0; }
+.dcard h3 { font-family: var(--font-display); font-weight: 400; font-size: 17px; margin: 0 0 6px; }
+.hbar { display: grid; grid-template-columns: 136px 1fr 40px; gap: 6px; align-items: center; font-size: 12px; font-weight: 800; margin: 4px 0; }
+.hbar .ht { height: 14px; background: #f1e3dc; border-radius: 999px; overflow: hidden; border: 1.5px solid var(--ink); }
+.hbar .hf { height: 100%; border-radius: 999px; }
+.hbar .hn { text-align: right; font-variant-numeric: tabular-nums; }
+.hbar .hl { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#incomeChart { width: 100%; height: 150px; display: block; }
+.board { width: 100%; border-collapse: collapse; font-size: 13px; }
+.board th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); padding: 4px 6px; border-bottom: 2px solid var(--fleece-deep); }
+.board td { padding: 5px 6px; border-bottom: 1px solid #f1e3dc; white-space: nowrap; }
+.board tr { cursor: pointer; } .board tbody tr:hover { background: #fff3e2; }
+.board .num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 800; }
+.boardwrap { overflow-x: auto; }
+.swatches { display: flex; flex-wrap: wrap; gap: 8px; }
+.swatch { width: 54px; height: 54px; border-radius: 12px; border: 3px solid var(--fleece-deep); cursor: pointer; font-size: 11px; font-weight: 800; display: flex; align-items: end; justify-content: center; padding-bottom: 3px; color: var(--ink); }
+.swatch[aria-pressed="true"] { border-color: var(--ink); box-shadow: 0 3px 0 var(--ink); }
+.cozy { font-size: 13px; font-weight: 800; margin: 2px 0 6px; }
 @media (max-width: 860px) {
+  .vtab { font-size: 15px; padding: 3px 10px; }
   header { align-items: start; }
   .hdr-right { align-items: stretch; width: 100%; }
   .res, .ctrls { justify-content: flex-start; }
@@ -164,26 +223,64 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
 
   <div class="main">
     <div style="display:flex; flex-direction:column; gap:12px; min-width:0">
+      <div class="viewtabs" id="viewtabs" role="tablist">
+        <button class="vtab" data-v="home" role="tab">🏡 Home Town</button>
+        <button class="vtab" data-v="city" role="tab">🏙️ Job City</button>
+        <button class="vtab" data-v="dash" role="tab">📊 Jobs Dashboard</button>
+        <button class="vtab" data-v="pcse" role="tab">📈 PCSE</button>
+        <button class="vtab inside" data-v="inside" role="tab" id="insideTab" hidden>🏰 Inside</button>
+      </div>
+      <div class="panel dash" id="dash" hidden>
+        <h2>Jobs Dashboard 📊</h2>
+        <p class="small" style="margin-top:0" id="dashSub"></p>
+        <div class="kpis" id="kpis"></div>
+        <div class="dgrid">
+          <div class="dcard"><h3>Earned today by workplace</h3><div id="byPlace"></div></div>
+          <div class="dcard"><h3>Job income per day</h3><canvas id="incomeChart" width="640" height="300"></canvas></div>
+        </div>
+        <div class="dcard"><h3>Commute board 🚗</h3><div class="boardwrap"><table class="board"><thead><tr><th>Pig</th><th>Job</th><th>Where</th><th>Car</th><th>Right now</th><th class="num">🪙 today</th></tr></thead><tbody id="boardBody"></tbody></table></div></div>
+      </div>
+      <div class="panel pcse" id="pcse" hidden>
+        <div class="pcse-head">
+          <div><h2 style="margin:0">PCSE 🏛️</h2><div class="tag">Pig City Stock Exchange</div></div>
+          <div class="pcse-idx"><span class="tag">PCSE INDEX</span><b id="idxVal"></b><span id="idxChg"></span></div>
+        </div>
+        <div id="stockLocked" class="small">Build <b>Masaki Capital</b> in Home Town or the <b>PCSE Tower</b> in Job City to ring the opening bell. 🔔</div>
+        <div id="stockOpen" hidden>
+          <div class="tape"><div class="tape-in" id="tape"></div></div>
+          <div class="pcse-main">
+            <div class="dcard">
+              <div class="bighead"><div><b id="bigSym"></b> <span class="tag" id="bigName"></span><div class="small" id="bigTip" style="margin-top:2px"></div></div><div class="bigpx" id="bigPx"></div></div>
+              <canvas id="bigChart" width="900" height="340"></canvas>
+              <div class="tradebar">
+                <span class="tag">Buy</span><button class="mini buy" data-q="1">1</button><button class="mini buy" data-q="5">5</button><button class="mini buy" data-q="10">10</button><button class="mini buy" data-q="max">Max</button>
+                <span class="tag" style="margin-left:8px">Sell</span><button class="mini sell" data-q="-1">1</button><button class="mini sell" data-q="-5">5</button><button class="mini sell" data-q="all">All</button>
+              </div>
+              <div class="small" id="bigPos"></div>
+            </div>
+            <div class="dcard">
+              <h3>Your portfolio</h3>
+              <div class="pf"><span id="pfVal"></span><span id="pfPL"></span></div>
+              <canvas id="pieChart" width="300" height="300"></canvas>
+              <div id="holdings"></div>
+            </div>
+          </div>
+          <div class="stocks" id="stocks"></div>
+          <div class="dcard" style="margin-top:10px"><h3>📰 PCSE Newswire</h3><div id="news"></div></div>
+        </div>
+      </div>
       <div class="stage" id="stage">
         <canvas id="c" aria-label="Your guinea pig town. Click pigs to see them, click poop to scoop it, or pick a building and click grass to build."></canvas>
         <div class="toast" id="toast" style="opacity:0"></div>
         <div class="banner" id="banner" hidden></div>
         <div class="paused" id="pausedOv" hidden>Paused</div>
       </div>
-      <div class="panel">
-        <h2>Build</h2>
+      <div class="panel" id="buildPanel">
+        <h2 id="buildTitle">Build</h2>
+        <div class="cozy" id="cozy" hidden></div>
         <div class="tabs" id="tabs" role="tablist"></div>
         <div class="tools" id="tools"></div>
         <p class="small hint" id="toolHint">Pick something to build, then click an empty patch of grass. Click a pig to see how it's doing. Click and drag across poop to sweep it up (1 🪙 each).</p>
-      </div>
-      <div class="panel" id="stockPanel">
-        <h2>Pig Stock Exchange 📈</h2>
-        <div id="stockLocked" class="small" style="margin-top:0">Build <b>Masaki Capital</b> to open the exchange. Buy shares low, sell them high, and watch the news for hints.</div>
-        <div id="stockOpen" hidden>
-          <div class="pf"><span id="pfVal"></span><span id="pfPL"></span></div>
-          <div class="stocks" id="stocks"></div>
-          <div class="news" id="news"></div>
-        </div>
       </div>
     </div>
 
@@ -194,7 +291,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
         <canvas id="bcanvas" width="440" height="220" style="width:220px;height:110px;display:block;margin:4px auto"></canvas>
         <p class="small" id="bInfo" style="margin-top:0"></p>
         <p class="small" id="bNext"></p>
-        <div class="btns"><button class="btn" id="upBtn">Upgrade</button><button class="btn ghost" id="bClose">Close</button></div>
+        <div class="btns"><button class="btn alt" id="goInBtn" hidden>Go inside 🚪</button><button class="btn" id="upBtn">Upgrade</button><button class="btn ghost" id="bClose">Close</button></div>
       </div>
       <div class="panel" id="pigPanel">
         <h2>Your pig</h2>
@@ -211,6 +308,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
             <button class="btn" id="petBtn">Pet</button>
             <button class="btn alt" id="treatBtn">Treat 🫑</button>
             <button class="btn ghost" id="renameBtn">Rename</button>
+            <button class="btn ghost" id="carBtn" hidden>New car</button>
           </div>
         </div>
       </div>
@@ -249,7 +347,9 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
       <div class="step"><span class="se">🧹</span><span><b>Drag across poop</b> to sweep it up for 1 🪙 each. Messy towns make pigs grumpy.</span></div>
       <div class="step"><span class="se">🌾</span><span><b>Keep food and water flowing.</b> Build Hay Fields and Water Towers from the Build bar below the map.</span></div>
       <div class="step"><span class="se">🏰</span><span><b>Happy pigs have babies</b> when there's room in the castles. Grow from Hamlet to Metropolis.</span></div>
-      <div class="step"><span class="se">📈</span><span><b>Build Masaki Capital</b> to give pigs jobs and open the Pig Stock Exchange.</span></div>
+      <div class="step"><span class="se">📈</span><span><b>Build Masaki Capital</b> to give pigs jobs and open the PCSE stock exchange.</span></div>
+      <div class="step"><span class="se">🏙️</span><span><b>Job City</b> has big businesses. Pigs who work there drive their cars in every morning. Track it all on the <b>📊 Jobs Dashboard</b>.</span></div>
+      <div class="step"><span class="se">🏰</span><span>Click a castle and <b>Go inside</b> to decorate. Cozy rooms keep the pigs who live there happy.</span></div>
       <div class="step"><span class="se">⏩</span><span>Use <b>❚❚ 1× 2× 3×</b> up top to pause or speed up time. Space bar pauses too.</span></div>
     </div>
     <div class="btns"><button class="btn" id="tutGo">Let's play!</button></div>
@@ -369,7 +469,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     water:  { name: 'Water Tower', ic: '💧', cat: 'home', cost: 25, desc: '+1 💧 every 5s. Faster when it rains.' },
     garden: { name: 'Veggie Garden', ic: '🫑', cat: 'home', cost: 55, desc: '+1 🫑 every 10s. Faster when it rains.' },
     park:   { name: 'Play Park', ic: '🛝', cat: 'home', cost: 80, desc: 'Pigs stay happy longer. Zoomies pigs love it.' },
-    bank:   { name: 'Masaki Capital', ic: '🏦', cat: 'biz', cost: 150, desc: '+2 🪙 every 4s, 2 analyst jobs, and opens the Pig Stock Exchange' },
+    bank:   { name: 'Masaki Capital', ic: '🏦', cat: 'biz', cost: 150, desc: '+2 🪙 every 4s, 2 analyst jobs, and opens the PCSE (Pig City Stock Exchange)' },
     cafe:   { name: 'Hay Latte Café', ic: '☕', cat: 'biz', cost: 60, desc: '2 jobs: baristas earn 🪙' },
     salon:  { name: 'Fluff Salon', ic: '✂️', cat: 'biz', cost: 90, desc: '2 jobs: stylists pamper pigs' },
     toys:   { name: 'Toy Shop', ic: '🧸', cat: 'biz', cost: 75, desc: '2 jobs: makes the whole town happier' },
@@ -382,21 +482,74 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     bench:  { name: 'Bench', ic: '🪑', cat: 'decor', cost: 15, desc: 'Sleepy pigs love a nap spot. Adds happiness.' },
     lantern: { name: 'Lantern', ic: '🏮', cat: 'decor', cost: 18, desc: 'Glows at night so pigs feel cozy after dark.' },
     pond:   { name: 'Pond', ic: '🪷', cat: 'decor', cost: 40, desc: 'A lily pond. Big happiness boost.' },
+    office:  { name: 'Wheek Tech HQ', ic: '🏢', cat: 'cbiz', cost: 140, desc: 'A 2×2 skyscraper with 4 coder jobs that pay well', city: true },
+    factory: { name: 'Hay Factory', ic: '🏭', cat: 'cbiz', cost: 100, desc: '3 jobs. Every shift makes extra 🌾 for town', city: true },
+    market:  { name: 'Veggie Market', ic: '🥕', cat: 'cbiz', cost: 90, desc: '3 jobs. Every shift brings home 🫑', city: true },
+    sushi:   { name: 'Sushi Spot', ic: '🍣', cat: 'cbiz', cost: 70, desc: '2 jobs. Workers in Job City get happier at lunch', city: true },
+    pcse:    { name: 'PCSE Tower', ic: '🏛️', cat: 'cbiz', cost: 160, desc: 'The Pig City Stock Exchange! 2×2, 3 trader jobs, opens the PCSE', city: true },
+    dealer:  { name: 'Zoomies Motors', ic: '🚗', cat: 'cbiz', cost: 130, desc: '2 jobs. Unlocks buying new cars for your pigs', city: true },
+    citytree: { name: 'Street Tree', ic: '🌳', cat: 'cdecor', cost: 10, desc: 'Shady sidewalk tree. City workers feel happier.', city: true },
+    streetlamp: { name: 'Street Lamp', ic: '💡', cat: 'cdecor', cost: 15, desc: 'Lights up the city at night', city: true },
+    fountain: { name: 'Fountain', ic: '⛲', cat: 'cdecor', cost: 50, desc: 'A splashy plaza fountain. Big happiness boost.', city: true },
     upgrade: { name: 'Upgrade', ic: '⬆️', cat: 'tool', cost: 0, desc: 'Click a building to make it fancier' },
     bulldoze: { name: 'Bulldoze', ic: '🚜', cat: 'tool', cost: 0, desc: 'Remove a building, refunds half' }
   };
   const CATS = [['home', '🏡 Homes & food'], ['biz', '💼 Shops & jobs'], ['help', '🧑‍⚕️ Helpers'], ['decor', '🌷 Decor'], ['tool', '🛠️ Tools']];
-  const DECOR = { tree: 1, flowers: .6, bench: 1, lantern: 1.2, pond: 2.5 };
+  const CITY_CATS = [['cbiz', '🏢 Businesses'], ['cdecor', '🌳 City decor'], ['tool', '🛠️ Tools']];
+  const DECOR = { tree: 1, flowers: .6, bench: 1, lantern: 1.2, pond: 2.5, citytree: 1, streetlamp: 1, fountain: 2.5 };
+  // ---------- furniture (inside castles) ----------
+  const F = {
+    bed:     { name: 'Fleece Bed', ic: '🛏️', cat: 'floor', cost: 15, cozy: 3, w: 2 },
+    hidey:   { name: 'Hidey Hut', ic: '🛖', cat: 'floor', cost: 12, cozy: 2 },
+    hayrack: { name: 'Hay Rack', ic: '🌾', cat: 'floor', cost: 10, cozy: 1 },
+    bottle:  { name: 'Water Bottle', ic: '💧', cat: 'floor', cost: 6, cozy: 1 },
+    tunnel:  { name: 'Tunnel', ic: '🌀', cat: 'floor', cost: 14, cozy: 2, w: 2 },
+    couch:   { name: 'Couch', ic: '🛋️', cat: 'floor', cost: 25, cozy: 3, w: 2 },
+    tv:      { name: 'TV', ic: '📺', cat: 'floor', cost: 30, cozy: 2 },
+    table:   { name: 'Snack Table', ic: '🍽️', cat: 'floor', cost: 15, cozy: 1 },
+    toybox:  { name: 'Toy Box', ic: '🧸', cat: 'floor', cost: 12, cozy: 2 },
+    plant:   { name: 'House Plant', ic: '🪴', cat: 'floor', cost: 8, cozy: 1 },
+    lamp:    { name: 'Floor Lamp', ic: '💡', cat: 'floor', cost: 12, cozy: 1 },
+    rug:     { name: 'Rug', ic: '🟥', cat: 'floor', cost: 10, cozy: 1, w: 3, under: true },
+    painting: { name: 'Pig Portrait', ic: '🖼️', cat: 'wall', cost: 15, cozy: 1 },
+    window:  { name: 'Window', ic: '🪟', cat: 'wall', cost: 10, cozy: 1 },
+    clock:   { name: 'Clock', ic: '🕰️', cat: 'wall', cost: 8, cozy: 1 },
+    shelf:   { name: 'Shelf', ic: '📚', cat: 'wall', cost: 10, cozy: 1, w: 2 },
+    lights:  { name: 'Fairy Lights', ic: '✨', cat: 'wall', cost: 12, cozy: 2, w: 3 },
+    remove:  { name: 'Remove', ic: '🧹', cat: 'tool', cost: 0, desc: 'Click furniture to put it away (refunds half)' }
+  };
+  const IN_CATS = [['floor', '🛋️ Furniture'], ['wall', '🖼️ Wall decor'], ['style', '🎨 Walls & floor'], ['tool', '🛠️ Tools']];
+  const WALLS = [['#f7dfe2', 'Pink'], ['#e3efd9', 'Mint'], ['#dfe8f7', 'Sky'], ['#f6ead0', 'Butter'], ['#e8dcf2', 'Lilac'], ['#2f3440', 'Night']];
+  const FLOORS = [['#c99a5b', 'Wood'], ['#e9e4dc', 'Tile'], ['#d98fa4', 'Carpet'], ['#e8c86a', 'Hay']];
+  // ---------- cars ----------
+  const CARS = {
+    bug:   { name: 'Bubble Bug', speed: 1 },
+    hatch: { name: 'Hay Hatch', speed: 1 },
+    van:   { name: 'Veggie Van', speed: .9 },
+    jeep:  { name: 'Trail Jeep', speed: 1.1 },
+    sport: { name: 'Zoomster GT', speed: 1.5 },
+    limo:  { name: 'Masaki Limo', speed: 1.2 }
+  };
+  const CAR_COLS = [['#e0483f', 'Red'], ['#5aa9e0', 'Blue'], ['#f2b134', 'Yellow'], ['#6fae3e', 'Green'], ['#f4a3b8', 'Pink'], ['#a98bd9', 'Purple'], ['#fbf6ee', 'White'], ['#ff8a3d', 'Orange']];
+  const carName = car => `${(CAR_COLS.find(k => k[0] === car.c) || ['', 'Black'])[1]} ${CARS[car.m].name}`;
+  // road rows in Job City
+  const ROAD = [5, 6], LANE_W = 226, LANE_E = 254, CURB_N = 206, CURB_S = 275;
   const RATE = { hay: 6, water: 5, garden: 10, bank: 4 };
   const JOBS = {
     cafe:  { title: 'Barista', place: 'Hay Latte Café', emoji: '☕', pay: 2, every: 5 },
     salon: { title: 'Stylist', place: 'Fluff Salon', emoji: '✂️', pay: 3, every: 7 },
     toys:  { title: 'Toy Seller', place: 'Toy Shop', emoji: '🧸', pay: 2, every: 6 },
-    bank:  { title: 'Analyst', place: 'Masaki Capital', emoji: '💼', pay: 3, every: 5 }
+    bank:  { title: 'Analyst', place: 'Masaki Capital', emoji: '💼', pay: 3, every: 5 },
+    office:  { title: 'Coder', place: 'Wheek Tech HQ', emoji: '💻', pay: 4, every: 5, slots: [4, 5, 6] },
+    factory: { title: 'Hay Maker', place: 'Hay Factory', emoji: '🏭', pay: 1, every: 6, slots: [3, 4, 5] },
+    market:  { title: 'Grocer', place: 'Veggie Market', emoji: '🥕', pay: 1, every: 6, slots: [3, 4, 5] },
+    sushi:   { title: 'Sushi Chef', place: 'Sushi Spot', emoji: '🍣', pay: 2, every: 5 },
+    dealer:  { title: 'Car Seller', place: 'Zoomies Motors', emoji: '🚗', pay: 3, every: 6 },
+    pcse:    { title: 'Trader', place: 'PCSE Tower', emoji: '📈', pay: 3, every: 5, slots: [3, 4, 5] }
   };
   const MULT = [1, 1.5, 2], CAP = [4, 6, 8], BEDS = [3, 4, 6], SLOT_N = [2, 3, 4];
   const L = b => b.lvl || 1;
-  const slotsOf = b => SLOT_N[L(b) - 1];
+  const slotsOf = b => (JOBS[b.type].slots || SLOT_N)[L(b) - 1];
   const upCost = b => B[b.type].cost * L(b);
   const lvlSum = t => G.buildings.filter(b => b.type === t).reduce((n, b) => n + L(b), 0);
   const LV_NAMES = {
@@ -406,7 +559,10 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     vet: ['Vet', 'Deluxe Vet', 'Modern Vet Clinic'], bank: ['Masaki Capital', 'Masaki Capital HQ', 'Masaki Capital Tower'],
     cafe: ['Hay Latte Café', 'Hay Latte Café Deluxe', 'Hay Latte Roastery'], salon: ['Fluff Salon', 'Fluff Salon Deluxe', 'Fluff Spa & Salon'],
     toys: ['Toy Shop', 'Toy Shop Deluxe', 'Toy Mega Store'], sitter: ['Pig Sitter', 'Sitter Cottage', 'Sitter Studio'],
-    roomba: ['Poop Roomba', 'Roomba Plus', 'Roomba Max']
+    roomba: ['Poop Roomba', 'Roomba Plus', 'Roomba Max'],
+    office: ['Wheek Tech HQ', 'Wheek Tech Tower', 'Wheek Tech Campus'], factory: ['Hay Factory', 'Big Hay Factory', 'Robo Hay Works'],
+    market: ['Veggie Market', 'Veggie Supermarket', 'Veggie Mega Mart'], sushi: ['Sushi Spot', 'Sushi House', 'Sushi Palace'],
+    dealer: ['Zoomies Motors', 'Zoomies Showroom', 'Zoomies Gigafactory'], pcse: ['PCSE Tower', 'PCSE Grand Hall', 'PCSE Sky Exchange']
   };
   const lvName = (b, l = L(b)) => (LV_NAMES[b.type] || [B[b.type].name])[l - 1];
   function perkText(t, l) {
@@ -421,6 +577,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
       case 'vet': return `Sick pigs heal ${l}× faster`;
       case 'hospital': return `${BEDS[l - 1]} hospital beds`;
       case 'cafe': case 'salon': case 'toys': return `${SLOT_N[l - 1]} jobs`;
+      case 'office': case 'factory': case 'market': case 'sushi': case 'dealer': case 'pcse': return `${(JOBS[t].slots || SLOT_N)[l - 1]} jobs` + (t === 'dealer' ? ' · sells new cars' : t === 'factory' ? ' · +2 🌾 per shift' : t === 'market' ? ' · +1 🫑 per shift' : '');
       case 'sitter': return `${l} pig sitter${l > 1 ? 's' : ''}`;
       case 'roomba': return ['Normal speed', 'Fast', 'Super fast'][l - 1];
     }
@@ -482,7 +639,11 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
   for (let i = 0; i < 90; i++) flowers.push({ x: Math.random() * W, y: Math.random() * H, c: ['#fff', '#ffd6e0', '#fff1a8', '#d8c9f5'][i % 4], k: Math.random() < .5 });
 
   // ---------- state ----------
-  let G, nextId = 1;
+  let G, nextId = 1, view = 'home', insideB = null;
+  const bl = () => view === 'city' ? G.city : view === 'inside' ? [] : G.buildings;
+  const allB = () => G.buildings.concat(G.city || []);
+  const pigMap = p => p.trip ? p.trip.legs[p.trip.i].map : (p.loc || 'home');
+  const pigPos = p => p.trip ? { x: p.trip.x, y: p.trip.y } : { x: p.x, y: p.y };
   function newTown() {
     const g = { coins: 80, hay: 12, water: 12, veg: 6, buildings: [], pigs: [], poops: [], time: 0, breedT: 20, born: 0, best: 5, prod: {}, goalsDone: [], stats: {} };
     const place = (type, x, y) => g.buildings.push({ type, x, y, t: Math.random() * 3 });
@@ -501,6 +662,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     if (!p.trait) p.trait = f && p.age >= 999 ? f[0] : pick(TRAIT_KEYS);
     if (p.fav === undefined) p.fav = f && p.age >= 999 ? f[1] : Math.floor(Math.random() * FOODS.length);
     if (!p.bday) p.bday = bday || 1 + Math.floor(Math.random() * YEAR);
+    if (!p.car) p.car = p.name === 'Masaki' && p.skin && p.skin.suit ? { m: 'limo', c: '#1d2540' } : { m: pick(['bug', 'hatch', 'van', 'jeep']), c: pick(CAR_COLS)[0] };
   }
   function pickFriends() {
     for (const p of G.pigs) {
@@ -555,6 +717,12 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     for (const p of G.pigs) givePersonality(p);
     pickFriends();
     initMarket();
+    if (!G.city) { G.city = [{ type: 'office', x: 2, y: 2, t: 0, map: 'city' }]; G.cityNew = true; }
+    for (const b of G.city) b.map = 'city';
+    G.jd = G.jd || { day: dayNum(), place: {}, pig: {}, total: 0 };
+    G.jobHist = G.jobHist || [];
+    for (const b of G.buildings) if (b.type === 'hutch' && !b.room) b.room = { wall: 0, floor: 0, items: [] };
+    for (const p of G.pigs) if (p.loc === 'city' && !G.city.length) p.loc = 'home';
     if (!G.goalsDone) { G.goalsDone = []; if (!fresh) { G.catchup = true; G.stats.built = Math.max(G.stats.built, G.buildings.length - 5); } }
   }
   load();
@@ -564,30 +732,32 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     for (const p of G.pigs) if (OLD_NAMES.has(p.name)) { const n = NAMES.find(n => !used.has(n)); if (n) { used.add(n); p.name = n; } }
   }
 
-  const SIZE = { hutch: 2, hospital: 2 };
+  const SIZE = { hutch: 2, hospital: 2, office: 2, pcse: 2 };
   const sz = t => SIZE[t] || 1;
   const PER_CASTLE = 4;
   const capacity = () => G.buildings.filter(b => b.type === 'hutch').reduce((n, b) => n + CAP[L(b) - 1], 0);
-  const count = t => G.buildings.filter(b => b.type === t).length;
+  const count = t => allB().filter(b => b.type === t).length;
   const covers = (b, x, y) => x >= b.x && x < b.x + sz(b.type) && y >= b.y && y < b.y + sz(b.type);
-  const at = (x, y) => G.buildings.find(b => covers(b, x, y));
-  const workersAt = b => b.x === undefined ? [] : G.pigs.filter(q => q.job && q.job.x === b.x && q.job.y === b.y);
-  const maxWorkers = t => Math.max(0, ...G.buildings.filter(b => b.type === t).map(b => workersAt(b).length));
-  const jobOf = p => p.job && G.buildings.find(b => b.x === p.job.x && b.y === p.job.y && JOBS[b.type]);
+  const at = (x, y) => bl().find(b => covers(b, x, y));
+  const workersAt = b => b.x === undefined ? [] : G.pigs.filter(q => q.job && q.job.x === b.x && q.job.y === b.y && (q.job.map || 'home') === (b.map || 'home'));
+  const maxWorkers = t => Math.max(0, ...allB().filter(b => b.type === t).map(b => workersAt(b).length));
+  const jobOf = p => p.job && (p.job.map === 'city' ? G.city : G.buildings).find(b => b.x === p.job.x && b.y === p.job.y && JOBS[b.type]);
+  const jobPlaces = () => allB().filter(b => JOBS[b.type]);
   const jobTitle = (p, b) => p.banker && b.type === 'bank' ? 'CEO' : JOBS[b.type].title;
   function hire(p, b, quiet) {
     const used = workersAt(b).map(q => q.job.slot);
     const slot = [0, 1, 2, 3].slice(0, slotsOf(b)).find(k => !used.includes(k));
     if (slot === undefined) return false;
-    p.job = { x: b.x, y: b.y, slot }; p.workT = 0; p.noJob = false; G.stats.hires++;
+    p.job = { x: b.x, y: b.y, slot, map: b.map || 'home' }; p.workT = 0; p.noJob = false; G.stats.hires++;
     if (!quiet) { toast(`${p.name} got a job as ${/^[AEIOU]/.test(jobTitle(p, b)) ? 'an' : 'a'} ${jobTitle(p, b)} at ${JOBS[b.type].place}! ${JOBS[b.type].emoji}`); popup(p.x, p.y - 22, 'Hired! ' + JOBS[b.type].emoji, '#1f2f5c'); }
     return true;
   }
-  const workSpot = (b, slot) => ({ x: b.x * T + (slot % 2 ? T - 7 : 7), y: b.y * T + T + 7 + (slot > 1 ? 10 : 0) });
+  const workSpot = (b, slot) => { const n = sz(b.type); return { x: b.x * T + 7 + (slot % 3) * (n * T - 14) / 2, y: (b.y + n) * T + 7 + Math.floor(slot / 3) * 10 }; };
   function fits(type, x, y, ignore) {
     const n = sz(type);
     if (x < 0 || y < 0 || x + n > COLS || y + n > ROWS) return false;
-    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) if (G.buildings.some(b => b !== ignore && covers(b, x + i, y + j))) return false;
+    if (view === 'city' && ROAD.some(r => y <= r && y + n > r)) return false;
+    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) if (bl().some(b => b !== ignore && covers(b, x + i, y + j))) return false;
     return true;
   }
   // older towns had small 1-tile hutches: give each castle a free 2x2 spot
@@ -605,18 +775,27 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
   let tool = null, selected = null, hover = null;
   const toolsEl = $('tools'), tabsEl = $('tabs');
   let cat = 'home', hoverTool = null;
-  CATS.forEach(([k, label]) => {
-    const t = document.createElement('button');
-    t.className = 'tab'; t.dataset.c = k; t.setAttribute('role', 'tab'); t.textContent = label;
-    t.addEventListener('click', () => { cat = k; drawTools(); sfx('tap'); });
-    tabsEl.appendChild(t);
-  });
   function drawTools() {
     [...tabsEl.children].forEach(t => t.setAttribute('aria-selected', t.dataset.c === cat ? 'true' : 'false'));
     toolsEl.innerHTML = '';
-    Object.entries(B).filter(([, b]) => b.cat === cat).forEach(([k, b]) => {
+    if (view === 'inside' && cat === 'style') {
+      const R = insideB.room, box = document.createElement('div'); box.style.gridColumn = '1 / -1';
+      box.innerHTML = `<p class="small" style="margin:0 0 6px"><b>Wallpaper</b></p><div class="swatches" id="sw-wall"></div><p class="small" style="margin:10px 0 6px"><b>Floor</b></p><div class="swatches" id="sw-floor"></div>`;
+      toolsEl.appendChild(box);
+      const mk = (id, list, key) => list.forEach(([col, name], i) => {
+        const s = document.createElement('button'); s.className = 'swatch'; s.style.background = col; s.style.color = i === 5 && key === 'wall' ? '#fff' : INK; s.textContent = name;
+        s.setAttribute('aria-pressed', R[key] === i ? 'true' : 'false');
+        s.addEventListener('click', () => { R[key] = i; sfx('tap'); save(); drawTools(); });
+        $(id).appendChild(s);
+      });
+      mk('sw-wall', WALLS, 'wall'); mk('sw-floor', FLOORS, 'floor');
+      $('toolHint').textContent = 'Wallpaper and floors are free. Try a few!';
+      return;
+    }
+    const defs = view === 'inside' ? F : B;
+    Object.entries(defs).filter(([, b]) => b.cat === cat).forEach(([k, b]) => {
       const el = document.createElement('button');
-      el.className = 'tool'; el.dataset.k = k; el.setAttribute('aria-pressed', 'false'); el.title = b.desc;
+      el.className = 'tool'; el.dataset.k = k; el.setAttribute('aria-pressed', 'false'); el.title = b.desc || `Coziness +${b.cozy}`;
       el.innerHTML = `<span class="ic" aria-hidden="true">${b.ic}</span><b>${b.name}</b>${b.cost ? `<span class="cost">${b.cost} 🪙</span>` : '<span class="cost">free</span>'}`;
       el.addEventListener('click', () => { tool = tool === k ? null : k; sfx('tap'); syncTools(); });
       el.addEventListener('pointerenter', () => { hoverTool = k; syncTools(); });
@@ -629,12 +808,19 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     [...toolsEl.children].forEach(el => {
       const k = el.dataset.k;
       el.setAttribute('aria-pressed', tool === k ? 'true' : 'false');
-      el.disabled = B[k].cost > G.coins && tool !== k;
+      el.disabled = TD(k) ? TD(k).cost > G.coins && tool !== k : false;
     });
-    const show = hoverTool || tool;
+    if (view === 'inside' && cat === 'style') return;
+    const show = (hoverTool && TD(hoverTool) ? hoverTool : null) || (tool && TD(tool) ? tool : null);
+    if (view === 'inside') {
+      $('toolHint').innerHTML = show ? (show === 'remove' ? 'Click furniture to put it away (you get half the coins back).' : `<b>${F[show].ic} ${F[show].name}</b> · ${F[show].cost} 🪙 · Coziness +${F[show].cozy}${F[show].cat === 'wall' ? ' · goes on the wall' : ''}${F[show].w > 1 ? ` · ${F[show].w} tiles wide` : ''}`)
+        : 'Pick furniture, then click the room to place it. Cozier rooms keep the pigs who live here happier. Click a pig to check on it.';
+      return;
+    }
     $('toolHint').innerHTML = tool === 'bulldoze' && !hoverTool ? 'Click a building to remove it (you get back half of what you spent).'
       : tool === 'upgrade' && !hoverTool ? 'Click a building to upgrade it: ⭐⭐ Deluxe, then ⭐⭐⭐ Modern. Upgrades look fancier and work better.'
       : show ? `<b>${B[show].ic} ${B[show].name}</b>${B[show].cost ? ` · ${B[show].cost} 🪙` : ''} · ${B[show].desc}${tool === show && B[show].cost ? '. Click empty grass to place it, or press Esc to stop.' : ''}`
+      : view === 'city' ? 'Build businesses on the sidewalks (not the road). Pigs who work here drive in each morning. Click a parked car or pig to check on it.'
       : "Pick something to build, then click an empty patch of grass. Click a pig to see how it's doing. Click and drag across poop to sweep it up (1 🪙 each).";
   }
 
@@ -694,7 +880,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
   function toast(msg) { const t = $('toast'); t.textContent = msg; t.style.opacity = 1; toastT = 3.2; }
 
   const popups = [];
-  function popup(x, y, text, color = INK) { popups.push({ x, y, text, color, life: 1.2 }); }
+  function popup(x, y, text, color = INK, map = 'home') { popups.push({ x, y, text, color, life: 1.2, map }); }
 
   function townTitle(n) { return n >= 36 ? 'Pig Metropolis' : n >= 21 ? 'Pig City' : n >= 11 ? 'Pig Town' : n >= 6 ? 'Pig Village' : 'Pig Hamlet'; }
 
@@ -750,32 +936,35 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     const jb = jobOf(p);
     $('pTag').innerHTML = age + (jb ? ` · ${jobTitle(p, jb)} at ${JOBS[jb.type].place} ${JOBS[jb.type].emoji}` + (p.working ? '' : ' (on break)') : '') + (p.state === 'admitted' ? ' · <span class="sick">In the hospital 🏥</span>' : p.state ? ' · Heading to the hospital' : '') + (!p.state && p.health < 50 ? ' · <span class="sick">Feeling sick</span>' : '') + (p.joy < 30 ? ' · Lonely' : '');
     const tr = TRAITS[p.trait], fd = FOODS[p.fav], fr = friendOf(p), isBday = yearDay(dayNum()) === p.bday;
-    const trSig = p.id + p.trait + p.fav + (fr ? fr.id + fr.name : '') + p.bday + isBday;
+    const trSig = p.id + p.trait + p.fav + (fr ? fr.id + fr.name : '') + p.bday + isBday + p.car.m + p.car.c + (p.age < 90);
     if ($('pTraits').dataset.sig !== trSig) {
       $('pTraits').dataset.sig = trSig;
       $('pTraits').innerHTML = `<span class="pill" title="${tr.desc}">${tr.e} ${tr.name}</span><span class="pill" title="Favorite snack">${fd[0]} Loves ${fd[1]}</span>` +
         `<span class="pill" title="Birthday">${isBday ? '🎉 Birthday today!' : '🎂 ' + bdayLabel(p.bday)}</span>` +
+        `<span class="pill" title="${p.age < 90 ? 'Too young to drive' : 'Drives to Job City'}">${p.age < 90 ? '🛴 Scooter' : '🚗 ' + carName(p.car)}</span>` +
         (fr ? `<button class="pill link" id="friendBtn" title="Go to best friend">💞 Best friend: ${fr.name}</button>` : '');
       $('pTraitDesc').textContent = tr.desc;
       const fb = $('friendBtn'); if (fb) fb.addEventListener('click', () => { selected = fr.id; fr.hop = .5; listSig = ''; renderPig(true); sfx('tap'); });
     }
     $('pBars').innerHTML = BAR.map(([k, l, col]) => `<div class="bar"><span>${l}</span><div class="track"><div class="fill" style="width:${Math.max(0, p[k])}%;background:${col}"></div></div><span class="num">${Math.round(p[k])}</span></div>`).join('');
+    $('pTag').innerHTML += ` · ${pigStatus(p)}`;
+    $('carBtn').hidden = !(count('dealer') && p.age >= 90); $('carBtn').textContent = 'New car 80 🪙'; $('carBtn').disabled = G.coins < 80;
     $('petBtn').disabled = p.petCd > 0; $('treatBtn').disabled = G.veg < 1;
     renderJobSel(p);
   }
   let jobSig = '';
   function renderJobSel(p) {
     const sel = $('jobSel');
-    const places = G.buildings.filter(b => JOBS[b.type]);
+    const places = jobPlaces();
     const sig = p.id + '|' + (p.age < 90) + '|' + (p.job ? p.job.x + ',' + p.job.y : '') + '|' + places.map(b => b.x + ',' + b.y + ':' + workersAt(b).length + ':' + L(b)).join(';');
     if (sig === jobSig || document.activeElement === sel) return; jobSig = sig;
     if (p.age < 90) { sel.innerHTML = '<option>Too young to work 🍼</option>'; sel.disabled = true; return; }
     sel.disabled = false;
-    const cur = p.job ? p.job.x + ',' + p.job.y : '';
+    const cur = p.job ? (p.job.map || 'home') + ':' + p.job.x + ',' + p.job.y : '';
     let html = `<option value="">No job (just relaxing)</option>`;
     for (const b of places) {
-      const n = workersAt(b).length, mine = cur === b.x + ',' + b.y, j = JOBS[b.type];
-      html += `<option value="${b.x},${b.y}" ${mine ? 'selected' : ''} ${!mine && n >= slotsOf(b) ? 'disabled' : ''}>${j.emoji} ${jobTitle(p, b)} at ${j.place} (${n}/${slotsOf(b)})</option>`;
+      const key = (b.map || 'home') + ':' + b.x + ',' + b.y, n = workersAt(b).length, mine = cur === key, j = JOBS[b.type];
+      html += `<option value="${key}" ${mine ? 'selected' : ''} ${!mine && n >= slotsOf(b) ? 'disabled' : ''}>${j.emoji} ${jobTitle(p, b)} at ${j.place}${b.map === 'city' ? ' 🏙️' : ''} (${n}/${slotsOf(b)})</option>`;
     }
     if (!places.length) html += '<option disabled>Build a Café, Salon or Toy Shop to create jobs</option>';
     sel.innerHTML = html; sel.value = cur;
@@ -785,7 +974,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     const v = e.target.value;
     p.job = null; p.working = false;
     if (!v) { p.noJob = true; toast(`${p.name} is taking some time off to relax. 🌸`); }
-    else { const [x, y] = v.split(',').map(Number); const b = G.buildings.find(q => q.x === x && q.y === y); if (b) hire(p, b); }
+    else { const [m, xy] = v.split(':'), [x, y] = xy.split(',').map(Number); const b = (m === 'city' ? G.city : G.buildings).find(q => q.x === x && q.y === y); if (b) hire(p, b); }
     jobSig = ''; listSig = ''; e.target.blur(); renderPig(); save();
   });
 
@@ -798,6 +987,13 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     const boost = has(p, 'foodie') ? 40 : 25;
     G.veg--; G.stats.treats++; p.joy = Math.min(100, p.joy + boost); p.food = Math.min(100, p.food + 15); p.hop = .6; p.nap = 0;
     popup(p.x, p.y - 22, `Wheek! ${FOODS[p.fav][0]}`, '#5f8f2e'); sfx('wheek'); renderPig(); hudRes();
+  });
+  $('carBtn').addEventListener('click', () => {
+    const p = G.pigs.find(q => q.id === selected); if (!p || G.coins < 80 || !count('dealer')) return;
+    const opts = Object.keys(CARS).filter(m => m !== p.car.m && (m !== 'limo' || p.banker));
+    G.coins -= 80; p.car = { m: pick(opts), c: p.banker && Math.random() < .5 ? '#1d2540' : pick(CAR_COLS)[0] };
+    G.stats.cars = (G.stats.cars || 0) + 1; G.mkt.st.ZOOM.shock += .6; sfx('goal');
+    toast(`${p.name} drove off the lot in a ${carName(p.car)}! 🚗✨`); renderPig(true); hudRes(); save();
   });
   $('renameBtn').addEventListener('click', () => {
     const p = G.pigs.find(q => q.id === selected); if (!p) return;
@@ -825,7 +1021,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     G.coins -= cost; b.lvl = l + 1; G.stats.ups++;
     const cx = (b.x + sz(b.type) / 2) * T;
     for (let i = 0; i < 34; i++) confetti.push({ x: cx + (Math.random() - .5) * 20, y: b.y * T + 10, vx: (Math.random() - .5) * 150, vy: -80 - Math.random() * 110, r: Math.random() * 6, vr: (Math.random() - .5) * 12, c: ['#e9b93b', '#fff', '#f4a3b8', '#9fe0ff'][i % 4], life: 1.2 + Math.random() * .6 });
-    popup(cx, b.y * T + 4, 'Upgraded! ' + '⭐'.repeat(b.lvl), '#c9a23a');
+    popup(cx, b.y * T + 4, 'Upgraded! ' + '⭐'.repeat(b.lvl), '#c9a23a', view);
     toast(`${old} → ${lvName(b)}! ${perkText(b.type, b.lvl)} ✨`); sfx('goal');
     hudRes(); syncTools(); save(); return true;
   }
@@ -837,7 +1033,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     else one(l, 110);
   }
   function renderBld() {
-    const b = selBld && G.buildings.includes(selBld) ? selBld : null;
+    const b = selBld && bl().includes(selBld) ? selBld : null;
     if (!b) selBld = null;
     $('bldPanel').hidden = !b; if (!b) return;
     const l = L(b);
@@ -845,6 +1041,8 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     $('bLvl').textContent = `Level ${l} ` + '★'.repeat(l) + '☆'.repeat(3 - l);
     $('bInfo').textContent = perkText(b.type, l) + (JOBS[b.type] ? ` · ${workersAt(b).length} working now` : '');
     renderBldCanvas(b);
+    $('goInBtn').hidden = b.type !== 'hutch';
+    if (b.type === 'hutch') $('bInfo').textContent += ` · Coziness ${cozyOf(b)}`;
     if (DECOR[b.type]) { $('bLvl').textContent = 'Decoration'; $('bNext').textContent = ''; $('upBtn').hidden = true; }
     else if (l < 3) {
       $('bNext').innerHTML = `<b>Next: ${lvName(b, l + 1)}</b> · ${perkText(b.type, l + 1)}`;
@@ -869,9 +1067,9 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     if (n) { G.stats.scoop += n; G.stats.poop += n; hudRes(); sfx('scoop'); }
     return n;
   }
-  canvas.addEventListener('pointerdown', e => { if (!tool) { sweeping = true; try { canvas.setPointerCapture(e.pointerId); } catch (x) {} } });
+  canvas.addEventListener('pointerdown', e => { if (!tool && view === 'home') { sweeping = true; try { canvas.setPointerCapture(e.pointerId); } catch (x) {} } });
   canvas.addEventListener('pointermove', e => {
-    const w = toWorld(e); hover = { x: Math.floor(w.x / T), y: Math.floor(w.y / T) };
+    const w = toWorld(e), k = view === 'inside' ? IS : 1; hover = { x: Math.floor(w.x / T / k), y: Math.floor(w.y / T / k) };
     if (sweeping) scoopNear(w, 16);
   });
   const stopSweep = () => { sweeping = false; };
@@ -879,12 +1077,13 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
   canvas.addEventListener('pointerleave', () => { hover = null; });
   canvas.addEventListener('click', e => {
     const w = toWorld(e), tx = Math.floor(w.x / T), ty = Math.floor(w.y / T);
+    if (view === 'inside') { const wi = { x: w.x / IS, y: w.y / IS }; insideClick(wi, Math.floor(wi.x / T), Math.floor(wi.y / T)); return; }
     if (tool === 'bulldoze') {
       const b = at(tx, ty); if (!b) return;
       if (b.type === 'hutch' && (capacity() - CAP[L(b) - 1]) < G.pigs.length) { toast("Can't remove that castle, your pigs need the room!"); return; }
       for (const q of workersAt(b)) { q.job = null; q.working = false; }
-      G.buildings.splice(G.buildings.indexOf(b), 1); if (selBld === b) selBld = null; const refund = Math.floor(B[b.type].cost * [1, 2, 4][L(b) - 1] / 2); G.coins += refund;
-      popup(tx * T + T / 2, ty * T + 10, '+' + refund + ' 🪙'); hudRes(); syncTools(); save(); return;
+      bl().splice(bl().indexOf(b), 1); if (selBld === b) selBld = null; const refund = Math.floor(B[b.type].cost * [1, 2, 4][L(b) - 1] / 2); G.coins += refund;
+      popup(tx * T + T / 2, ty * T + 10, '+' + refund + ' 🪙', INK, view); hudRes(); syncTools(); save(); return;
     }
     if (tool === 'upgrade') {
       const b = at(tx, ty); if (!b) { toast('Click a building to upgrade it.'); return; }
@@ -893,19 +1092,27 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     if (tool) {
       if (!fits(tool, tx, ty)) { toast(sz(tool) > 1 ? 'A castle needs a free 2×2 patch of grass (it grows right and down from where you click).' : 'Something is already built there.'); return; }
       if (G.coins < B[tool].cost) { toast(`You need ${B[tool].cost} 🪙 for a ${B[tool].name}.`); return; }
-      G.coins -= B[tool].cost; G.buildings.push({ type: tool, x: tx, y: ty, t: 0 }); G.stats.built++; sfx('build');
+      if (!!B[tool].city !== (view === 'city')) { toast(view === 'city' ? 'That one belongs in Home Town.' : 'That one belongs in Job City.'); return; }
+      const nb = { type: tool, x: tx, y: ty, t: 0 }; if (view === 'city') nb.map = 'city'; if (tool === 'hutch') nb.room = { wall: 0, floor: 0, items: [] };
+      G.coins -= B[tool].cost; bl().push(nb); G.stats.built++; sfx('build');
       if (DECOR[tool]) G.stats.decor++;
-      if (tool === 'bank' && count('bank') === 1) setTimeout(() => toast('📈 The Pig Stock Exchange is open! Check the panel on the right.'), 3300);
-      if (JOBS[tool] && tool !== 'bank') toast(`${B[tool].name} is open! Grown-up pigs will apply for its 2 jobs. ${JOBS[tool].emoji}`);
-      popup(tx * T + sz(tool) * T / 2, ty * T + 8, 'Built!', '#5f8f2e');
+      if ((tool === 'bank' || tool === 'pcse') && count('bank') + count('pcse') === 1) setTimeout(() => toast('🔔 The PCSE opening bell rang! Open the 📈 PCSE tab to trade.'), 3300);
+      if (JOBS[tool] && tool !== 'bank') toast(`${B[tool].name} is open! Grown-up pigs will apply for its ${(JOBS[tool].slots || SLOT_N)[0]} jobs. ${JOBS[tool].emoji}`);
+      popup(tx * T + sz(tool) * T / 2, ty * T + 8, 'Built!', '#5f8f2e', view);
       if (G.coins < B[tool].cost) tool = null;
       hudRes(); syncTools(); save(); return;
     }
     // poop?
-    if (scoopNear(w, 16)) return;
-    // pig?
+    if (view === 'home' && scoopNear(w, 16)) return;
+    // pig (or its car)?
     let best = null, bd = 22;
-    for (const p of G.pigs) { if (p.state === 'admitted') continue; const d = Math.hypot(p.x - w.x, p.y - 4 - w.y); if (d < bd) { bd = d; best = p; } }
+    for (const p of G.pigs) {
+      if (p.state === 'admitted') continue;
+      const cands = [];
+      if (pigMap(p) === view) cands.push(pigPos(p));
+      if (view === 'city' && !p.trip && pigMap(p) === 'city' && p.park) cands.push({ x: p.park.x, y: p.park.y });
+      for (const q of cands) { const d = Math.hypot(q.x - w.x, q.y - 4 - w.y); if (d < bd) { bd = d; best = p; } }
+    }
     if (best) { selected = best.id; best.hop = .4; renderPig(true); listSig = ''; return; }
     const b = at(tx, ty);
     selBld = b || null; renderBld();
@@ -914,6 +1121,173 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     if (e.key === 'Escape') { if (!$('tutorial').hidden) closeTut(); tool = null; syncTools(); }
     if (e.key === ' ' && !/INPUT|SELECT|TEXTAREA|BUTTON/.test(document.activeElement.tagName)) { e.preventDefault(); paused = !paused; syncSpeed(); }
   });
+
+  // ---------- inside a castle ----------
+  function furnAt(x, y, under) {
+    const R = insideB.room.items;
+    for (let i = R.length - 1; i >= 0; i--) { const it = R[i], w = F[it.k].w || 1; if (it.y === y && x >= it.x && x < it.x + w && (under === undefined || !!F[it.k].under === under)) return it; }
+    return null;
+  }
+  function furnFits(k, x, y) {
+    const d = F[k], w = d.w || 1;
+    if (x < 0 || x + w > IC) return false;
+    if (d.cat === 'wall' ? (y < 0 || y > 0) : (y < WALL_R || y > 5)) return false;
+    for (let i = 0; i < w; i++) if (furnAt(x + i, y, !!d.under)) return false;
+    return true;
+  }
+  function drawInside(c) {
+    if (!insideB || !G.buildings.includes(insideB)) { setView('home'); return; }
+    c.save(); c.scale(IS, IS);
+    const W = RW, H = RH;
+    drawRoom(c, insideB);
+    const its = insideB.room.items;
+    for (const it of its) if (F[it.k].cat === 'wall') drawFurn(c, it);
+    for (const it of its) if (F[it.k].under) drawFurn(c, it);
+    // hover preview
+    if (hover && tool && tool !== 'remove' && F[tool]) {
+      if (F[tool].cat === 'wall' && hover.y < WALL_R) hover.y = 0;
+      const ok = furnFits(tool, hover.x, hover.y) && G.coins >= F[tool].cost, w = F[tool].w || 1;
+      c.fillStyle = ok ? 'rgba(255,255,255,.5)' : 'rgba(217,69,90,.3)'; rr(c, hover.x * T + 2, hover.y * T + 2 + (F[tool].cat === 'wall' ? 22 : 0), w * T - 4, T - 4, 6); c.fill();
+      if (ok) { c.globalAlpha = .55; drawFurn(c, { k: tool, x: hover.x, y: hover.y }); c.globalAlpha = 1; }
+    }
+    if (hover && tool === 'remove') { const it = furnAt(hover.x, hover.y < WALL_R ? 0 : hover.y); if (it) { c.fillStyle = 'rgba(217,69,90,.35)'; rr(c, it.x * T + 2, it.y * T + 2, (F[it.k].w || 1) * T - 4, T - 4, 6); c.fill(); } }
+    const items = [];
+    for (const it of its) if (F[it.k].cat === 'floor' && !F[it.k].under) items.push({ y: it.y * T + 36, f: () => drawFurn(c, it) });
+    for (const p of insideResidents()) {
+      const s = insidePigs.get(p.id); if (!s) continue;
+      items.push({ y: s.y + (s.sleep ? 40 : 10), f: () => {
+        c.save(); c.translate(s.x, s.y); c.fillStyle = 'rgba(0,0,0,.12)'; ell(c, 0, 12, 18, 4); c.fill();
+        if (p.id === selected) { c.strokeStyle = '#fff'; c.lineWidth = 2.5; ell(c, 0, 12, 24, 7); c.stroke(); }
+        const sc = p.age < 90 ? .34 : .46; c.scale(s.face * sc, sc); drawPig(c, p.skin, { sleep: s.sleep });
+        c.restore();
+        if (s.sleep) { c.font = '13px Chewy, sans-serif'; c.textAlign = 'center'; c.fillStyle = '#1f2f5c'; const k = (G.time * .8 + p.id) % 1; c.globalAlpha = 1 - k; c.fillText('z', s.x + 12 + k * 6, s.y - 16 - k * 10); c.fillText('Z', s.x + 18 + k * 4, s.y - 26 - k * 8); c.globalAlpha = 1; }
+        if (!s.sleep || p.id === selected) { c.font = '11px Nunito, sans-serif'; c.textAlign = 'center'; c.fillStyle = INK; c.fillText(p.name, s.x, s.y + 26); }
+      } });
+    }
+    items.sort((a, b) => a.y - b.y).forEach(i => i.f());
+    const dk = darkness();
+    if (dk > 0) {
+      c.fillStyle = `rgba(22,26,64,${.38 * dk})`; c.fillRect(0, 0, W, H);
+      c.save(); c.globalCompositeOperation = 'lighter';
+      const glow = (x, y, r, a, col = '255,200,110') => { const g = c.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, `rgba(${col},${a})`); g.addColorStop(1, `rgba(${col},0)`); c.fillStyle = g; c.fillRect(x - r, y - r, r * 2, r * 2); };
+      for (const it of its) {
+        const cx = it.x * T + (F[it.k].w || 1) * T / 2;
+        if (it.k === 'lamp') glow(cx, it.y * T + 8, 80, .5 * dk);
+        if (it.k === 'lights') glow(cx, it.y * T + 18, 90, .35 * dk, '255,220,240');
+        if (it.k === 'tv') glow(cx, it.y * T + 15, 50, .35 * dk, '170,220,255');
+      }
+      c.restore();
+    }
+    c.textAlign = 'center'; c.font = '13px Chewy, "Comic Sans MS", sans-serif';
+    for (const q of popups) { if (q.map !== 'inside' && q.map !== 'any') continue; c.globalAlpha = Math.min(1, q.life / .4); c.lineWidth = 3.5; c.strokeStyle = '#fff'; c.strokeText(q.text, q.x, q.y); c.fillStyle = q.color; c.fillText(q.text, q.x, q.y); }
+    c.globalAlpha = 1;
+    c.restore(); c.globalAlpha = 1;
+    { const W0 = W * IS, H0 = H * IS; const away = insideResidents(true).filter(p => !insideResidents().includes(p));
+    if (away.length) { c.font = '13px Nunito, sans-serif'; c.textAlign = 'left'; c.fillStyle = 'rgba(255,255,255,.85)'; const txt = 'Out right now: ' + away.map(p => p.name + (p.trip || pigMap(p) === 'city' ? ' 🚗' : p.state ? ' 🏥' : '')).join(', '); const w = c.measureText(txt).width; rr(c, 8, H0 - 28, w + 16, 20, 8); c.fill(); c.fillStyle = INK; c.fillText(txt, 16, H0 - 13); } }
+    for (const q of confetti) { c.globalAlpha = Math.min(1, q.life / .5); c.save(); c.translate(q.x, q.y); c.rotate(q.r); c.fillStyle = q.c; c.fillRect(-3, -1.5, 6, 3); c.restore(); }
+    c.globalAlpha = 1;
+  }
+  function insideClick(w, tx, ty) {
+    const R = insideB.room;
+    if (ty < WALL_R && (tool === 'remove' || (F[tool] && F[tool].cat === 'wall'))) ty = 0;
+    if (tool === 'remove') {
+      const it = furnAt(tx, ty, false) || furnAt(tx, ty, true); if (!it) return;
+      R.items.splice(R.items.indexOf(it), 1); const back = Math.floor(F[it.k].cost / 2); G.coins += back;
+      popup(tx * T + T / 2, ty * T + 8, `+${back} 🪙`, INK, 'inside'); sfx('tap'); hudRes(); syncTools(); save(); return;
+    }
+    if (tool && F[tool]) {
+      if (!furnFits(tool, tx, ty)) { toast(F[tool].cat === 'wall' ? 'Wall decor goes on the wall (the top part of the room).' : 'Furniture goes on the floor, and that spot is taken.'); return; }
+      if (G.coins < F[tool].cost) { toast(`You need ${F[tool].cost} 🪙 for a ${F[tool].name}.`); return; }
+      G.coins -= F[tool].cost; R.items.push({ k: tool, x: tx, y: ty }); G.stats.furn = (G.stats.furn || 0) + 1; sfx('build');
+      popup(tx * T + (F[tool].w || 1) * T / 2, ty * T + 6, `Cozy! +${F[tool].cozy} 🛋️`, '#c96a85', 'inside');
+      hudRes(); syncTools(); renderCozy(); save(); return;
+    }
+    let best = null, bd = 26;
+    for (const p of insideResidents()) { const s = insidePigs.get(p.id); if (!s) continue; const d = Math.hypot(s.x - w.x, s.y - w.y); if (d < bd) { bd = d; best = p; } }
+    if (best) { selected = best.id; best.hop = .4; popup(insidePigs.get(best.id).x, insidePigs.get(best.id).y - 26, '♥', '#e07a9a', 'inside'); renderPig(true); listSig = ''; }
+  }
+  function renderCozy() {
+    const el = $('cozy');
+    if (view !== 'inside' || !insideB) { el.hidden = true; return; }
+    const cz = cozyOf(insideB), stars = Math.min(5, Math.floor(cz / 6));
+    el.hidden = false;
+    el.innerHTML = `Coziness ${'★'.repeat(stars)}${'☆'.repeat(5 - stars)} (${cz}) · residents' joy drains ${Math.round(100 - 100 / (1 + Math.min(.8, .035 * cz)))}% slower`;
+  }
+
+  // ---------- views ----------
+  const curCats = () => view === 'city' ? CITY_CATS : view === 'inside' ? IN_CATS : CATS;
+  const TD = k => view === 'inside' ? F[k] : B[k];
+  function drawTabs() {
+    tabsEl.innerHTML = '';
+    curCats().forEach(([k, label]) => {
+      const t = document.createElement('button');
+      t.className = 'tab'; t.dataset.c = k; t.setAttribute('role', 'tab'); t.textContent = label;
+      t.addEventListener('click', () => { cat = k; tool = null; drawTools(); sfx('tap'); });
+      tabsEl.appendChild(t);
+    });
+  }
+  function setView(v) {
+    if (v === 'inside' && !insideB) v = 'home';
+    view = v; tool = null; hoverTool = null; selBld = null; hover = null;
+    cat = curCats()[0][0];
+    document.querySelectorAll('.vtab').forEach(b => b.setAttribute('aria-selected', b.dataset.v === v ? 'true' : 'false'));
+    $('insideTab').hidden = !insideB;
+    if (insideB) $('insideTab').textContent = `🏰 Castle #${G.buildings.filter(q => q.type === 'hutch').indexOf(insideB) + 1}`;
+    const map = v === 'home' || v === 'city' || v === 'inside';
+    $('stage').hidden = !map; $('buildPanel').hidden = !map; $('dash').hidden = v !== 'dash'; $('pcse').hidden = v !== 'pcse';
+    $('buildTitle').textContent = v === 'city' ? 'Build downtown 🏙️' : v === 'inside' ? `Decorate ${insideName(insideB)} 🛋️` : 'Build';
+    drawTabs(); drawTools(); renderBld(); renderCozy();
+    if (map) resize();
+    if (v === 'city' && G.cityNew) { G.cityNew = false; setTimeout(() => toast('🏙️ Welcome to Job City! Pigs with jobs here drive in around 8am and home after 5pm.'), 200); }
+    if (v === 'dash') renderDash(); if (v === 'pcse') { stockSig = ''; renderStocks(); }
+  }
+  const insideName = b => { const i = G.buildings.filter(q => q.type === 'hutch').indexOf(b); return `${lvName(b)} #${i + 1}`; };
+  function goInside(b) { insideB = b; insidePigs.clear(); setView('inside'); sfx('wheek'); }
+  document.querySelectorAll('.vtab').forEach(b => b.addEventListener('click', () => { setView(b.dataset.v); sfx('tap'); }));
+  $('goInBtn').addEventListener('click', () => { if (selBld && selBld.type === 'hutch') goInside(selBld); });
+
+  // ---------- jobs dashboard ----------
+  function pigStatus(p) {
+    if (p.state) return '🏥 At the hospital';
+    if (p.trip) return p.trip.to === 'city' ? '🚗 Driving to work' : '🚗 Driving home';
+    const jb = jobOf(p);
+    if (pigMap(p) === 'city') return p.working ? '💼 Working downtown' : '🚶 Walking to the car';
+    if (jb && jb.map === 'city') { const h = hourNow(); return h < p.leaveH ? '☕ Getting ready for work' : '🏠 Home for the evening'; }
+    if (p.working) return '💼 Working in town';
+    if (p.nap > 0) return '😴 Napping';
+    return jb ? '🌸 On a break' : '🌸 Relaxing';
+  }
+  function renderDash() {
+    if (view !== 'dash') return;
+    const adults = G.pigs.filter(p => p.age >= 90), emp = adults.filter(p => jobOf(p));
+    const driving = G.pigs.filter(p => p.trip).length, atWork = G.pigs.filter(p => p.working).length;
+    const openJobs = jobPlaces().reduce((s, b) => s + slotsOf(b) - workersAt(b).length, 0);
+    const kp = [['👷', `${emp.length}/${adults.length}`, 'Pigs with jobs'], ['🚗', driving, 'On the road now'], ['💼', atWork, 'Working right now'], ['🪙', Math.round(G.jd.total), 'Earned at jobs today'], ['📭', openJobs, 'Open jobs']];
+    $('kpis').innerHTML = kp.map(([e, v, l]) => `<div class="kpi"><div class="kv">${e} ${v}</div><div class="kl">${l}</div></div>`).join('');
+    $('dashSub').textContent = `Day ${dayNum()} · ${hudClock()} · City jobs run from about 8am to 5pm. Click a pig on the board to check on it.`;
+    const places = Object.entries(G.jd.place).sort((a, b) => b[1] - a[1]), mx = Math.max(1, ...places.map(p => p[1]));
+    const cols = ['#e0a43a', '#5aa9e0', '#e07a9a', '#5f8f2e', '#a98bd9', '#ff8a3d', '#1f2f5c', '#c96a85'];
+    $('byPlace').innerHTML = places.length ? places.map(([k, v], i) => `<div class="hbar"><span class="hl" title="${k}">${k}</span><div class="ht"><div class="hf" style="width:${v / mx * 100}%;background:${cols[i % cols.length]}"></div></div><span class="hn">${Math.round(v)}</span></div>`).join('')
+      : '<p class="small">No paychecks yet today. Once pigs start working, each workplace shows up here.</p>';
+    // income per day: past days + today
+    const days = G.jobHist.slice(-9).concat([{ d: dayNum(), v: G.jd.total }]);
+    const cv = $('incomeChart'), c = cv.getContext('2d'), Wc = cv.width, Hc = cv.height, pl = 50, pb = 34, mv = Math.max(10, ...days.map(d => d.v));
+    c.clearRect(0, 0, Wc, Hc); c.font = '700 18px Nunito, sans-serif'; c.fillStyle = '#8a6a52'; c.textAlign = 'right'; c.textBaseline = 'middle'; c.strokeStyle = '#f1e3dc'; c.lineWidth = 1.5;
+    for (let i = 0; i <= 3; i++) { const v = mv * i / 3, y = Hc - pb - (Hc - pb - 14) * i / 3; c.beginPath(); c.moveTo(pl, y); c.lineTo(Wc - 6, y); c.stroke(); c.fillText(Math.round(v), pl - 8, y); }
+    const bw = (Wc - pl - 10) / 10;
+    days.forEach((d, i) => {
+      const h = (Hc - pb - 14) * d.v / mv, x = pl + 4 + i * bw, today = i === days.length - 1;
+      c.fillStyle = today ? '#e0a43a' : '#c9b49a'; rr(c, x, Hc - pb - h, bw - 10, Math.max(2, h), 6); c.fill();
+      c.fillStyle = '#8a6a52'; c.textAlign = 'center'; c.textBaseline = 'alphabetic'; c.fillText(today ? 'today' : 'D' + d.d, x + (bw - 10) / 2, Hc - 8);
+    });
+    const rows = adults.concat(G.pigs.filter(p => p.age < 90)).map(p => {
+      const jb = jobOf(p);
+      return `<tr data-id="${p.id}"><td><b>${p.name}</b>${p.age < 90 ? ' 🍼' : ''}</td><td>${jb ? JOBS[jb.type].emoji + ' ' + jobTitle(p, jb) : p.age < 90 ? 'Too young' : '—'}</td><td>${jb ? (jb.map === 'city' ? '🏙️ ' : '🏡 ') + JOBS[jb.type].place : '—'}</td><td>${p.age < 90 ? '🛴 Scooter' : carName(p.car)}</td><td>${pigStatus(p)}</td><td class="num">${Math.round(G.jd.pig[p.id] || 0)}</td></tr>`;
+    }).join('');
+    $('boardBody').innerHTML = rows;
+  }
+  $('boardBody').addEventListener('click', e => { const tr = e.target.closest('tr'); if (!tr) return; selected = +tr.dataset.id; listSig = ''; renderPig(true); sfx('tap'); });
+  function hudClock() { const h = hourNow(), hh = Math.floor(h), mm = Math.floor((h - hh) * 6) * 10; return `${(hh + 11) % 12 + 1}:${String(mm).padStart(2, '0')} ${hh < 12 ? 'am' : 'pm'}`; }
 
   // ---------- goals ----------
   const st = () => G.stats;
@@ -933,9 +1307,11 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     { id: 'pop6', e: '🏘️', name: 'Pig Village', desc: 'Reach 6 pigs', r: 40, f: () => [G.pigs.length, 6] },
     { id: 'heal1', e: '🏥', name: 'Get Well Soon', desc: 'A pig leaves the hospital healthy', r: 40, f: () => [st().healed, 1] },
     { id: 'castle4', e: '🏰', name: 'Castle Kingdom', desc: 'Own 4 Pig Castles', r: 60, f: () => [count('hutch'), 4] },
-    { id: 'modern', e: '✨', name: 'Modern Living', desc: 'Upgrade a building to level 3', r: 100, f: () => [Math.max(0, ...G.buildings.map(L)), 3] },
+    { id: 'modern', e: '✨', name: 'Modern Living', desc: 'Upgrade a building to level 3', r: 100, f: () => [Math.max(0, ...allB().map(L)), 3] },
     { id: 'masaki', e: '👔', name: "Masaki's Team", desc: 'Fill both jobs at Masaki Capital', r: 80, f: () => [maxWorkers('bank'), 2] },
-    { id: 'trade1', e: '📈', name: 'First Trade', desc: 'Buy a share on the Pig Stock Exchange', r: 30, f: () => [G.mkt.trades, 1] },
+    { id: 'commute1', e: '🚗', name: 'Morning Commute', desc: 'A pig drives to work in Job City', r: 30, f: () => [st().commutes || 0, 1] },
+    { id: 'cozy10', e: '🛋️', name: 'Home Sweet Home', desc: 'Make a castle room 10 coziness', r: 40, f: () => [Math.max(0, ...G.buildings.filter(b => b.type === 'hutch').map(cozyOf)), 10] },
+    { id: 'trade1', e: '📈', name: 'First Trade', desc: 'Buy a share on the PCSE', r: 30, f: () => [G.mkt.trades, 1] },
     { id: 'party1', e: '🎂', name: 'Party Animal', desc: 'Celebrate a pig birthday', r: 40, f: () => [st().parties, 1] },
     { id: 'hay50', e: '🌾', name: 'Hay Hoarder', desc: 'Have 50 🌾 at once', r: 40, f: () => [Math.floor(G.hay), 50] },
     { id: 'pop11', e: '🏡', name: 'Pig Town', desc: 'Reach 11 pigs', r: 80, f: () => [G.pigs.length, 11] },
@@ -945,6 +1321,8 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     { id: 'pay1000', e: '💰', name: 'Big Earner', desc: 'Earn 1,000 🪙 from jobs', r: 150, f: () => [st().jobPay, 1000] },
     { id: 'profit200', e: '💹', name: 'Wolf of Wheek Street', desc: 'Make 200 🪙 profit selling stocks', r: 150, f: () => [Math.max(0, Math.floor(G.mkt.realized)), 200] },
     { id: 'year1', e: '🗓️', name: 'A Whole Pig Year', desc: 'Live through all 4 seasons', r: 150, f: () => [Math.min(dayNum() - 1, YEAR), YEAR] },
+    { id: 'city6', e: '🏙️', name: 'Rush Hour', desc: 'Have 6 pigs with jobs in Job City', r: 120, f: () => [G.pigs.filter(p => jobOf(p) && jobOf(p).map === 'city').length, 6] },
+    { id: 'car1', e: '🏎️', name: 'New Wheels', desc: 'Buy a pig a new car at Zoomies Motors', r: 50, f: () => [st().cars || 0, 1] },
     { id: 'pop21', e: '🌆', name: 'Pig City', desc: 'Reach 21 pigs', r: 150, f: () => [G.pigs.length, 21] },
     { id: 'pf1000', e: '🏦', name: 'Pig Tycoon', desc: 'Own stocks worth 1,000 🪙', r: 200, f: () => [Math.floor(pfValue()), 1000] },
     { id: 'pop36', e: '🌃', name: 'Pig Metropolis', desc: 'Reach 36 pigs', r: 300, f: () => [G.pigs.length, 36] }
@@ -969,7 +1347,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
       const [a, b] = g.f();
       if (a >= b) {
         G.goalsDone.push(g.id); G.coins += g.r; celebrate(); sfx('goal');
-        toast(`🏆 Goal complete: ${g.name}! +${g.r} 🪙`); popup(W / 2, H * .35, `${g.e} ${g.name}! +${g.r} 🪙`, '#c96a85');
+        toast(`🏆 Goal complete: ${g.name}! +${g.r} 🪙`); popup(W / 2, H * .35, `${g.e} ${g.name}! +${g.r} 🪙`, '#c96a85', 'any');
         save(); return;
       }
     }
@@ -1004,9 +1382,17 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     ['HAY', +1, '🌾 Hay Holdings signs a big deal with every Pig Castle in town.'],
     ['HAY', -1, '🌾 Too much hay on the market: Hay Holdings prices soften.']
   ];
-  function setNews(text) { G.mkt.news = text; stockSig = ''; }
+  const exOpen = () => count('bank') > 0 || count('pcse') > 0;
+  const STOCK_COL = { HAY: '#d9ad3c', WTR: '#5aa9e0', VEG: '#5fb04a', FLUF: '#a98bd9', ZOOM: '#e0483f', POOP: '#8a6a52' };
+  const pcseIdx = () => 100 * STOCKS.reduce((s, k) => s + G.mkt.st[k.s].p / k.base, 0) / STOCKS.length;
+  function stamp() { const h = hourNow(), hh = Math.floor(h), mm = Math.floor((h - hh) * 6) * 10; return `Day ${dayNum()} ${(hh + 11) % 12 + 1}:${String(mm).padStart(2, '0')}${hh < 12 ? 'am' : 'pm'}`; }
+  function setNews(text) {
+    G.mkt.news = text; G.mkt.feed = G.mkt.feed || [];
+    G.mkt.feed.unshift({ t: stamp(), text }); G.mkt.feed.length = Math.min(G.mkt.feed.length, 6); stockSig = '';
+  }
   function marketTick(dt) {
     const M = G.mkt;
+    M.ihist = M.ihist || [];
     // prices move a little every second (mean-reverting random walk around a slowly growing base)
     M.tickT = (M.tickT || 0) + dt;
     while (M.tickT >= 1) {
@@ -1018,8 +1404,9 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
         let push = S.shock * .12; S.shock *= .9;
         if (k.s === 'WTR' && w === 'rain') push += .004;
         if (k.s === 'HAY' && s.name === 'Winter') push += .003;
-        if (k.s === 'VEG') push += .0015 * Math.min(4, count('garden'));
+        if (k.s === 'VEG') push += .0015 * Math.min(4, count('garden') + count('market'));
         if (k.s === 'FLUF') push += .0015 * Math.min(3, maxWorkers('salon'));
+        if (k.s === 'ZOOM') push += .001 * Math.min(4, maxWorkers('dealer') + G.pigs.filter(p => p.trip).length / 3);
         if (k.s === 'POOP') push += .0004 * Math.min(10, G.poops.length) - .001;
         if (G.event && G.event.mkt) push += G.event.mkt * .01;
         S.x += -.04 * S.x + push + k.vol * .09 * gauss();
@@ -1027,23 +1414,28 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
         S.p = Math.max(1, +(S.base * Math.exp(S.x)).toFixed(2));
       }
       M.histT = (M.histT || 0) + 1;
-      if (M.histT >= 3) { M.histT = 0; for (const k of STOCKS) { const S = M.st[k.s]; S.hist.push(S.p); if (S.hist.length > HIST) S.hist.shift(); } }
+      if (M.histT >= 3) {
+        M.histT = 0;
+        for (const k of STOCKS) { const S = M.st[k.s]; S.hist.push(S.p); if (S.hist.length > HIST) S.hist.shift(); }
+        M.ihist.push(+pcseIdx().toFixed(1)); if (M.ihist.length > HIST) M.ihist.shift();
+      }
     }
-    // headlines: Masaki's analysts drop hints about what's coming
+    // headlines: analysts drop hints about what's coming
     M.newsT -= dt;
-    if (M.newsT <= 0 && count('bank')) {
+    if (M.newsT <= 0 && exOpen()) {
       M.newsT = 35 + Math.random() * 30;
       const [sym, dir, text] = pick(NEWS_POOL);
       M.st[sym].shock += dir * (1.2 + Math.random());
       const ceo = G.pigs.find(p => p.banker && jobOf(p) && jobOf(p).type === 'bank');
       setNews(text + (ceo ? ` <i>Masaki says: "${dir > 0 ? 'Buy' : 'Sell'} ${sym}."</i>` : ''));
     }
-    // Hay Holdings pays a small dividend in hay each morning (handled in newDay)
   }
   function trade(sym, n) {
     const S = G.mkt.st[sym];
+    if (n === 'max') n = Math.floor(G.coins / S.p);
+    if (n === 'all') n = -S.own;
     if (n > 0) {
-      const cost = S.p * n; if (G.coins < cost) return;
+      const cost = S.p * n; if (!n || G.coins < cost) return;
       G.coins -= cost; S.own += n; S.cost += cost; G.mkt.trades++; sfx('buy');
       toast(`Bought ${n} ${sym} for ${Math.round(cost)} 🪙`);
     } else {
@@ -1052,51 +1444,90 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
       G.coins += got; S.own -= n; S.cost -= avg * n; if (!S.own) S.cost = 0; G.mkt.realized += profit; sfx(profit >= 0 ? 'sell' : 'bad');
       toast(`Sold ${n} ${sym} for ${Math.round(got)} 🪙 (${profit >= 0 ? '+' : ''}${Math.round(profit)} ${profit >= 0 ? 'profit 🎉' : 'loss'})`);
     }
-    stockSig = ''; hudRes(); syncTools(); save();
+    stockSig = ''; hudRes(); syncTools(); save(); renderStocks();
   }
-  let stockSig = '', stockBuilt = false;
+  let stockSig = '', stockBuilt = false, selSym = 'HAY';
+  document.querySelectorAll('.tradebar .mini').forEach(b => b.addEventListener('click', () => {
+    const q = b.dataset.q; trade(selSym, q === 'max' || q === 'all' ? q : +q);
+  }));
   function buildStocks() {
     const el = $('stocks'); el.innerHTML = '';
     for (const k of STOCKS) {
-      const row = document.createElement('div'); row.className = 'stock'; row.id = 'st-' + k.s; row.title = `${k.name}: ${k.tip}`;
-      row.innerHTML = `<span class="sym">${k.s} <small>${k.name}</small></span><span class="px"></span><canvas width="440" height="68"></canvas><span class="own"></span>` +
-        `<span class="tb"><button class="mini buy">Buy</button><button class="mini sell">Sell</button></span>`;
-      row.querySelector('.buy').addEventListener('click', e => trade(k.s, e.shiftKey ? 5 : 1));
-      row.querySelector('.sell').addEventListener('click', e => trade(k.s, e.shiftKey ? -G.mkt.st[k.s].own : -1));
+      const row = document.createElement('button'); row.className = 'stock'; row.id = 'st-' + k.s; row.title = `${k.name}: ${k.tip}`;
+      row.style.font = 'inherit'; row.style.textAlign = 'left'; row.style.color = 'inherit';
+      row.innerHTML = `<span class="sym">${k.s} <small>${k.name}</small></span><span class="px"></span><canvas width="440" height="68"></canvas><span class="own" style="grid-column:1/-1"></span>`;
+      row.addEventListener('click', () => { selSym = k.s; sfx('tap'); renderStocks(); });
       el.appendChild(row);
     }
     stockBuilt = true;
   }
+  function lineChart(cv, pts, opt = {}) {
+    const c = cv.getContext('2d'), Wc = cv.width, Hc = cv.height, padL = opt.axes ? 52 : 4, padB = opt.axes ? 22 : 6, padT = 8;
+    const lo0 = Math.min(...pts, opt.ref || Infinity), hi0 = Math.max(...pts, opt.ref || 0), pad = (hi0 - lo0) * .08 || 1, lo = lo0 - pad, hi = hi0 + pad;
+    const X = i => padL + i / Math.max(1, pts.length - 1) * (Wc - padL - 8), Y = p => padT + (1 - (p - lo) / (hi - lo)) * (Hc - padT - padB);
+    c.clearRect(0, 0, Wc, Hc);
+    if (opt.axes) {
+      c.font = '700 18px Nunito, sans-serif'; c.fillStyle = '#8a6a52'; c.textAlign = 'right'; c.textBaseline = 'middle'; c.strokeStyle = '#f1e3dc'; c.lineWidth = 1.5;
+      for (let i = 0; i <= 4; i++) { const v = lo + (hi - lo) * i / 4, y = Y(v); c.beginPath(); c.moveTo(padL, y); c.lineTo(Wc - 8, y); c.stroke(); c.fillText(v.toFixed(v < 20 ? 1 : 0), padL - 8, y); }
+      c.textAlign = 'left'; c.textBaseline = 'alphabetic'; c.fillText('earlier', padL, Hc - 2); c.textAlign = 'right'; c.fillText('now', Wc - 8, Hc - 2);
+    }
+    const up = pts[pts.length - 1] >= pts[0], col = opt.col || (up ? '#3c8a2e' : '#d9455a');
+    c.beginPath(); pts.forEach((p, i) => i ? c.lineTo(X(i), Y(p)) : c.moveTo(X(i), Y(p)));
+    c.lineTo(X(pts.length - 1), Hc - padB); c.lineTo(X(0), Hc - padB); c.closePath();
+    const g = c.createLinearGradient(0, padT, 0, Hc - padB); g.addColorStop(0, up ? 'rgba(60,138,46,.28)' : 'rgba(217,69,90,.24)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+    c.fillStyle = g; c.fill();
+    c.beginPath(); pts.forEach((p, i) => i ? c.lineTo(X(i), Y(p)) : c.moveTo(X(i), Y(p)));
+    c.strokeStyle = col; c.lineWidth = opt.axes ? 4 : 3; c.lineJoin = 'round'; c.stroke();
+    if (opt.ref) {
+      c.setLineDash([8, 6]); c.strokeStyle = '#1f2f5c'; c.lineWidth = 2; c.beginPath(); c.moveTo(padL, Y(opt.ref)); c.lineTo(Wc - 8, Y(opt.ref)); c.stroke(); c.setLineDash([]);
+      if (opt.axes) { c.fillStyle = '#1f2f5c'; c.font = '800 17px Nunito, sans-serif'; c.textAlign = 'left'; c.fillText('your avg price', padL + 6, Y(opt.ref) - 7); }
+    }
+    c.fillStyle = col; ell(c, X(pts.length - 1), Y(pts[pts.length - 1]), opt.axes ? 7 : 5, opt.axes ? 7 : 5); c.fill();
+  }
   function renderStocks() {
-    const open = count('bank') > 0;
+    const open = exOpen();
     $('stockLocked').hidden = open; $('stockOpen').hidden = !open;
-    if (!open) return;
+    const M = G.mkt, ih = (M.ihist && M.ihist.length ? M.ihist : [pcseIdx()]), iv = pcseIdx(), ic = (iv - ih[0]) / ih[0] * 100;
+    $('idxVal').textContent = iv.toFixed(1);
+    $('idxChg').innerHTML = `<span class="${ic >= 0 ? 'up' : 'down'}">${ic >= 0 ? '▲' : '▼'} ${Math.abs(ic).toFixed(1)}%</span>`;
+    if (!open || view !== 'pcse') return;
     if (!stockBuilt) buildStocks();
-    const M = G.mkt, v = pfValue(), pl = v - pfCost();
-    $('pfVal').textContent = `Portfolio ${Math.round(v)} 🪙`;
+    const v = pfValue(), pl = v - pfCost();
+    $('pfVal').textContent = `Worth ${Math.round(v)} 🪙`;
     $('pfPL').innerHTML = `<span class="${pl >= 0 ? 'up' : 'down'}">${pl >= 0 ? '▲' : '▼'} ${Math.abs(Math.round(pl))}</span> · banked ${Math.round(M.realized)}`;
+    // ticker tape (duplicated so it loops seamlessly)
+    const tape = STOCKS.map(k => { const S = M.st[k.s], ch = (S.p - S.hist[0]) / S.hist[0] * 100; return `<span>${k.s} ${S.p.toFixed(1)} <b class="${ch >= 0 ? 'up' : 'down'}">${ch >= 0 ? '▲' : '▼'}${Math.abs(ch).toFixed(1)}%</b></span>`; }).join('') + `<span>PCSE ${iv.toFixed(1)}</span>`;
+    const tsig = tape.replace(/\d/g, '');
+    if ($('tape').dataset.n !== String(Math.floor(G.time / 3))) { $('tape').dataset.n = String(Math.floor(G.time / 3)); $('tape').innerHTML = tape + tape; }
     for (const k of STOCKS) {
       const S = M.st[k.s], row = $('st-' + k.s), h = S.hist, first = h[0], chg = (S.p - first) / first * 100;
-      row.classList.toggle('on', S.own > 0);
+      row.classList.toggle('on', S.own > 0); row.classList.toggle('sel', selSym === k.s);
       row.querySelector('.px').innerHTML = `${S.p.toFixed(1)} 🪙<br><small class="${chg >= 0 ? 'up' : 'down'}">${chg >= 0 ? '▲' : '▼'}${Math.abs(chg).toFixed(0)}%</small>`;
-      const avg = S.own ? S.cost / S.own : 0, up = S.p >= avg;
-      row.querySelector('.own').innerHTML = S.own ? `You own ${S.own} · avg ${avg.toFixed(1)} · <span class="${up ? 'up' : 'down'}">${up ? '+' : ''}${Math.round((S.p - avg) * S.own)}</span>` : 'Shift-click: buy 5 / sell all';
-      row.querySelector('.buy').disabled = G.coins < S.p; row.querySelector('.sell').disabled = !S.own;
-      // sparkline
-      const c = row.querySelector('canvas').getContext('2d'), Wc = 440, Hc = 68;
-      const pts = h.concat([S.p]), lo = Math.min(...pts, avg || Infinity), hi = Math.max(...pts, avg || 0), rng = Math.max(.01, hi - lo);
-      const X = i => 4 + i / (pts.length - 1) * (Wc - 8), Y = p => Hc - 6 - (p - lo) / rng * (Hc - 12);
-      c.clearRect(0, 0, Wc, Hc);
-      const col = S.p >= first ? '#3c8a2e' : '#d9455a';
-      c.beginPath(); pts.forEach((p, i) => i ? c.lineTo(X(i), Y(p)) : c.moveTo(X(i), Y(p)));
-      c.lineTo(X(pts.length - 1), Hc); c.lineTo(X(0), Hc); c.closePath();
-      c.fillStyle = S.p >= first ? 'rgba(60,138,46,.14)' : 'rgba(217,69,90,.12)'; c.fill();
-      c.beginPath(); pts.forEach((p, i) => i ? c.lineTo(X(i), Y(p)) : c.moveTo(X(i), Y(p)));
-      c.strokeStyle = col; c.lineWidth = 3; c.lineJoin = 'round'; c.stroke();
-      if (S.own) { c.setLineDash([6, 5]); c.strokeStyle = '#1f2f5c'; c.lineWidth = 2; c.beginPath(); c.moveTo(4, Y(avg)); c.lineTo(Wc - 4, Y(avg)); c.stroke(); c.setLineDash([]); }
-      c.fillStyle = col; ell(c, X(pts.length - 1), Y(S.p), 5, 5); c.fill();
+      row.querySelector('.own').textContent = S.own ? `You own ${S.own}` : 'Click to trade';
+      lineChart(row.querySelector('canvas'), h.concat([S.p]), { ref: S.own ? S.cost / S.own : 0 });
     }
-    if (M.news !== stockSig) { stockSig = M.news; $('news').innerHTML = M.news || '📰 No news yet. Masaki\'s analysts are reading the hay leaves...'; }
+    // big chart for the selected stock
+    const k = STOCKS.find(q => q.s === selSym), S = M.st[selSym], pts = S.hist.concat([S.p]), chg = (S.p - pts[0]) / pts[0] * 100, avg = S.own ? S.cost / S.own : 0;
+    $('bigSym').textContent = k.s; $('bigName').textContent = k.name; $('bigTip').textContent = 'Tip: ' + k.tip;
+    $('bigPx').innerHTML = `${S.p.toFixed(2)} 🪙<small class="${chg >= 0 ? 'up' : 'down'}">${chg >= 0 ? '▲' : '▼'} ${Math.abs(chg).toFixed(1)}% · high ${Math.max(...pts).toFixed(1)} · low ${Math.min(...pts).toFixed(1)}</small>`;
+    lineChart($('bigChart'), pts, { axes: true, ref: avg });
+    $('bigPos').innerHTML = S.own ? `You own <b>${S.own}</b> shares · avg ${avg.toFixed(2)} · worth ${Math.round(S.own * S.p)} 🪙 · <span class="${S.p >= avg ? 'up' : 'down'}">${S.p >= avg ? '+' : ''}${Math.round((S.p - avg) * S.own)} 🪙</span>` : `You don't own any ${k.s} yet. One share costs ${S.p.toFixed(1)} 🪙.`;
+    document.querySelectorAll('.tradebar .buy').forEach(b => { const q = b.dataset.q === 'max' ? 1 : +b.dataset.q; b.disabled = G.coins < S.p * q; });
+    document.querySelectorAll('.tradebar .sell').forEach(b => { const q = b.dataset.q === 'all' ? 1 : -b.dataset.q; b.disabled = S.own < q; });
+    // portfolio donut + holdings
+    const held = STOCKS.filter(q => M.st[q.s].own), pc = $('pieChart').getContext('2d');
+    pc.clearRect(0, 0, 300, 300); let a0 = -Math.PI / 2;
+    if (!held.length) { pc.strokeStyle = '#f1e3dc'; pc.lineWidth = 46; pc.beginPath(); pc.arc(150, 150, 110, 0, Math.PI * 2); pc.stroke(); }
+    for (const q of held) { const val = M.st[q.s].own * M.st[q.s].p, a1 = a0 + val / v * Math.PI * 2; pc.strokeStyle = STOCK_COL[q.s]; pc.lineWidth = 46; pc.beginPath(); pc.arc(150, 150, 110, a0, a1); pc.stroke(); a0 = a1; }
+    pc.fillStyle = '#3b2a1a'; pc.font = '800 34px Nunito, sans-serif'; pc.textAlign = 'center'; pc.textBaseline = 'middle'; pc.fillText(held.length ? Math.round(v) + '' : '0', 150, 142); pc.font = '700 20px Nunito, sans-serif'; pc.fillStyle = '#8a6a52'; pc.fillText('coins', 150, 176);
+    const hsig = held.map(q => q.s + M.st[q.s].own).join() + Math.round(v / 5);
+    if ($('holdings').dataset.sig !== hsig) {
+      $('holdings').dataset.sig = hsig;
+      $('holdings').innerHTML = held.length ? held.map(q => { const S2 = M.st[q.s], val = S2.own * S2.p; return `<div class="hrow"><i style="background:${STOCK_COL[q.s]}"></i><span>${q.s} × ${S2.own}</span><span>${Math.round(val)} 🪙 · ${Math.round(val / v * 100)}%</span></div>`; }).join('') : '<p class="small" style="text-align:center">Nothing yet. Pick a stock and hit Buy!</p>';
+    }
+    const feed = M.feed && M.feed.length ? M.feed : (M.news ? [{ t: '', text: M.news }] : []);
+    const nsig = feed.map(f => f.t + f.text).join('|');
+    if (nsig !== stockSig) { stockSig = nsig; $('news').innerHTML = feed.length ? feed.map(f => `<div class="nitem"><span class="tag">${f.t}</span>${f.text}</div>`).join('') : '<p class="small">No news yet. The analysts are reading the hay leaves...</p>'; }
   }
 
   // ---------- days, weather & events ----------
@@ -1120,6 +1551,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
   function newDay() {
     const d = dayNum(), yd = yearDay(d);
     pickFriends();
+    if (G.jd.day !== d) { G.jobHist.push({ d: G.jd.day, v: Math.round(G.jd.total) }); if (G.jobHist.length > 20) G.jobHist.shift(); G.jd = { day: d, place: {}, pig: {}, total: 0 }; }
     if ((d - 1) % SEASON_DAYS === 0 && d > 1) { const s = season(); toast(`${s.e} ${s.name} is here!${s.name === 'Winter' ? ' Hay grows slower, stock up.' : s.name === 'Spring' ? ' Baby season: pigs feel romantic.' : ''}`); celebrate(); }
     const hay = G.mkt.st.HAY.own; if (hay >= 5) { const n = Math.floor(hay / 5); G.hay += n; setTimeout(() => toast(`🌾 Hay Holdings paid a dividend: +${n} 🌾`), 3500); }
     const bdays = G.pigs.filter(p => p.bday === yd && p.age >= 30);
@@ -1132,7 +1564,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     }
   }
   function startEvent() {
-    const pool = EVENTS.filter(e => e.id !== 'boom' && e.id !== 'crash' || count('bank'));
+    const pool = EVENTS.filter(e => e.id !== 'boom' && e.id !== 'crash' || exOpen());
     const ev = pick(pool);
     G.event = { id: ev.id, t: 90, mkt: ev.mkt || 0 }; G.stats.events++;
     if (ev.id === 'delivery') G.veg += 10;
@@ -1158,13 +1590,60 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
   }
   const drops = [], fireflies = [];
 
+  // ---------- commuting ----------
+  function parkSpot(b, slot) {
+    const n = sz(b.type), cx = (b.x + n / 2) * T, north = b.y < ROAD[0];
+    return { x: Math.max(18, Math.min(W - 18, cx + (slot - 1.5) * 27)), y: north ? CURB_N : CURB_S };
+  }
+  function startCommute(p, wb) {
+    const pk = parkSpot(wb, p.job.slot); p.park = pk;
+    p.trip = { to: 'city', i: 0, j: 1, x: p.x, y: p.y, dir: 1, legs: [
+      { map: 'home', pts: [[p.x, p.y], [W + 30, p.y]] },
+      { map: 'city', pts: [[-30, LANE_E], [pk.x, LANE_E], [pk.x, pk.y]] }] };
+    p.nap = 0; p.working = false;
+  }
+  function startHome(p) {
+    const pk = p.park || { x: p.x, y: CURB_N };
+    const hy = 60 + Math.random() * (H - 120), hx = W - 70 - Math.random() * 140;
+    p.trip = { to: 'home', i: 0, j: 1, x: pk.x, y: pk.y, dir: -1, legs: [
+      { map: 'city', pts: [[pk.x, pk.y], [pk.x, LANE_W], [-30, LANE_W]] },
+      { map: 'home', pts: [[W + 30, hy], [hx, hy]] }] };
+    p.working = false;
+  }
+  function driveTick(p, dt) {
+    const tr = p.trip, leg = tr.legs[tr.i], [tx, ty] = leg.pts[tr.j];
+    const dx = tx - tr.x, dy = ty - tr.y, d = Math.hypot(dx, dy), sp = 95 * CARS[p.car.m].speed * dt;
+    if (Math.abs(dx) > .5) tr.dir = dx > 0 ? 1 : -1;
+    tr.spin = (tr.spin || 0) + Math.min(d, sp);
+    if (d > sp) { tr.x += dx / d * sp; tr.y += dy / d * sp; return; }
+    tr.x = tx; tr.y = ty; tr.j++;
+    if (tr.j < leg.pts.length) return;
+    tr.i++;
+    if (tr.i < tr.legs.length) { const s = tr.legs[tr.i].pts[0]; tr.x = s[0]; tr.y = s[1]; tr.j = 1; return; }
+    p.loc = tr.to; p.trip = null; p.hop = .4; p.face = tr.dir;
+    if (p.loc === 'city') { p.x = tr.x; p.y = tr.y + (tr.y < 240 ? -12 : 12); G.stats.commutes = (G.stats.commutes || 0) + 1; popup(p.x, p.y - 20, 'Parked! 🅿️', '#1f2f5c', 'city'); }
+    else { p.x = tr.x - 20; p.y = tr.y; p.tx = p.x; p.ty = p.y; p.wait = 1; popup(p.x, p.y - 20, 'Home! 🏡', '#5f8f2e'); }
+  }
+  function residents() {
+    const map = new Map(), castles = G.buildings.filter(b => b.type === 'hutch').sort((a, b) => a.y - b.y || a.x - b.x);
+    let ci = 0, n = 0;
+    for (const p of G.pigs) { while (castles[ci] && n >= CAP[L(castles[ci]) - 1]) { ci++; n = 0; } if (!castles[ci]) break; map.set(p.id, castles[ci]); n++; }
+    return map;
+  }
+  const cozyOf = b => b && b.room ? b.room.items.reduce((s, it) => s + (F[it.k] ? F[it.k].cozy : 0), 0) : 0;
+  function logPay(p, b, pay) {
+    const J = G.jd; J.total += pay; J.pig[p.id] = (J.pig[p.id] || 0) + pay;
+    const k = (b.map === 'city' ? '🏙️ ' : '🏡 ') + JOBS[b.type].place; J.place[k] = (J.place[k] || 0) + pay;
+  }
+
   // ---------- simulation ----------
   function tick(dt) {
-    worldTick(dt);
+    worldTick(dt); insideTick(dt);
     G.time += dt;
     const parks = lvlSum('park') * (evOn('spa') ? 1.5 : 1), vets = lvlSum('vet');
     const decor = G.buildings.reduce((s, b) => s + (DECOR[b.type] || 0), 0), lanterns = count('lantern');
     const dark = darkness(), wk = G.weather.k, sn = season().name;
+    const cityDecor = (G.city || []).reduce((s, b) => s + (DECOR[b.type] || 0), 0), home = residents(), hourH = hourNow();
     // production (weather, seasons and events change the pace)
     for (const b of G.buildings) {
       if (!RATE[b.type]) continue;
@@ -1193,10 +1672,12 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     for (let i = G.pigs.length - 1; i >= 0; i--) {
       const p = G.pigs[i];
       p.age += dt; p.petCd = Math.max(0, p.petCd - dt); p.hop = Math.max(0, p.hop - dt);
+      if (!p.leaveH) { p.leaveH = 7.3 + Math.random() * .9; p.backH = 16.8 + Math.random() * .9; }
+      if (p.trip) { driveTick(p, dt); p.food = Math.max(0, p.food - .3 * dt); p.water = Math.max(0, p.water - .3 * dt); continue; }
       // hospital: check in when sick, get treated, come out healthy
       let hosp = p.hosp && G.buildings.find(b => b.type === 'hospital' && b.x === p.hosp.x && b.y === p.hosp.y);
       if (p.state && !hosp) { p.state = null; p.hosp = null; }
-      if (!p.state && p.health < 60) {
+      if (!p.state && p.health < 60 && pigMap(p) === 'home') {
         const h = G.buildings.find(b => b.type === 'hospital' && G.pigs.filter(q => q.hosp && q.hosp.x === b.x && q.hosp.y === b.y).length < BEDS[L(b) - 1]);
         if (h) { p.state = 'walking'; p.hosp = { x: h.x, y: h.y }; p.wait = 0; hosp = h; }
       }
@@ -1213,8 +1694,10 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
       if (p.state === 'walking') { p.tx = hosp.x * T + T; p.ty = hosp.y * T + 2 * T - 4; p.wait = 0;
         if (Math.hypot(p.tx - p.x, p.ty - p.y) < 5) { p.state = 'admitted'; popup(p.x, p.y - 22, 'Checked in 🏥', '#3c7ab8'); continue; } }
       p.food -= (has(p, 'foodie') ? .75 : .6) * dt; p.water -= (sn === 'Summer' ? .85 : .75) * dt;
-      const pk = has(p, 'zoomies') ? parks * 2 : parks, dc = has(p, 'fancy') ? decor * 2 : decor;
-      let jd = .45 / (1 + .5 * pk + .07 * dc) + (has(p, 'shy') ? .25 : .5) * dirt;
+      const inCity = pigMap(p) === 'city', dBase = inCity ? cityDecor : decor;
+      const pk = inCity ? 0 : has(p, 'zoomies') ? parks * 2 : parks, dc = has(p, 'fancy') ? dBase * 2 : dBase;
+      let jd = .45 / (1 + .5 * pk + .07 * dc) + (inCity ? 0 : (has(p, 'shy') ? .25 : .5) * dirt);
+      jd /= 1 + Math.min(.8, .035 * cozyOf(home.get(p.id)));
       if (has(p, 'sleepy')) jd *= .75;
       if (dark > .5 && !lanterns && !has(p, 'sleepy')) jd += .08; // dark nights feel a little spooky without lanterns
       if (wk === 'snow' && sn === 'Winter') jd += .05;
@@ -1223,9 +1706,9 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
       // company keeps pigs happy, and best friends most of all
       if (G.pigs.length > 1) p.joy += .08 * dt;
       const fr = friendOf(p);
-      if (fr && !fr.state && Math.hypot(fr.x - p.x, fr.y - p.y) < 40) {
+      if (fr && !fr.state && !fr.trip && pigMap(fr) === pigMap(p) && Math.hypot(fr.x - p.x, fr.y - p.y) < 40) {
         p.joy += (has(p, 'social') ? .9 : .35) * dt; G.stats.friendT += dt / 2;
-        p.heartT = (p.heartT || 0) - dt; if (p.heartT <= 0) { p.heartT = 9 + Math.random() * 6; popup((p.x + fr.x) / 2, Math.min(p.y, fr.y) - 22, '💞', '#e07a9a'); }
+        p.heartT = (p.heartT || 0) - dt; if (p.heartT <= 0) { p.heartT = 9 + Math.random() * 6; popup((p.x + fr.x) / 2, Math.min(p.y, fr.y) - 22, '💞', '#e07a9a', pigMap(p)); }
       }
       // naps: sleepy pigs (and everyone, late at night) curl up for a snooze
       if (p.nap > 0) { p.nap -= dt; p.joy += .3 * dt; }
@@ -1248,15 +1731,27 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
       }
       // coins & poop
       p.coinT -= dt;
-      if (p.coinT <= 0) { p.coinT = 6; if (p.joy > 40 && p.health > 50) { const n = evOn('tourists') ? 2 : 1; G.coins += n; popup(p.x, p.y - 20, `+${n} 🪙`, '#a77c4c'); } }
+      if (p.coinT <= 0) { p.coinT = 6; if (p.joy > 40 && p.health > 50) { const n = evOn('tourists') ? 2 : 1; G.coins += n; popup(p.x, p.y - 20, `+${n} 🪙`, '#a77c4c', pigMap(p)); } }
       p.poopT -= dt;
-      if (p.poopT <= 0) { p.poopT = 10 + Math.random() * 10; if (G.poops.length < 80) G.poops.push({ x: p.x - p.face * 14 + (Math.random() - .5) * 6, y: p.y + 8 + (Math.random() - .5) * 4, a: Math.random() * 3 }); }
+      if (p.poopT <= 0) { p.poopT = 10 + Math.random() * 10; if (G.poops.length < 80 && !inCity) G.poops.push({ x: p.x - p.face * 14 + (Math.random() - .5) * 6, y: p.y + 8 + (Math.random() - .5) * 4, a: Math.random() * 3 }); }
       // work
       const wb = jobOf(p);
       if (p.job && !wb) p.job = null;
       p.working = false;
+      const cityJob = wb && wb.map === 'city';
+      if (inCity && !cityJob) { startHome(p); continue; } // job gone while downtown: drive home
       if (wb && !p.state) {
-        if (p.food > 30 && p.water > 30 && p.joy > 20 && p.health > 60) {
+        const able = p.food > 30 && p.water > 30 && p.joy > 20 && p.health > 60;
+        if (cityJob) {
+          const onShift = hourH >= p.leaveH && hourH < p.backH;
+          if (!inCity) { if (onShift && able && p.age >= 90) { startCommute(p, wb); continue; } }
+          else if (!onShift || !able) {
+            const pk = p.park || { x: p.x, y: p.y }, dx = pk.x - p.x, dy = pk.y - p.y, d = Math.hypot(dx, dy);
+            if (d > 3) { const sp = Math.min(d, 30 * dt); p.x += dx / d * sp; p.y += dy / d * sp; if (Math.abs(dx) > 1) p.face = dx > 0 ? 1 : -1; continue; }
+            startHome(p); continue;
+          }
+        }
+        if ((!cityJob || inCity) && able) {
           const spot = workSpot(wb, p.job.slot), dx = spot.x - p.x, dy = spot.y - p.y, d = Math.hypot(dx, dy);
           if (d > 3) { const sp = Math.min(d, 24 * dt); p.x += dx / d * sp; p.y += dy / d * sp; if (Math.abs(dx) > 1) p.face = dx > 0 ? 1 : -1; continue; }
           p.working = true; p.face = p.job.slot % 2 ? -1 : 1; p.tx = p.x; p.ty = p.y;
@@ -1267,8 +1762,13 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
             p.workT -= J.every;
             let pay = J.pay * (p.banker && wb.type === 'bank' ? 2 : 1);
             if ((has(p, 'brainy') && wb.type === 'bank') || (has(p, 'fancy') && wb.type === 'salon')) pay = Math.round(pay * 1.5);
-            G.coins += pay; G.stats.jobPay += pay; sfx('coin');
-            popup(p.x, p.y - 22, `+${pay} 🪙 ${J.emoji}`, '#1f2f5c');
+            G.coins += pay; G.stats.jobPay += pay; logPay(p, wb, pay); if (view === pigMap(p)) sfx('coin');
+            popup(p.x, p.y - 22, `+${pay} 🪙 ${J.emoji}`, '#1f2f5c', pigMap(p));
+            if (wb.type === 'factory') { G.hay += 2; popup(p.x, p.y - 34, '+2 🌾', '#5f8f2e', 'city'); }
+            if (wb.type === 'market') { G.veg += 1; popup(p.x, p.y - 34, '+1 🫑', '#5f8f2e', 'city'); }
+            if (wb.type === 'sushi') for (const q of G.pigs) if (pigMap(q) === 'city' && !q.trip) q.joy = Math.min(100, q.joy + 4);
+            if (wb.type === 'dealer') G.mkt.st.ZOOM.shock += .15;
+            if (wb.type === 'pcse' && Math.random() < .25) { const q = pick(STOCKS); G.mkt.st[q.s].shock += (Math.random() < .5 ? -1 : 1) * .3; }
             if (wb.type === 'salon') {
               const others = G.pigs.filter(q => q !== p && !q.state && q.joy < 90);
               if (others.length) { const q = pick(others); q.joy = Math.min(100, q.joy + (has(q, 'fancy') ? 30 : 15) * (evOn('spa') ? 1.5 : 1)); q.hop = .5; popup(q.x, q.y - 22, 'Fresh fluff ✨', '#a98bd9'); }
@@ -1278,7 +1778,8 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
           continue;
         }
       }
-      // wander
+      // wander (downtown pigs stay put near work)
+      if (inCity) continue;
       if (p.nap > 0 && !p.state) continue;
       if (p.wait > 0) p.wait -= dt;
       else {
@@ -1301,13 +1802,13 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     sitters.forEach((st, i) => {
       const home = homes[i];
       let pig = st.target && G.pigs.find(q => q.id === st.target);
-      if (pig && pig.state) pig = null;
+      if (pig && (pig.state || pig.trip || pigMap(pig) !== 'home')) pig = null;
       if (!pig) {
         st.target = null;
         const taken = new Set(sitters.map(o => o.target));
         let best = null, bs = 72;
         for (const q of G.pigs) {
-          if (q.state || taken.has(q.id) || (q.sitCd || 0) > G.time) continue;
+          if (q.state || q.trip || pigMap(q) !== 'home' || taken.has(q.id) || (q.sitCd || 0) > G.time) continue;
           const sc = Math.min(q.joy, q.food + 10, q.water + 10);
           if (sc < bs) { bs = sc; best = q; }
         }
@@ -1371,7 +1872,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     G.hireT = (G.hireT || 0) - dt;
     if (G.hireT <= 0) {
       G.hireT = 4;
-      const open = G.buildings.filter(b => JOBS[b.type] && workersAt(b).length < slotsOf(b));
+      const open = jobPlaces().filter(b => workersAt(b).length < slotsOf(b));
       const idle = G.pigs.filter(q => !q.job && !q.noJob && !q.state && q.age >= 90 && q.health > 60);
       const ceo = G.pigs.find(q => q.banker && q.job && !q.noJob && !q.state), cb = ceo && jobOf(ceo), freeBank = open.find(b => b.type === 'bank');
       if (ceo && cb && cb.type !== 'bank' && freeBank) { ceo.job = null; hire(ceo, freeBank, true); toast('Masaki left his old job to run Masaki Capital as CEO! 💼'); }
@@ -1387,7 +1888,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     G.breedT -= dt;
     if (G.breedT <= 0) {
       G.breedT = sn === 'Spring' ? 15 : sn === 'Winter' ? 30 : 22;
-      const adults = G.pigs.filter(p => p.age >= 90 && p.health > 60);
+      const adults = G.pigs.filter(p => p.age >= 90 && p.health > 60 && pigMap(p) === 'home');
       const avgJoy = G.pigs.reduce((s, p) => s + p.joy, 0) / Math.max(1, G.pigs.length);
       if (adults.length < 2) {}
       else if (G.pigs.length >= capacity()) { if (avgJoy > 55) toast('Your pigs want babies, but the castles are full! Build another Pig Castle.'); }
@@ -1757,6 +2258,133 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
       c.fillStyle = 'rgba(255,255,255,.6)'; ell(c, x + 33.8, by - 1.5, 1, 1.6); c.fill();
     }
   };
+  // ---------- cars ----------
+  function drawCar(c, x, y, dir, car, skin, driving, spin = 0) {
+    const m = car.m, len = m === 'limo' ? 40 : m === 'van' ? 28 : m === 'bug' ? 22 : 26, h = m === 'van' ? 13 : m === 'sport' ? 7 : 9;
+    c.save(); c.translate(x, y); c.scale(dir, 1); c.lineJoin = 'round';
+    c.fillStyle = 'rgba(0,0,0,.18)'; ell(c, 0, 1, len / 2 + 2, 2.6); c.fill();
+    c.strokeStyle = INK; c.lineWidth = 1.5;
+    // cabin
+    const cb = m === 'van' ? [-len / 2 + 2, len / 2 - 6] : m === 'sport' ? [-len * .2, len * .18] : m === 'limo' ? [-len * .3, len * .22] : [-len * .28, len * .2];
+    const top = -h - (m === 'van' ? 9 : m === 'sport' ? 6 : 8);
+    c.fillStyle = car.c; c.beginPath(); c.moveTo(cb[0], -h); c.lineTo(cb[0] + (m === 'van' ? 0 : 4), top); c.lineTo(cb[1] - (m === 'sport' ? 7 : 4), top); c.lineTo(cb[1], -h); c.closePath(); c.fill(); c.stroke();
+    // windows
+    c.fillStyle = '#cfe9ff'; c.beginPath(); c.moveTo(cb[0] + (m === 'van' ? 2 : 5), -h - 1); c.lineTo(cb[0] + (m === 'van' ? 2 : 6), top + 2); c.lineTo(cb[1] - (m === 'sport' ? 8 : 5), top + 2); c.lineTo(cb[1] - 2, -h - 1); c.closePath(); c.fill();
+    // driver
+    if (driving && skin) {
+      const hx = (cb[0] + cb[1]) / 2 + 2, hy = top + 6;
+      c.save(); c.beginPath(); c.rect(cb[0], top + 1, cb[1] - cb[0], -h - top - 1); c.clip();
+      c.fillStyle = skin.head || skin.base; ell(c, hx, hy + 1, 4.6, 4.2); c.fill();
+      c.fillStyle = skin.ear || '#e0a08a'; ell(c, hx - 2.5, hy - 3, 1.8, 1.3); c.fill();
+      c.fillStyle = '#0b0809'; ell(c, hx + 2, hy, .9, .9); c.fill();
+      c.fillStyle = skin.nose || '#e07a7a'; ell(c, hx + 4.3, hy + 1.5, .9, .8); c.fill();
+      c.restore();
+    }
+    // body
+    c.fillStyle = car.c; rr(c, -len / 2, -h, len, h, m === 'bug' ? 5 : 3); c.fill(); c.stroke();
+    if (m === 'limo') { c.fillStyle = '#c9a23a'; c.fillRect(-len / 2 + 2, -h / 2 - 1, len - 4, 1.6); }
+    if (m === 'sport') { c.fillStyle = INK; c.fillRect(-len / 2 - 1, -h - 4, 5, 2); c.fillRect(-len / 2 + 1, -h - 2, 1.5, 2); c.fillStyle = '#fff'; c.fillRect(-len / 2 + 6, -h / 2 - 1, len - 12, 1.5); }
+    if (m === 'jeep') { c.fillStyle = '#2a2a2a'; ell(c, -len / 2 - 1.5, -h / 2 - 1, 2.4, 3.4); c.fill(); }
+    if (m === 'van') { c.fillStyle = 'rgba(255,255,255,.75)'; c.font = '7px sans-serif'; c.textAlign = 'center'; c.fillText('🥕', -2, -3); }
+    // lights
+    c.fillStyle = '#ffe08a'; ell(c, len / 2 - 1.5, -h + 3, 1.8, 1.5); c.fill();
+    c.fillStyle = '#e0483f'; c.fillRect(-len / 2, -h + 2, 1.6, 3);
+    // wheels
+    for (const wx of [-len * .3, len * .3]) {
+      c.fillStyle = '#2a2a2a'; ell(c, wx, 0, 3.6, 3.6); c.fill();
+      c.fillStyle = '#bdbdbd'; ell(c, wx, 0, 1.6, 1.6); c.fill();
+      c.strokeStyle = '#555'; c.lineWidth = .8; c.beginPath(); c.moveTo(wx, 0); c.lineTo(wx + Math.cos(spin / 3) * 2.8, Math.sin(spin / 3) * 2.8); c.stroke();
+    }
+    c.restore();
+  }
+
+  // ---------- job city ground ----------
+  function drawCityGround(c) {
+    const si = seasonIdx();
+    c.fillStyle = si === 3 ? '#e9edef' : '#ddd6ca'; c.fillRect(0, 0, W, H);
+    c.strokeStyle = 'rgba(120,105,90,.16)'; c.lineWidth = 1;
+    for (let x = 0; x <= W; x += 20) { c.beginPath(); c.moveTo(x, 0); c.lineTo(x, H); c.stroke(); }
+    for (let y = 0; y <= H; y += 20) { c.beginPath(); c.moveTo(0, y); c.lineTo(W, y); c.stroke(); }
+    // little green planters along the sidewalk edges
+    c.fillStyle = si === 3 ? '#f4f7f8' : '#9cc65a';
+    for (let x = 30; x < W; x += 160) { rr(c, x, 186, 26, 7, 3); c.fill(); rr(c, x + 70, 288, 26, 7, 3); c.fill(); }
+    // road
+    const y0 = ROAD[0] * T, y1 = (ROAD[ROAD.length - 1] + 1) * T;
+    c.fillStyle = '#55595f'; c.fillRect(0, y0, W, y1 - y0);
+    c.fillStyle = '#bdb6aa'; c.fillRect(0, y0 - 4, W, 4); c.fillRect(0, y1, W, 4);
+    c.strokeStyle = '#f2c94c'; c.lineWidth = 2.4; c.setLineDash([16, 12]); c.beginPath(); c.moveTo(0, (y0 + y1) / 2); c.lineTo(W, (y0 + y1) / 2); c.stroke(); c.setLineDash([]);
+    c.strokeStyle = 'rgba(255,255,255,.5)'; c.lineWidth = 1.2;
+    c.beginPath(); c.moveTo(0, y0 + 16); c.lineTo(W, y0 + 16); c.moveTo(0, y1 - 16); c.lineTo(W, y1 - 16); c.stroke();
+    // crosswalk
+    c.fillStyle = 'rgba(255,255,255,.85)'; for (let i = 0; i < 7; i++) c.fillRect(W / 2 - 22 + i * 7, y0 + 2, 4, y1 - y0 - 4);
+    // highway signs at the edges
+    c.font = '11px Chewy, sans-serif'; c.textAlign = 'left'; c.fillStyle = '#fff';
+    rr(c, 4, y1 + 8, 74, 18, 4); c.fillStyle = '#2f7a3a'; c.fill(); c.fillStyle = '#fff'; c.fillText('← Home Town', 9, y1 + 21);
+    if (si === 3) { c.fillStyle = 'rgba(255,255,255,.55)'; c.fillRect(0, y0, W, 3); c.fillRect(0, y1 - 3, W, 3); }
+  }
+
+  // ---------- castle interiors ----------
+  function drawRoom(c, b) {
+    const R = b.room, wall = WALLS[R.wall][0], floor = FLOORS[R.floor][0], wy = WALL_R * T, W = RW, H = RH;
+    c.fillStyle = wall; c.fillRect(0, 0, W, wy);
+    // wallpaper pattern
+    c.fillStyle = R.wall === 5 ? 'rgba(255,255,255,.08)' : 'rgba(255,255,255,.45)';
+    for (let x = 10; x < W; x += 28) for (let y = 12; y < wy - 8; y += 28) { ell(c, x + (y / 28 % 2) * 14, y, 3, 3); c.fill(); }
+    c.fillStyle = floor; c.fillRect(0, wy, W, H - wy);
+    c.strokeStyle = 'rgba(0,0,0,.12)'; c.lineWidth = 1.2;
+    if (R.floor === 0) for (let y = wy; y < H; y += 16) { c.beginPath(); c.moveTo(0, y); c.lineTo(W, y); c.stroke(); for (let x = (y / 16 % 2) * 60; x < W; x += 120) { c.beginPath(); c.moveTo(x, y); c.lineTo(x, y + 16); c.stroke(); } }
+    if (R.floor === 1) { for (let y = wy; y < H; y += 40) { c.beginPath(); c.moveTo(0, y); c.lineTo(W, y); c.stroke(); } for (let x = 0; x < W; x += 40) { c.beginPath(); c.moveTo(x, wy); c.lineTo(x, H); c.stroke(); } }
+    if (R.floor === 2) { c.fillStyle = 'rgba(255,255,255,.18)'; for (let i = 0; i < 160; i++) { ell(c, (i * 97) % W, wy + (i * 53) % (H - wy), 1.2, 1.2); c.fill(); } }
+    if (R.floor === 3) { c.strokeStyle = 'rgba(160,120,40,.45)'; for (let i = 0; i < 120; i++) { const x = (i * 131) % W, y = wy + (i * 71) % (H - wy); c.beginPath(); c.moveTo(x, y); c.lineTo(x + 8, y - 3); c.stroke(); } }
+    // baseboard + side shading for a little depth
+    c.fillStyle = '#8a5a34'; c.fillRect(0, wy - 6, W, 8); c.strokeStyle = INK; c.lineWidth = 1.5; c.beginPath(); c.moveTo(0, wy + 2); c.lineTo(W, wy + 2); c.stroke();
+    const g = c.createLinearGradient(0, 0, 40, 0); g.addColorStop(0, 'rgba(0,0,0,.12)'); g.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = g; c.fillRect(0, 0, 40, H);
+    const g2 = c.createLinearGradient(W, 0, W - 40, 0); g2.addColorStop(0, 'rgba(0,0,0,.12)'); g2.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = g2; c.fillRect(W - 40, 0, 40, H);
+  }
+  function drawFurn(c, it) {
+    const d = F[it.k], x = it.x * T, y = it.y * T + (d.cat === 'wall' ? 22 : 0), w = (d.w || 1) * T, cx = x + w / 2, t = G.time || 0;
+    c.save(); c.strokeStyle = INK; c.lineWidth = 1.8; c.lineJoin = 'round';
+    const sh = (rx = w / 2 - 4) => { c.fillStyle = 'rgba(0,0,0,.13)'; ell(c, cx, y + 36, rx, 4); c.fill(); };
+    switch (it.k) {
+      case 'rug': c.fillStyle = '#c96a85'; rr(c, x + 4, y + 8, w - 8, 28, 12); c.fill(); c.stroke(); c.strokeStyle = '#ffd36b'; c.lineWidth = 2; rr(c, x + 10, y + 13, w - 20, 18, 8); c.stroke(); break;
+      case 'bed': sh(); c.fillStyle = '#a77c4c'; rr(c, x + 4, y + 18, w - 8, 16, 6); c.fill(); c.stroke(); c.fillStyle = '#9fd3f2'; rr(c, x + 7, y + 12, w - 14, 14, 7); c.fill(); c.stroke(); c.fillStyle = '#fff'; rr(c, x + 10, y + 10, 18, 9, 4); c.fill(); c.stroke(); c.fillStyle = 'rgba(255,255,255,.5)'; for (let i = 0; i < 4; i++) { ell(c, x + 36 + i * 9, y + 19, 2, 2); c.fill(); } break;
+      case 'hidey': sh(); c.fillStyle = '#d9ad3c'; c.beginPath(); c.moveTo(x + 5, y + 36); c.lineTo(x + 5, y + 16); c.lineTo(cx, y + 4); c.lineTo(x + 35, y + 16); c.lineTo(x + 35, y + 36); c.closePath(); c.fill(); c.stroke(); c.fillStyle = '#3b2a1a'; c.beginPath(); c.arc(cx, y + 36, 8, Math.PI, 0); c.fill(); c.strokeStyle = 'rgba(120,80,20,.5)'; c.lineWidth = 1; for (let i = 0; i < 4; i++) { c.beginPath(); c.moveTo(x + 7, y + 19 + i * 4); c.lineTo(x + 33, y + 19 + i * 4); c.stroke(); } break;
+      case 'hayrack': sh(); c.fillStyle = '#ecc55a'; ell(c, cx, y + 12, 13, 7); c.fill(); c.strokeStyle = '#a77c4c'; c.lineWidth = 2; rr(c, x + 7, y + 10, 26, 24, 3); c.stroke(); for (let i = 1; i < 5; i++) { c.beginPath(); c.moveTo(x + 7 + i * 5.2, y + 10); c.lineTo(x + 7 + i * 5.2, y + 34); c.stroke(); } c.fillStyle = '#ecc55a'; for (let i = 0; i < 5; i++) { c.fillRect(x + 9 + i * 5, y + 14 + (i % 2) * 3, 2, 14); } break;
+      case 'bottle': c.fillStyle = '#9fd3f2'; rr(c, x + 14, y + 4, 12, 24, 5); c.fill(); c.stroke(); c.fillStyle = '#5aa9e0'; c.fillRect(x + 15, y + 12 + Math.sin(t) * 1, 10, 15); c.fillStyle = '#bdbdbd'; c.fillRect(x + 18, y + 28, 4, 8); c.strokeRect(x + 18, y + 28, 4, 8); break;
+      case 'tunnel': sh(); c.fillStyle = '#7fc1ea'; rr(c, x + 6, y + 14, w - 12, 22, 11); c.fill(); c.stroke(); c.strokeStyle = 'rgba(255,255,255,.6)'; c.lineWidth = 2; for (let i = 1; i < 6; i++) { c.beginPath(); c.moveTo(x + 6 + i * 12, y + 15); c.lineTo(x + 6 + i * 12, y + 35); c.stroke(); } c.fillStyle = '#2f3440'; ell(c, x + 12, y + 25, 5, 9); c.fill(); break;
+      case 'couch': sh(); c.fillStyle = '#a98bd9'; rr(c, x + 4, y + 8, w - 8, 18, 6); c.fill(); c.stroke(); rr(c, x + 2, y + 18, w - 4, 16, 6); c.fill(); c.stroke(); c.fillStyle = '#c4adeb'; rr(c, x + 9, y + 16, w / 2 - 11, 9, 4); c.fill(); c.stroke(); rr(c, cx + 2, y + 16, w / 2 - 11, 9, 4); c.fill(); c.stroke(); c.fillStyle = '#7b5236'; c.fillRect(x + 6, y + 34, 3, 3); c.fillRect(x + w - 9, y + 34, 3, 3); break;
+      case 'tv': sh(13); c.fillStyle = '#7b5236'; rr(c, x + 6, y + 26, 28, 10, 2); c.fill(); c.stroke(); c.fillStyle = '#2f3440'; rr(c, x + 4, y + 4, 32, 22, 3); c.fill(); c.stroke(); c.fillStyle = ['#9fe0ff', '#ffd36b', '#f4a3b8', '#9cc65a'][Math.floor(t / 2) % 4]; c.fillRect(x + 7, y + 7, 26, 16); c.font = '10px sans-serif'; c.textAlign = 'center'; c.fillText('🐹', cx, y + 19); break;
+      case 'table': sh(); c.fillStyle = '#c99a5b'; ell(c, cx, y + 18, 15, 6); c.fill(); c.stroke(); c.fillRect(cx - 2, y + 22, 4, 13); c.strokeRect(cx - 2, y + 22, 4, 13); c.font = '11px sans-serif'; c.textAlign = 'center'; c.fillText('🥕', cx - 5, y + 18); c.fillText('🍓', cx + 6, y + 17); break;
+      case 'toybox': sh(); c.fillStyle = '#e0483f'; rr(c, x + 6, y + 16, 28, 20, 3); c.fill(); c.stroke(); c.fillStyle = '#f2b134'; c.fillRect(x + 6, y + 21, 28, 4); c.font = '11px sans-serif'; c.textAlign = 'center'; c.fillText('🧸', cx - 5, y + 16); c.fillText('⚽', cx + 6, y + 15); break;
+      case 'plant': sh(10); c.fillStyle = '#c96d2c'; c.beginPath(); c.moveTo(x + 12, y + 24); c.lineTo(x + 28, y + 24); c.lineTo(x + 26, y + 36); c.lineTo(x + 14, y + 36); c.closePath(); c.fill(); c.stroke(); c.fillStyle = '#5fae48'; for (const [ox, oy, r] of [[-6, 14, 6], [6, 14, 6], [0, 8, 7]]) { ell(c, cx + ox, y + oy + Math.sin(t + ox) * .5, r, r * .8); c.fill(); c.stroke(); } break;
+      case 'lamp': sh(8); c.fillStyle = '#3b2a1a'; c.fillRect(cx - 1.5, y + 12, 3, 22); c.fillRect(cx - 7, y + 33, 14, 3); c.fillStyle = '#ffe08a'; c.beginPath(); c.moveTo(cx - 9, y + 14); c.lineTo(cx - 5, y + 2); c.lineTo(cx + 5, y + 2); c.lineTo(cx + 9, y + 14); c.closePath(); c.fill(); c.stroke(); break;
+      case 'painting': c.fillStyle = '#c9a23a'; rr(c, x + 5, y + 6, 30, 28, 2); c.fill(); c.stroke(); c.fillStyle = '#f7dfe2'; c.fillRect(x + 9, y + 10, 22, 20); c.save(); c.translate(cx, y + 22); c.scale(.24, .24); drawPig(c, FOUNDERS[(it.x + it.y) % FOUNDERS.length].skin); c.restore(); break;
+      case 'window': { const dk = darkness(); c.fillStyle = '#fff'; rr(c, x + 4, y + 4, 32, 30, 3); c.fill(); c.stroke(); const sky = dk > .5 ? '#1f2f5c' : seasonIdx() === 3 ? '#cfe0ee' : '#9fd3f2'; c.fillStyle = sky; c.fillRect(x + 7, y + 7, 26, 24); if (dk > .5) { c.fillStyle = '#fff1a8'; ell(c, x + 26, y + 13, 3.5, 3.5); c.fill(); } else { c.fillStyle = '#fff'; ell(c, x + 14, y + 14, 5, 2.5); c.fill(); } c.strokeStyle = '#fff'; c.lineWidth = 2; c.beginPath(); c.moveTo(cx, y + 7); c.lineTo(cx, y + 31); c.moveTo(x + 7, y + 19); c.lineTo(x + 33, y + 19); c.stroke(); break; }
+      case 'clock': { c.fillStyle = '#fff'; ell(c, cx, y + 20, 12, 12); c.fill(); c.stroke(); const h = hourNow(); c.lineWidth = 2; c.beginPath(); c.moveTo(cx, y + 20); c.lineTo(cx + Math.sin(h / 12 * Math.PI * 2) * 6, y + 20 - Math.cos(h / 12 * Math.PI * 2) * 6); c.stroke(); c.lineWidth = 1.2; c.beginPath(); c.moveTo(cx, y + 20); c.lineTo(cx + Math.sin(h * Math.PI * 2) * 9, y + 20 - Math.cos(h * Math.PI * 2) * 9); c.stroke(); break; }
+      case 'shelf': c.fillStyle = '#a77c4c'; c.fillRect(x + 4, y + 26, w - 8, 5); c.strokeRect(x + 4, y + 26, w - 8, 5); { const cols = ['#e0483f', '#5aa9e0', '#f2b134', '#6fae3e', '#a98bd9']; for (let i = 0; i < 8; i++) { c.fillStyle = cols[i % 5]; c.fillRect(x + 8 + i * 8, y + 12 + (i % 3), 6, 14 - (i % 3)); c.strokeRect(x + 8 + i * 8, y + 12 + (i % 3), 6, 14 - (i % 3)); } } break;
+      case 'lights': c.strokeStyle = '#5f8f2e'; c.lineWidth = 1.4; c.beginPath(); c.moveTo(x + 2, y + 10); c.quadraticCurveTo(cx, y + 30, x + w - 2, y + 10); c.stroke(); for (let i = 0; i <= 10; i++) { const u = i / 10, px = x + 2 + u * (w - 4), py = y + 10 + 4 * u * (1 - u) * 20; c.fillStyle = ['#ffd36b', '#f4a3b8', '#9fe0ff', '#c4f0a0'][i % 4]; c.globalAlpha = .6 + .4 * Math.sin(t * 3 + i); ell(c, px, py + 3, 2.6, 3); c.fill(); } c.globalAlpha = 1; break;
+    }
+    c.restore();
+  }
+  const IS = 1.6, RW = W / IS, RH = H / IS, IC = 10, WALL_R = 2;
+  const insidePigs = new Map();
+  function insideResidents(all) { if (!insideB) return []; const r = residents(); return G.pigs.filter(p => r.get(p.id) === insideB && (all || (!p.trip && pigMap(p) === 'home' && p.state !== 'admitted'))); }
+  function insideTick(dt) {
+    if (view !== 'inside' || !insideB) return;
+    const dk = darkness(), spots = [];
+    for (const i of insideB.room.items) { if (i.k === 'bed') spots.push([i.x * T + 22, i.y * T + 24], [i.x * T + 58, i.y * T + 24]); if (i.k === 'hidey') spots.push([i.x * T + 20, i.y * T + 34]); if (i.k === 'couch') spots.push([i.x * T + 40, i.y * T + 22]); }
+    insideResidents().forEach((p, idx) => {
+      let s = insidePigs.get(p.id);
+      if (!s) { s = { x: 50 + Math.random() * (RW - 100), y: 110 + Math.random() * (RH - 140), tx: 0, ty: 0, wait: 0, face: 1 }; s.tx = s.x; s.ty = s.y; insidePigs.set(p.id, s); }
+      s.sleep = dk > .6 || p.nap > 0;
+      if (s.sleep && spots[idx]) { s.tx = spots[idx][0]; s.ty = spots[idx][1]; }
+      else if (s.sleep) { s.tx = s.x; s.ty = s.y; }
+      const dx = s.tx - s.x, dy = s.ty - s.y, d = Math.hypot(dx, dy);
+      if (d > 2) { const sp = Math.min(d, (s.sleep ? 40 : 22) * dt); s.x += dx / d * sp; s.y += dy / d * sp; if (Math.abs(dx) > 1) s.face = dx > 0 ? 1 : -1; }
+      else if (!s.sleep) { s.wait -= dt; if (s.wait <= 0) { s.wait = 1 + Math.random() * 3; s.tx = 40 + Math.random() * (RW - 80); s.ty = 105 + Math.random() * (RH - 130); } }
+    });
+  }
+
   function drawBuilding(c, b) {
     const x = b.x * T, y = b.y * T, cx = x + T / 2;
     c.save(); c.lineJoin = 'round'; c.lineWidth = 2; c.strokeStyle = INK;
@@ -1868,6 +2496,89 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
         for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, k = i % 2 ? 1.6 : 3.6; c.lineTo(Math.cos(a) * k, Math.sin(a) * k); }
         c.fill(); c.restore();
         break;
+      case 'office': {
+        const S2 = 2 * T, lit = darkness() > .4;
+        shadow(c, x + S2 / 2, y + S2 - 1, 34);
+        c.fillStyle = '#7fa8c9'; rr(c, x + 8, y - 22, S2 - 16, S2 + 18, 3); c.fill(); c.stroke();
+        c.fillStyle = '#5c86a8'; c.fillRect(x + 8, y - 22, 8, S2 + 18);
+        for (let r = 0; r < 8; r++) for (let k = 0; k < 4; k++) { c.fillStyle = lit && (r * 3 + k + b.x) % 4 ? '#ffe08a' : 'rgba(220,240,255,.85)'; c.fillRect(x + 20 + k * 13, y - 16 + r * 11, 9, 7); }
+        c.fillStyle = '#2f3440'; rr(c, x + S2 / 2 - 8, y + S2 - 13, 16, 12, 2); c.fill(); c.stroke();
+        c.fillStyle = '#e0483f'; c.fillRect(x + S2 / 2 - 1, y - 32, 2, 10); ell(c, x + S2 / 2, y - 33, 2.4, 2.4); c.fill();
+        c.fillStyle = '#fff'; c.font = '9px Chewy, sans-serif'; c.textAlign = 'center'; c.fillText('WHEEK TECH', x + S2 / 2, y - 25);
+        break;
+      }
+      case 'pcse': {
+        const S2 = 2 * T, t = G.time || 0;
+        shadow(c, x + S2 / 2, y + S2 - 1, 36);
+        c.fillStyle = '#efe7d6'; c.beginPath(); c.moveTo(x + 2, y + 16); c.lineTo(x + S2 / 2, y - 6); c.lineTo(x + S2 - 2, y + 16); c.closePath(); c.fill(); c.stroke();
+        c.fillStyle = '#c9a23a'; c.font = '10px Chewy, sans-serif'; c.textAlign = 'center'; c.fillText('PCSE', x + S2 / 2, y + 12);
+        c.fillStyle = '#f4ede0'; c.fillRect(x + 6, y + 16, S2 - 12, 6); c.strokeRect(x + 6, y + 16, S2 - 12, 6);
+        for (let i = 0; i < 6; i++) { c.fillStyle = '#fbf6ee'; c.fillRect(x + 10 + i * 11.5, y + 22, 6, 40); c.strokeRect(x + 10 + i * 11.5, y + 22, 6, 40); }
+        // scrolling ticker band
+        c.fillStyle = '#1f2f5c'; c.fillRect(x + 6, y + 44, S2 - 12, 9); c.strokeRect(x + 6, y + 44, S2 - 12, 9);
+        c.save(); c.beginPath(); c.rect(x + 7, y + 44, S2 - 14, 9); c.clip(); c.font = '7px sans-serif'; c.textAlign = 'left';
+        const tk = STOCKS.map(k => { const S = G.mkt.st[k.s]; return `${k.s} ${S.p.toFixed(0)}${S.p >= S.hist[0] ? '▲' : '▼'}`; }).join('   ');
+        const off = (t * 18) % 260; c.fillStyle = '#8fe07a'; c.fillText(tk, x + 8 - off, y + 51); c.fillText(tk, x + 8 - off + 260, y + 51); c.restore();
+        c.fillStyle = '#c9a23a'; c.fillRect(x + 2, y + S2 - 6, S2 - 4, 6); c.strokeRect(x + 2, y + S2 - 6, S2 - 4, 6);
+        c.fillStyle = '#2f3440'; rr(c, x + S2 / 2 - 7, y + 62, 14, 12, 2); c.fill();
+        // bull & bear flags
+        c.font = '10px sans-serif'; c.fillText('🐂', x + 8, y + 2); c.fillText('🐻', x + S2 - 8, y + 2);
+        break;
+      }
+      case 'factory':
+        shadow(c, cx, y + 37, 18);
+        c.fillStyle = '#b4654a'; c.fillRect(x + 4, y + 16, 32, 20); c.strokeRect(x + 4, y + 16, 32, 20);
+        c.beginPath(); c.moveTo(x + 4, y + 16); for (let i = 0; i < 3; i++) { c.lineTo(x + 4 + i * 11, y + 8); c.lineTo(x + 15 + i * 11, y + 16); } c.fillStyle = '#c97b5e'; c.fill(); c.stroke();
+        c.fillStyle = '#7a7f87'; c.fillRect(x + 28, y - 2, 6, 18); c.strokeRect(x + 28, y - 2, 6, 18);
+        c.fillStyle = 'rgba(240,240,240,.8)'; { const t = G.time || 0; for (let i = 0; i < 3; i++) { const k = (t * .5 + i / 3) % 1; ell(c, x + 31 + k * 6, y - 4 - k * 14, 3 + k * 3, 2.5 + k * 2); c.fill(); } }
+        c.fillStyle = '#ecc55a'; c.fillRect(x + 8, y + 26, 10, 10); c.strokeRect(x + 8, y + 26, 10, 10); c.fillStyle = '#ffe08a'; c.fillRect(x + 22, y + 22, 9, 6);
+        break;
+      case 'market':
+        shadow(c, cx, y + 37, 18);
+        c.fillStyle = '#f4ede0'; c.fillRect(x + 4, y + 14, 32, 22); c.strokeRect(x + 4, y + 14, 32, 22);
+        for (let i = 0; i < 4; i++) { c.fillStyle = i % 2 ? '#fff' : '#5fae48'; c.beginPath(); c.moveTo(x + 2 + i * 9, y + 8); c.lineTo(x + 11 + i * 9, y + 8); c.lineTo(x + 11 + i * 9, y + 16); c.quadraticCurveTo(x + 6.5 + i * 9, y + 20, x + 2 + i * 9, y + 16); c.closePath(); c.fill(); c.stroke(); }
+        c.fillStyle = '#c99a5b'; c.fillRect(x + 6, y + 27, 28, 8); c.strokeRect(x + 6, y + 27, 28, 8);
+        for (let i = 0; i < 5; i++) { c.fillStyle = ['#ff8a3d', '#e0483f', '#5fb04a', '#f2b134', '#a98bd9'][i]; ell(c, x + 10 + i * 5, y + 26, 2.5, 2.5); c.fill(); }
+        break;
+      case 'sushi':
+        shadow(c, cx, y + 37, 18);
+        c.fillStyle = '#fbf6ee'; c.fillRect(x + 5, y + 14, 30, 22); c.strokeRect(x + 5, y + 14, 30, 22);
+        c.fillStyle = '#c8343c'; c.beginPath(); c.moveTo(x + 1, y + 15); c.quadraticCurveTo(cx, y + 2, x + 39, y + 15); c.closePath(); c.fill(); c.stroke();
+        c.fillStyle = '#2f3440'; c.fillRect(x + 10, y + 16, 20, 5);
+        for (let i = 0; i < 3; i++) { c.fillStyle = '#fff'; rr(c, x + 9 + i * 8, y + 27, 6, 5, 2); c.fill(); c.stroke(); c.fillStyle = '#ff8a7a'; c.fillRect(x + 9 + i * 8, y + 26, 6, 2.4); }
+        c.fillStyle = '#e0483f'; ell(c, x + 8, y + 22, 2.4, 3); c.fill(); ell(c, x + 32, y + 22, 2.4, 3); c.fill();
+        break;
+      case 'dealer':
+        shadow(c, cx, y + 37, 18);
+        c.fillStyle = '#e8eef4'; c.fillRect(x + 3, y + 12, 34, 24); c.strokeRect(x + 3, y + 12, 34, 24);
+        c.fillStyle = 'rgba(150,200,240,.7)'; c.fillRect(x + 6, y + 18, 28, 13);
+        c.fillStyle = '#e0483f'; c.fillRect(x + 3, y + 8, 34, 6); c.strokeRect(x + 3, y + 8, 34, 6);
+        c.fillStyle = '#fff'; c.font = '6px sans-serif'; c.textAlign = 'center'; c.fillText('ZOOMIES', cx, y + 13);
+        drawCar(c, cx, y + 30, 1, { m: 'sport', c: '#f2b134' }, null, false);
+        break;
+      case 'citytree': {
+        const si = seasonIdx();
+        c.fillStyle = '#9a8f80'; ell(c, cx, y + 33, 11, 4); c.fill(); c.stroke();
+        c.fillStyle = '#7b5236'; c.fillRect(cx - 2, y + 18, 4, 15); c.strokeRect(cx - 2, y + 18, 4, 15);
+        c.fillStyle = ['#7cc35a', '#4f9a3a', '#d98a35', '#f4f7f8'][si]; ell(c, cx, y + 13, 12, 11); c.fill(); c.stroke();
+        c.fillStyle = 'rgba(255,255,255,.25)'; ell(c, cx - 4, y + 9, 4, 3); c.fill();
+        break;
+      }
+      case 'streetlamp':
+        shadow(c, cx, y + 36, 6);
+        c.fillStyle = '#2f3440'; c.fillRect(cx - 1.5, y + 6, 3, 30); c.fillRect(cx - 5, y + 34, 10, 3);
+        c.beginPath(); c.moveTo(cx, y + 6); c.quadraticCurveTo(cx + 2, y + 1, cx + 9, y + 3); c.lineWidth = 2.5; c.strokeStyle = '#2f3440'; c.stroke();
+        c.fillStyle = darkness() > .3 ? '#ffe08a' : '#fff6d6'; ell(c, cx + 9, y + 5, 4, 2.5); c.fill(); c.lineWidth = 1.2; c.strokeStyle = INK; c.stroke();
+        break;
+      case 'fountain': {
+        const t = G.time || 0;
+        c.fillStyle = '#bdb6aa'; ell(c, cx, y + 28, 17, 8); c.fill(); c.stroke();
+        c.fillStyle = seasonIdx() === 3 ? '#dfeef6' : '#7fc1ea'; ell(c, cx, y + 27, 14, 6); c.fill();
+        c.fillStyle = '#bdb6aa'; c.fillRect(cx - 2, y + 12, 4, 14); c.strokeRect(cx - 2, y + 12, 4, 14); ell(c, cx, y + 13, 6, 2.5); c.fill(); c.stroke();
+        c.strokeStyle = 'rgba(160,215,245,.9)'; c.lineWidth = 1.6;
+        for (const s of [-1, 1]) { c.beginPath(); c.moveTo(cx, y + 11); c.quadraticCurveTo(cx + s * 8, y + 2 + Math.sin(t * 4) * 1, cx + s * 11, y + 24); c.stroke(); }
+        break;
+      }
       case 'tree': {
         const si = typeof G === 'object' && G ? seasonIdx() : 0, sway = Math.sin((G ? G.time : 0) * 1.3 + b.x) * .8;
         shadow(c, cx, y + 36, 13);
@@ -1922,7 +2633,10 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
 
   function draw() {
     const c = ctx;
+    if (view === 'dash' || view === 'pcse') return;
+    if (view === 'inside') { drawInside(c); return; }
     const S = season(), si = seasonIdx();
+    if (view === 'city') drawCityGround(c); else {
     c.fillStyle = S.grass; c.fillRect(0, 0, W, H);
     c.fillStyle = S.check;
     for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) if ((x + y) % 2) c.fillRect(x * T, y * T, T, T);
@@ -1932,11 +2646,12 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
       else { c.fillStyle = S.flowers[i % 4]; ell(c, f.x, f.y, 1.8, 1.8); c.fill(); }
     });
     if (G.weather.k === 'rain') { c.fillStyle = 'rgba(90,140,200,.18)'; for (let i = 0; i < 6; i++) { ell(c, (i * 173 + 60) % W, (i * 97 + 80) % H, 22, 7); c.fill(); } }
+    }
     // build preview
     if (hover && tool && hover.x >= 0 && hover.y >= 0 && hover.x < COLS && hover.y < ROWS) {
       const occ = at(hover.x, hover.y);
       const onB = tool === 'bulldoze' || tool === 'upgrade';
-      const ok = tool === 'bulldoze' ? !!occ : tool === 'upgrade' ? !!occ && L(occ) < 3 && G.coins >= upCost(occ) : fits(tool, hover.x, hover.y) && G.coins >= B[tool].cost;
+      const ok = tool === 'bulldoze' ? !!occ : tool === 'upgrade' ? !!occ && L(occ) < 3 && G.coins >= upCost(occ) : fits(tool, hover.x, hover.y) && G.coins >= B[tool].cost && !!B[tool].city === (view === 'city');
       c.fillStyle = ok ? (tool === 'bulldoze' ? 'rgba(217,69,90,.35)' : tool === 'upgrade' ? 'rgba(233,185,59,.5)' : 'rgba(255,255,255,.55)') : 'rgba(217,69,90,.25)';
       if (onB && occ) { rr(c, occ.x * T + 2, occ.y * T + 2, sz(occ.type) * T - 4, sz(occ.type) * T - 4, 6); c.fill(); }
       else { const n = sz(tool); rr(c, hover.x * T + 2, hover.y * T + 2, n * T - 4, n * T - 4, 6); c.fill(); }
@@ -1944,9 +2659,14 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     }
     // depth-sorted scene
     const items = [];
-    for (const b of G.buildings) items.push({ y: (b.y + sz(b.type)) * T, f: () => drawBuilding(c, b) });
-    for (const q of G.poops) items.push({ y: q.y, f: () => drawPoop(c, q.x, q.y, q.a, 1.5) });
-    for (const st of sitters) items.push({ y: st.y + 2, f: () => {
+    for (const b of bl()) items.push({ y: (b.y + sz(b.type)) * T, f: () => drawBuilding(c, b) });
+    // cars: driving on this map, and parked downtown while their pigs work
+    for (const p of G.pigs) {
+      if (p.trip && pigMap(p) === view) items.push({ y: p.trip.y + 4, f: () => drawCar(c, p.trip.x, p.trip.y, p.trip.dir, p.car, p.skin, true, p.trip.spin) });
+      else if (view === 'city' && !p.trip && pigMap(p) === 'city' && p.park) items.push({ y: p.park.y + 4, f: () => drawCar(c, p.park.x, p.park.y, p.park.y < 240 ? -1 : 1, p.car, p.skin, false) });
+    }
+    if (view === 'home') for (const q of G.poops) items.push({ y: q.y, f: () => drawPoop(c, q.x, q.y, q.a, 1.5) });
+    if (view === 'home') for (const st of sitters) items.push({ y: st.y + 2, f: () => {
       const bob = st.act > 0 ? 0 : Math.abs(Math.sin(st.step)) * 1.5;
       c.save(); c.translate(st.x, st.y - bob); c.lineWidth = 1.4; c.strokeStyle = INK;
       c.fillStyle = 'rgba(0,0,0,.14)'; ell(c, 0, 1 + bob, 7, 2.4); c.fill();
@@ -1968,7 +2688,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
       c.restore();
       if (st.act > 0) { c.font = '11px sans-serif'; c.textAlign = 'center'; c.fillText('💕', st.x + st.face * 8, st.y - 26 - (0.9 - st.act) * 8); }
     } });
-    for (const rb of roombas) items.push({ y: rb.y + 6, f: () => {
+    if (view === 'home') for (const rb of roombas) items.push({ y: rb.y + 6, f: () => {
       c.save(); c.translate(rb.x, rb.y);
       c.fillStyle = 'rgba(0,0,0,.15)'; ell(c, 0, 6, 9, 3); c.fill();
       c.fillStyle = '#8f86d9'; ell(c, 0, 0, 9, 9); c.fill(); c.lineWidth = 1.8; c.strokeStyle = INK; c.stroke();
@@ -1982,7 +2702,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
       }
       c.restore();
     } });
-    for (const p of G.pigs) if (p.state !== 'admitted') items.push({ y: p.y + 8, f: () => {
+    for (const p of G.pigs) if (p.state !== 'admitted' && !p.trip && pigMap(p) === view) items.push({ y: p.y + 8, f: () => {
       const baby = p.age < 90, sc = baby ? .2 + .14 * Math.min(1, p.age / 90) : .36;
       const hop = p.hop > 0 ? Math.abs(Math.sin(p.hop * 16)) * 5 : 0;
       c.save(); c.translate(p.x, p.y - hop);
@@ -2013,18 +2733,21 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
       c.fillStyle = `rgba(22,26,64,${.42 * dk})`; c.fillRect(0, 0, W, H);
       c.save(); c.globalCompositeOperation = 'lighter';
       const glow = (x, y, r, a, col = '255,200,110') => { const g = c.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, `rgba(${col},${a})`); g.addColorStop(1, `rgba(${col},0)`); c.fillStyle = g; c.fillRect(x - r, y - r, r * 2, r * 2); };
-      for (const b of G.buildings) {
+      for (const p of G.pigs) if (p.trip && pigMap(p) === view) { const tr = p.trip; glow(tr.x + tr.dir * 14, tr.y - 5, 22, .45 * dk, '255,240,170'); }
+      for (const b of bl()) {
         const n = sz(b.type) * T, bx = b.x * T + n / 2;
-        if (b.type === 'lantern') glow(bx, b.y * T + 9, 46, .55 * dk);
+        if (b.type === 'streetlamp') glow(bx + 9, b.y * T + 8, 50, .55 * dk);
+        else if (b.type === 'lantern') glow(bx, b.y * T + 9, 46, .55 * dk);
         else if (!DECOR[b.type] && !['hay', 'garden', 'park', 'roomba'].includes(b.type)) glow(bx, b.y * T + n * .6, n * .55, .3 * dk);
       }
-      for (const f of fireflies) glow(f.x, f.y, 6, (.5 + .5 * Math.sin(f.p * 4)) * .8 * dk, '230,255,140');
+      if (view === 'home') for (const f of fireflies) glow(f.x, f.y, 6, (.5 + .5 * Math.sin(f.p * 4)) * .8 * dk, '230,255,140');
       c.restore();
     }
-    if (selBld && G.buildings.includes(selBld)) { const n = sz(selBld.type) * T; c.save(); c.setLineDash([5, 4]); c.lineDashOffset = -G.time * 12; c.strokeStyle = '#e9b93b'; c.lineWidth = 2.5; rr(c, selBld.x * T + 1, selBld.y * T + 1, n - 2, n - 2, 8); c.stroke(); c.restore(); }
+    if (selBld && bl().includes(selBld)) { const n = sz(selBld.type) * T; c.save(); c.setLineDash([5, 4]); c.lineDashOffset = -G.time * 12; c.strokeStyle = '#e9b93b'; c.lineWidth = 2.5; rr(c, selBld.x * T + 1, selBld.y * T + 1, n - 2, n - 2, 8); c.stroke(); c.restore(); }
     // popups
     c.textAlign = 'center'; c.font = '13px Chewy, "Comic Sans MS", sans-serif';
     for (const q of popups) {
+      if (q.map !== 'any' && q.map !== view) continue;
       c.globalAlpha = Math.min(1, q.life / .4);
       c.lineWidth = 3.5; c.strokeStyle = '#fff'; c.strokeText(q.text, q.x, q.y);
       c.fillStyle = q.color; c.fillText(q.text, q.x, q.y);
@@ -2049,16 +2772,16 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 
     const dt = Math.min(.1, (t - last) / 1000 || 0); last = t;
     if (!paused) for (let i = 0; i < G.speed; i++) tick(dt);
     draw();
-    uiT -= dt; if (uiT <= 0) { uiT = .25; hudRes(); hudList(); renderPig(); syncTools(); hudGoals(); renderBld(); renderStocks(); renderBanner(); }
+    uiT -= dt; if (uiT <= 0) { uiT = .25; hudRes(); hudList(); renderPig(); syncTools(); hudGoals(); renderBld(); renderStocks(); renderBanner(); renderDash(); }
     saveT -= dt; if (saveT <= 0) { saveT = 5; save(); }
     requestAnimationFrame(loop);
   }
   document.addEventListener('visibilitychange', () => { if (document.hidden) save(); });
-  resize(); drawTools(); hudRes(); renderPig(); hudGoals(); syncSound(); syncSpeed();
+  setView('home'); hudRes(); renderPig(); hudGoals(); syncSound(); syncSpeed();
   let seen = false, seen2 = false;
   try { seen = !!localStorage.getItem('pigcity-seen'); seen2 = !!localStorage.getItem('pigcity-seen2'); localStorage.setItem('pigcity-seen', '1'); localStorage.setItem('pigcity-seen2', '1'); } catch (e) {}
   if (!seen) openTut();
-  else if (!seen2) setTimeout(() => toast('✨ Pig City update: seasons, night time, pig personalities and the Pig Stock Exchange!'), 400);
+  else if (!seen2) setTimeout(() => toast('✨ Pig City update: seasons, night time, pig personalities, Job City, cars, castle interiors and the PCSE!'), 400);
   requestAnimationFrame(loop);
 })();
 </script>
