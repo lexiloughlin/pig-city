@@ -2,7 +2,7 @@
 
 A cozy guinea pig town builder. Build hutches, hay fields, water towers and veggie gardens, keep your pigs fed, watered and happy, and watch the town grow from a Pig Hamlet into a Pig Metropolis.
 
-Founders: Toki, Mochi, Poke, Miso Soup and Masaki (who runs Masaki Capital).
+Founders: Toki, Mochi, Poke, Miso Soup and Masaki (who runs Masaki Capital). Build **Big Bronson Bank** in Job City and Bronson moves to town as its CEO.
 
 **What's in town**
 - 🏝️ Build new island towns out in the water and connect them with bridges: drag from any island to another island, to town, or to the other town's strip by the highway, see a preview of the bridge and its cost, and it builds the shortest crossing over the water so cars can drive across, even onto islands without roads yet (pigs on unconnected islands take a little boat)
@@ -12,6 +12,7 @@ Founders: Toki, Mochi, Poke, Miso Soup and Masaki (who runs Masaki Capital).
 - 🐹 Pig personalities: every pig has a trait (Foodie, Sleepy, Zoomies, Brainy…), a favorite snack, a best friend and a birthday party
 - 🏙️ Job City: a downtown map with Wheek Tech HQ, the Hay Factory, Sushi Spot and more. Pigs drive their own cars to work every morning and home after 5pm
 - 📊 Jobs Dashboard: who's working, who's on the road, earnings by workplace and a daily income chart
+- 💰 Big Bronson Bank: the top bank in Pig City and the tallest skyscraper in Job City, with a gold crown, a vault, the best-paying jobs in town and CEO Bronson at the big mahogany desk
 - 📈 PCSE (Pig City Stock Exchange): trade six pig companies with big charts, a ticker tape, a portfolio donut and a newswire
 - 🏢 Go inside every Job City business: coder desks at Wheek Tech, a hay conveyor belt, a sushi conveyor, a car showroom and a PCSE trading floor with the live market board
 - 🌉 The bridge links Home Town and Job City, so you can watch pigs drive between towns
