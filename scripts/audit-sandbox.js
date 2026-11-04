@@ -25,7 +25,9 @@ check(local.every((p) => p.startsWith('assets/')), 'Local assets all live under 
 // 2. no network use in the game
 check(!/\bfetch\s*\(|XMLHttpRequest|WebSocket|EventSource|navigator\.sendBeacon/.test(script), 'Game code makes no network requests');
 const csp = (html.match(/http-equiv="Content-Security-Policy"\s+content="([^"]+)"/) || [])[1] || '';
-check(/connect-src 'none'/.test(csp) && /default-src 'self'/.test(csp), 'Content Security Policy blocks network access', csp);
+// the web version may reach its cloud-save database and nothing else; the Mac app is blocked by the main process below
+check(/connect-src (?:'none'|https:\/\/[a-z0-9]+\.supabase\.co);/.test(csp) && /default-src 'self'/.test(csp), 'Content Security Policy allows no network access besides the cloud-save database', csp);
+check(/if \(!T \|\| window\.pigDesktop\) return;/.test(read('assets/cloud.js')), 'Cloud saves are switched off in the Mac app');
 
 // 3. browser features Electron doesn't provide / that behave badly in a packaged app
 check(!/\bprompt\s*\(/.test(script), 'No window.prompt() (Electron does not support it)');

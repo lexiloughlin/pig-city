@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Pig City</title>
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; media-src 'self' data: blob:; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; media-src 'self' data: blob:; connect-src https://mrbmybiwxayhhneixdgc.supabase.co; object-src 'none'; base-uri 'self'; form-action 'none'">
 <style>
 /* fonts ship with the game (no network needed, works inside the Mac App Store sandbox) */
 @font-face { font-family: 'Chewy'; font-style: normal; font-weight: 400; font-display: swap; src: url(assets/fonts/chewy-latin-400-normal.woff2) format('woff2'); }
@@ -367,6 +367,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
         <div class="btns"><button class="btn ghost" id="helpBtn2">How to play</button><button class="btn ghost" id="resetBtn">Start a new town</button></div>
         <div class="btns" style="margin-top:8px"><button class="btn ghost" id="exportBtn" title="Save a copy of your town to a file">💾 Export town</button><button class="btn ghost" id="importBtn" title="Load a town from a file you exported">📂 Import town</button></div>
         <input type="file" id="importFile" accept=".pigcity,.json,application/json" hidden>
+        <div id="cloudBox" hidden style="margin-top:8px"><button class="btn ghost" id="cloudBtn">☁️ Cloud save</button><div class="small" id="cloudStatus" style="margin-top:4px"></div></div>
       </div>
     </div>
   </div>
@@ -1172,11 +1173,20 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     let s = null; try { const j = JSON.parse(txt); s = j && j.pigcity && j.town ? j.town : j; } catch (e) {}
     if (!validTown(s)) { await tellBox("That file isn't a Pig City town. Pick a file you made with 💾 Export town."); return; }
     if (!(await askYes(`Load the town with ${s.pigs.length} pigs and ${s.buildings.length} buildings? Your current town will be replaced. (Export it first if you want to keep it.)`, 'Load town'))) return;
-    const out = JSON.stringify(s);
-    try { localStorage.setItem('pigcity-v1', out); } catch (e) {}
-    if (desk) { try { desk.writeSave(out, true); } catch (e) {} }
+    useTown(JSON.stringify(s));
+  }
+  // replace this device's town with another one and restart the game
+  function useTown(txt) {
+    try { localStorage.setItem('pigcity-v1', txt); } catch (e) {}
+    if (desk) { try { desk.writeSave(txt, true); } catch (e) {} }
     saveLocked = true; location.reload();
   }
+  // hooks for cloud saves (assets/cloud.js, web version only)
+  window.pigTown = {
+    text: () => JSON.stringify(G),
+    summary: () => ({ name: (G.townName || 'Pig City').slice(0, 40), pigs: G.pigs.length, buildings: G.buildings.length, coins: Math.round(G.coins) }),
+    valid: validTown, use: useTown, toast, ask, askText, askYes, tellBox,
+  };
   $('importBtn').addEventListener('click', async () => {
     if (desk) { const r = await desk.importTown(); if (r && r.text) importText(r.text); else if (r && r.error) toast('Could not open the file: ' + r.error); return; }
     $('importFile').value = ''; $('importFile').click();
@@ -4681,5 +4691,6 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   requestAnimationFrame(loop);
 })();
 </script>
+<script src="assets/cloud.js"></script>
 </body>
 </html>
