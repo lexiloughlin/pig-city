@@ -11,6 +11,7 @@
   const $ = id => document.getElementById(id);
 
   let sb = null, user = null, link = null, lastSent = null, savedAt = 0, busy = false, status = '';
+  let leaving = false; // a cloud town is loading: the old town on screen must not be saved over it
   try { link = JSON.parse(localStorage.getItem(LINK_KEY) || 'null'); } catch (e) {}
   const setLink = l => { link = l; try { if (l) localStorage.setItem(LINK_KEY, JSON.stringify(l)); else localStorage.removeItem(LINK_KEY); } catch (e) {} };
   const linked = () => user && link && link.user === user.id;
@@ -82,6 +83,7 @@
     if (error) throw error;
     if (!T.valid(data.state)) return T.tellBox("That cloud town couldn't be loaded.");
     try { localStorage.setItem('pigcity-before-cloud', T.text()); } catch (e) {} // this browser's old town, just in case
+    leaving = true;
     setLink({ user: user.id, town: id, version: data.version });
     T.use(JSON.stringify(data.state));
   }
@@ -100,7 +102,7 @@
     await push(true);
   }
   async function push(force) {
-    if (!linked() || busy) return;
+    if (!linked() || busy || leaving) return;
     const text = T.text();
     if (text === lastSent && !force) return;
     const s = T.summary();
