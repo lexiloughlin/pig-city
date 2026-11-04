@@ -5,7 +5,7 @@ A cozy guinea pig town builder. Build hutches, hay fields, water towers and vegg
 Founders: Toki, Mochi, Poke, Miso Soup and Masaki (who runs Masaki Capital). Build **Big Bronson Bank** in Job City and Bronson moves to town as its CEO.
 
 **What's in town**
-- 🏝️ Build new island towns out in the water and connect them with bridges: drag from any island to another island, to town, or to the other town's strip by the highway, see a preview of the bridge and its cost, and it builds the shortest crossing over the water so cars can drive across, even onto islands without roads yet (pigs on unconnected islands take a little boat)
+- 🏝️ Build new island towns out in the water and connect them with bridges: drag from any island to another island, to town, or to the other town's strip by the highway, see a preview of the bridge and its cost, and it builds the shortest crossing over the water so cars can drive across, even onto islands without roads yet (pigs on unconnected islands take a little boat). Every island town gets its own tab next to Home Town and Job City, so you can jump straight to it
 - 📐 Urban planning on 40×30 maps: pave your own roads and sidewalks, draw neighborhoods and zone them (Residential, Farm, Commercial, Industrial, Parkland, Downtown) for bonuses, and check service-coverage and happiness overlays
 - 🏙️ An isometric 3D-style town on an island: drag to look around, scroll or pinch to zoom
 - 🌸 Seasons, weather and day/night: rain speeds up gardens, winter slows the hay, lanterns and fireflies light up the night
@@ -39,3 +39,4 @@ npm run dist:dev   # build Pig City Dev.dmg for your own Mac
 
 The App Store build, signing, and the remaining Apple account steps are in [docs/MAC_APP_STORE.md](docs/MAC_APP_STORE.md). What changed for the sandbox is in [docs/SANDBOX_AUDIT.md](docs/SANDBOX_AUDIT.md).
 
+y

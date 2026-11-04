@@ -189,6 +189,8 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
 .vtab[aria-selected="true"] { background: var(--wood-dark); color: #fff; }
 .vtab.inside { background: #fff3e2; }
 .vtab.inside[aria-selected="true"] { background: #c96a85; }
+.vtab.isle { background: #e3f3fb; }
+.vtab.isle[aria-selected="true"] { background: #4a9cc9; color: #fff; }
 .dash h2 { margin-bottom: 4px; }
 .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; margin: 6px 0 12px; }
 .kpi { background: #fff; border: 2px solid var(--fleece-deep); border-radius: 14px; padding: 8px 10px; }
@@ -1741,7 +1743,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   function setView(v) {
     if (v === 'inside' && !insideB) v = 'home';
     if (builder && v !== 'home' && v !== 'city') setBuilder(false); moving = null;
-    view = v; tool = null; hoverTool = null; selBld = null; hover = null;
+    view = v; tool = null; hoverTool = null; selBld = null; hover = null; isleFocus = null;
     cat = curCats()[0][0];
     document.querySelectorAll('.vtab').forEach(b => b.setAttribute('aria-selected', b.dataset.v === v ? 'true' : 'false'));
     $('insideTab').hidden = !insideB;
@@ -1756,6 +1758,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     if (map) { resize(); if ((v === 'home' || v === 'city') && !cams[v].init) { camHome(v); cams[v].init = true; } if (isHouse()) houseCamHome(); }
     if (v === 'city' && G.cityNew) { G.cityNew = false; setTimeout(() => toast('🏙️ Welcome to Job City! Pigs with jobs here drive in around 8am and home after 5pm.'), 200); }
     if (v === 'dash') renderDash(); if (v === 'pcse') { stockSig = ''; renderStocks(); }
+    renderIsleTabs();
   }
   const insideName = b => { if (b.type !== 'hutch') return lvName(b); const i = G.buildings.filter(q => q.type === 'hutch').indexOf(b); return `${lvName(b)} #${i + 1}`; };
   function goInside(b) { houseRoom = null; if (b.type === 'hutch') ensureHouse(b); housePigs.clear(); if (!b.room) b.room = Object.assign({ items: [] }, WORKPLACES[b.type] || { wall: 0, floor: 0 }); insideB = b; insidePigs.clear(); setView('inside'); sfx('wheek'); }
@@ -4520,6 +4523,29 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     for (const k of [...pathSets[m]]) { const [x, y] = k.split(',').map(Number); if (inRect(isl, x, y)) pathSets[m].delete(k); } G.paths[m] = [...pathSets[m]];
     G.coins += Math.floor(B.island.cost / 2); markGround(); hoodSig = ''; save(); return true;
   }
+  // ---------- island town tabs: one per island, next to Home Town and Job City ----------
+  let isleFocus = null, isleSig = '';
+  const isleName = (m, isl) => (hoodsOf(m).find(h => h.island === isl.id) || isl).name; // follows renames in the Neighborhoods list
+  function renderIsleTabs() {
+    const all = ['home', 'city'].flatMap(m => islandsOf(m).map(isl => ({ m, isl, name: isleName(m, isl) })));
+    const sig = all.map(a => a.m + a.isl.id + a.name).join('|') + '|' + view + '|' + isleFocus;
+    if (sig === isleSig) return; isleSig = sig;
+    document.querySelectorAll('.vtab.isle').forEach(b => b.remove());
+    const before = $('viewtabs').querySelector('[data-v="dash"]');
+    for (const a of all) {
+      const b = document.createElement('button'); b.className = 'vtab isle'; b.setAttribute('role', 'tab');
+      b.textContent = '🏝️ ' + a.name; b.title = `${a.name}, an island town off ${a.m === 'city' ? 'Job City' : 'Home Town'}`;
+      b.setAttribute('aria-selected', view === a.m && isleFocus === a.isl.id ? 'true' : 'false');
+      b.addEventListener('click', () => { goIsland(a.m, a.isl); sfx('tap'); });
+      $('viewtabs').insertBefore(b, before);
+    }
+    if (isleFocus !== null) { const t = $('viewtabs').querySelector(`[data-v="${view}"]`); if (t) t.setAttribute('aria-selected', 'false'); }
+  }
+  function goIsland(m, isl) {
+    if (view !== m) setView(m);
+    const c0 = cams[m], p = iso((isl.x + isl.w / 2) * T, (isl.y + isl.h / 2) * T);
+    c0.x = p.x; c0.y = p.y; c0.init = true; isleFocus = isl.id; renderIsleTabs();
+  }
 
   function drawSitter(c, st) {
     const P = iso(st.x, st.y), bob = st.act > 0 ? 0 : Math.abs(Math.sin(st.step)) * 1.5;
@@ -4677,7 +4703,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     const dt = Math.min(.1, (t - last) / 1000 || 0); last = t;
     if (!paused) for (let i = 0; i < G.speed; i++) tick(dt);
     panKeys(dt); draw(); sweepSprites(dt);
-    uiT -= dt; if (uiT <= 0) { uiT = .25; hudRes(); hudList(); renderPig(); syncTools(); hudGoals(); renderBld(); renderStocks(); renderBanner(); renderDash(); renderHoods(); }
+    uiT -= dt; if (uiT <= 0) { uiT = .25; hudRes(); hudList(); renderPig(); syncTools(); hudGoals(); renderBld(); renderStocks(); renderBanner(); renderDash(); renderHoods(); renderIsleTabs(); }
     saveT -= dt; if (saveT <= 0) { saveT = 5; save(); }
     requestAnimationFrame(loop);
   }
