@@ -158,6 +158,13 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
 .news { font-size: 12px; background: #eef3ff; border: 1.5px dashed #1f2f5c; border-radius: 10px; padding: 5px 8px; margin-top: 6px; color: #1f2f5c; font-weight: 700; }
 /* ---- PCSE ---- */
 .pcse-head { display: flex; justify-content: space-between; align-items: end; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+/* ---- Mini-games ---- */
+.minigame-overlay { position: fixed; inset: 0; background: rgba(59,42,26,.5); display: grid; place-items: center; z-index: 20; padding: 16px; }
+.minigame-modal { background: var(--card); border: 3px solid var(--ink); border-radius: 18px; box-shadow: 0 8px 0 var(--ink); padding: 20px; max-width: 500px; width: 100%; }
+.minigame-modal h2 { font-family: var(--font-display); font-size: 28px; margin: 0 0 8px; color: var(--hay-deep); text-align: center; }
+.minigame-modal .stats { display: flex; justify-content: space-around; gap: 12px; margin: 12px 0; font-weight: 800; font-size: 16px; }
+.minigame-modal .game-canvas { display: block; width: 100%; height: 240px; border: 2px solid var(--ink); border-radius: 12px; background: #b8e6f0; cursor: crosshair; margin: 12px 0; }
+.minigame-modal .btns { display: flex; gap: 8px; justify-content: center; margin-top: 12px; }
 .pcse-idx { display: flex; align-items: baseline; gap: 8px; background: #1f2f5c; color: #fff; border: 2px solid var(--ink); border-radius: 12px; padding: 4px 12px; }
 .pcse-idx .tag { color: #c9d4f2; } .pcse-idx b { font-family: var(--font-display); font-weight: 400; font-size: 24px; font-variant-numeric: tabular-nums; }
 .pcse-idx .up { color: #8fe07a; } .pcse-idx .down { color: #ff9aa8; }
@@ -521,6 +528,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     cafe:   { name: 'Hay Latte Café', ic: '☕', cat: 'biz', cost: 60, desc: '2 jobs: baristas earn 🪙' },
     salon:  { name: 'Fluff Salon', ic: '✂️', cat: 'biz', cost: 90, desc: '2 jobs: stylists pamper pigs' },
     toys:   { name: 'Toy Shop', ic: '🧸', cat: 'biz', cost: 75, desc: '2 jobs: makes the whole town happier' },
+    haymill: { name: 'Hay Mill', ic: '🌾', cat: 'biz', cost: 85, desc: 'Play the Hay Harvest game to earn bonus 🪙. Once per day!' },
     hospital: { name: 'Pig Hospital', ic: '🏥', cat: 'help', cost: 150, desc: 'Sick pigs check in and come out healthy (3 beds, 2×2)' },
     vet:    { name: 'Vet', ic: '🩺', cat: 'help', cost: 120, desc: 'Sick pigs heal faster' },
     sitter: { name: 'Pig Sitter', ic: '👩‍🌾', cat: 'help', cost: 90, desc: 'Hires a sitter who pets, feeds & restocks' },
@@ -1154,6 +1162,143 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     const n = await askText('New name for ' + p.name + '?', p.name, 16);
     if (n && n.trim()) { p.name = n.trim().slice(0, 16); renderPig(true); listSig = ''; save(); }
   });
+
+  // ---------- Hay Harvest Mini-game ----------
+  let minigameLastPlay = 0;
+  const MINIGAME_COOLDOWN = 24 * 60 * 60 * 1000; // 24 hours
+  const MAX_HAY = 15;
+  const GAME_DURATION = 30;
+  const HAY_REWARD = 50;
+
+  let gameState = {
+    running: false,
+    time: GAME_DURATION,
+    score: 0,
+    hayItems: [],
+    gameCanvas: null,
+    gameCtx: null,
+  };
+
+  function initMiniGame() {
+    gameState.gameCanvas = $('minigameCanvas');
+    gameState.gameCtx = gameState.gameCanvas.getContext('2d');
+  }
+
+  function startHayHarvest() {
+    if (Date.now() - minigameLastPlay < MINIGAME_COOLDOWN) {
+      toast('You already played today! Come back tomorrow.');
+      return;
+    }
+    $('minigameOverlay').hidden = false;
+    $('startBtn').disabled = true;
+    gameState.running = true;
+    gameState.time = GAME_DURATION;
+    gameState.score = 0;
+    gameState.hayItems = [];
+    
+    for (let i = 0; i < MAX_HAY; i++) {
+      gameState.hayItems.push({
+        x: Math.random() * gameState.gameCanvas.width,
+        y: -20,
+        vx: (Math.random() - 0.5) * 40,
+        vy: 60 + Math.random() * 40,
+        size: 12 + Math.random() * 8,
+        collected: false
+      });
+    }
+
+    const gameLoop = setInterval(() => {
+      if (!gameState.running) { clearInterval(gameLoop); return; }
+      gameState.time -= 0.016;
+      if (gameState.time <= 0) {
+        endHayHarvest(gameLoop);
+        return;
+      }
+      updateHayGame();
+      renderHayGame();
+    }, 16);
+
+    gameState.gameCanvas.addEventListener('click', collectHay, { once: false });
+  }
+
+  function updateHayGame() {
+    for (const hay of gameState.hayItems) {
+      if (!hay.collected) {
+        hay.y += hay.vy * 0.016;
+        hay.x += hay.vx * 0.016;
+        if (hay.y > gameState.gameCanvas.height) hay.collected = true;
+      }
+    }
+    $('gameTime').textContent = Math.max(0, Math.ceil(gameState.time));
+    $('gameScore').textContent = gameState.score;
+    const reward = Math.round(gameState.score * (HAY_REWARD / MAX_HAY));
+    $('gameReward').textContent = reward;
+  }
+
+  function renderHayGame() {
+    const c = gameState.gameCtx;
+    c.fillStyle = '#b8e6f0';
+    c.fillRect(0, 0, gameState.gameCanvas.width, gameState.gameCanvas.height);
+
+    for (const hay of gameState.hayItems) {
+      if (hay.collected) continue;
+      c.save();
+      c.translate(hay.x, hay.y);
+      c.fillStyle = '#9cc65a';
+      c.fillRect(-hay.size / 2, -hay.size / 2, hay.size, hay.size);
+      c.fillStyle = '#6a8c2e';
+      c.fillText('🌾', -hay.size / 2 + 2, hay.size / 2 - 2);
+      c.restore();
+    }
+
+    c.fillStyle = 'rgba(59, 42, 26, 0.7)';
+    c.font = 'bold 16px Nunito, sans-serif';
+    c.fillText('Click the falling hay to collect it!', 10, 30);
+  }
+
+  function collectHay(e) {
+    if (!gameState.running) return;
+    const rect = gameState.gameCanvas.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const clickY = e.clientY - rect.top;
+
+    for (const hay of gameState.hayItems) {
+      if (hay.collected) continue;
+      const dist = Math.hypot(clickX - hay.x, clickY - hay.y);
+      if (dist < hay.size + 8) {
+        hay.collected = true;
+        gameState.score++;
+        sfx('coin');
+      }
+    }
+  }
+
+  function endHayHarvest(gameLoop) {
+    gameState.running = false;
+    gameState.gameCanvas.removeEventListener('click', collectHay);
+    clearInterval(gameLoop);
+    const reward = Math.round(gameState.score * (HAY_REWARD / MAX_HAY));
+    
+    if (reward > 0) {
+      G.coins += reward;
+      minigameLastPlay = Date.now();
+      $('startBtn').textContent = '✓ Played today!';
+      $('startBtn').disabled = true;
+      toast(`Harvest complete! +${reward} 🪙`);
+      hudRes();
+      save();
+      sfx('goal');
+    }
+  }
+
+  $('startBtn').addEventListener('click', startHayHarvest);
+  $('closeBtn').addEventListener('click', () => {
+    gameState.running = false;
+    $('minigameOverlay').hidden = true;
+    selBld = null;
+    renderBld();
+  });
+
   const buy = (cost, k, n) => () => { if (G.coins < cost) return; G.coins -= cost; G[k] += n; hudRes(); syncTools(); };
   $('buyHay').addEventListener('click', buy(10, 'hay', 5));
   $('buyWater').addEventListener('click', buy(6, 'water', 5));
@@ -1236,10 +1381,17 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     renderBldCanvas(b);
     $('goInBtn').hidden = !canEnter(b);
     if (b.type === 'hutch') $('bInfo').textContent += ` · Coziness ${cozyOf(b)}`;
-    if (DECOR[b.type]) { $('bLvl').textContent = 'Decoration'; $('bNext').textContent = ''; $('upBtn').hidden = true; }
+    if (b.type === 'haymill') {
+      $('bLvl').textContent = 'Mini-Game';
+      $('bNext').textContent = 'Click Play to start the Hay Harvest game and earn bonus coins!';
+      $('upBtn').hidden = false;
+      $('upBtn').textContent = '▶ Play Game';
+      $('upBtn').onclick = () => startHayHarvest();
+    } else if (DECOR[b.type]) { $('bLvl').textContent = 'Decoration'; $('bNext').textContent = ''; $('upBtn').hidden = true; }
     else if (l < 3) {
       $('bNext').innerHTML = `<b>Next: ${lvName(b, l + 1)}</b> · ${perkText(b.type, l + 1)}`;
       $('upBtn').hidden = false; $('upBtn').textContent = `Upgrade for ${upCost(b)} 🪙`; $('upBtn').disabled = G.coins < upCost(b);
+      $('upBtn').onclick = () => { if (selBld) { upgrade(selBld); renderBld(); } };
     } else { $('bNext').textContent = 'Fully upgraded! It can\'t get any fancier. ✨'; $('upBtn').hidden = true; }
   }
   $('upBtn').addEventListener('click', () => { if (selBld) { upgrade(selBld); renderBld(); } });
@@ -4708,15 +4860,31 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     requestAnimationFrame(loop);
   }
   document.addEventListener('visibilitychange', () => { if (document.hidden) save(); });
-  setView('home'); syncBaby(); hudRes(); renderPig(); hudGoals(); syncSound(); syncSpeed();
+  setView('home'); syncBaby(); hudRes(); renderPig(); hudGoals(); syncSound(); syncSpeed(); initMiniGame();
   let seen = false, seen2 = false, seen3 = false;
-  try { seen = !!localStorage.getItem('pigcity-seen'); seen2 = !!localStorage.getItem('pigcity-seen2'); seen3 = !!localStorage.getItem('pigcity-seen3'); localStorage.setItem('pigcity-seen', '1'); localStorage.setItem('pigcity-seen2', '1'); localStorage.setItem('pigcity-seen3', '1'); } catch (e) {}
+  try { seen = !!localStorage.getItem('pigcity-seen'); seen2 = !!localStorage.getItem('pigcity-seen2'); seen3 = !!localStorage.getItem('pigcity-seen3'); localStorage.setItem('pigcity-seen', '1'); localStorage.setItem('pigcity-seen2', '1'); localStorage.setItem('pigcity-seen3', '1'); } catch (e) {} } catch (e) {}
   if (!seen) openTut();
   else if (!seen3) setTimeout(() => toast('✨ Pig City has a brand new 3D look! Drag to look around, scroll or pinch to zoom.'), 400);
   else if (!seen2) setTimeout(() => toast('✨ Pig City update: seasons, night time, pig personalities, Job City, cars, castle interiors and the PCSE!'), 400);
   requestAnimationFrame(loop);
 })();
 </script>
+<!-- Hay Harvest Mini-game Modal -->
+<div class="minigame-overlay" id="minigameOverlay" hidden>
+  <div class="minigame-modal">
+    <h2>🌾 Hay Harvest Game</h2>
+    <div class="stats">
+      <div>Time: <span id="gameTime">30</span>s</div>
+      <div>Collected: <span id="gameScore">0</span></div>
+      <div>Reward: <span id="gameReward">0</span> 🪙</div>
+    </div>
+    <canvas id="minigameCanvas" class="game-canvas" width="450" height="240"></canvas>
+    <div class="btns" id="gameButtons">
+      <button class="btn alt" id="startBtn">Start Game</button>
+      <button class="btn ghost" id="closeBtn">Close</button>
+    </div>
+  </div>
+</div>
 <script src="assets/cloud.js"></script>
 </body>
 </html>
