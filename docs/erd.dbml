@@ -1,0 +1,57 @@
+// Pig City cloud saves: entity relationship diagram (DBML)
+// Paste into https://dbdiagram.io to see the diagram.
+// Matches the data model in the Pig City Database PRD (v1).
+
+Project pig_city {
+  database_type: 'PostgreSQL'
+  Note: 'v1 stores each town as one JSON document (the game state G), plus a few columns for the town list.'
+}
+
+Table players {
+  id uuid [pk, note: 'Same id as the sign-in account (auth.users.id)']
+  display_name varchar(40)
+  created_at timestamptz [not null, default: `now()`]
+  deleted_at timestamptz [note: 'Set when the player asks to delete their account; rows are removed within 30 days']
+}
+
+Table towns {
+  id uuid [pk, default: `gen_random_uuid()`]
+  player_id uuid [not null, ref: > players.id]
+  name varchar(40) [not null, default: 'Pig City', note: 'G.townName']
+  state jsonb [not null, note: 'The whole game state G: pigs, buildings, roads, islands, bridges, hoods, city, mkt...']
+  version int [not null, default: 1, note: 'Goes up by 1 on every cloud save; a save is accepted only if the device sent the current version']
+  schema_version int [not null, default: 1, note: 'Save format version, so old saves can be upgraded']
+  pig_count int [not null, default: 0]
+  building_count int [not null, default: 0]
+  coins int [not null, default: 0]
+  device varchar(10) [note: 'web or mac: where the last save came from']
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    (player_id, updated_at) [note: 'Town list, newest first']
+  }
+  Note: 'Up to 10 towns per player. Row-level security: a player can only read and write rows where player_id = their id.'
+}
+
+Table town_versions {
+  id bigint [pk, increment]
+  town_id uuid [not null, ref: > towns.id]
+  version int [not null]
+  state jsonb [not null]
+  reason save_reason [not null, default: 'autosave']
+  saved_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    (town_id, version) [unique]
+    (town_id, saved_at)
+  }
+  Note: 'Save history for Restore: the last 20 versions per town plus one per day for 30 days.'
+}
+
+Enum save_reason {
+  autosave
+  restore
+  import
+  upload [note: 'First sign-in, uploading the town already on this device']
+}
