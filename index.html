@@ -1796,7 +1796,15 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
         if (p.id === selected) { c.strokeStyle = '#fff'; c.lineWidth = 2.5; ell(c, 0, 12, 24, 7); c.stroke(); }
         const sc = p.age < 90 ? .34 : .46; c.scale(s.face * sc, sc); drawPig(c, p.skin, { sleep: s.sleep }); if (work) drawHat(c, insideB.type, p);
         c.restore();
-        if (work && p.working) { const jb = jobOf(p); c.font = '12px sans-serif'; c.textAlign = 'center'; c.fillText(JOBS[jb.type].emoji, s.x + s.face * 4, s.y - 24 + Math.sin(G.time * 3 + p.id) * 1.5); }
+        if (work && p.working) { 
+          const jb = jobOf(p); 
+          c.font = '12px sans-serif'; c.textAlign = 'center'; 
+          c.fillText(JOBS[jb.type].emoji, s.x + s.face * 4, s.y - 24 + Math.sin(G.time * 3 + p.id) * 1.5);
+          // Show clock with shift end time
+          const h = hourNow(), endH = Math.round(p.backH), endM = Math.round((p.backH - Math.floor(p.backH)) * 60);
+          const timeStr = `${(endH + 11) % 12 + 1}:${String(endM).padStart(2, '0')} ${endH < 12 ? 'am' : 'pm'}`;
+          c.font = '10px Nunito, sans-serif'; c.fillStyle = '#8a6a52'; c.fillText(`⏰ ${timeStr}`, s.x, s.y - 12); 
+        }
         if (s.sleep) { c.font = '13px Chewy, sans-serif'; c.textAlign = 'center'; c.fillStyle = '#1f2f5c'; const k = (G.time * .8 + p.id) % 1; c.globalAlpha = 1 - k; c.fillText('z', s.x + 12 + k * 6, s.y - 16 - k * 10); c.fillText('Z', s.x + 18 + k * 4, s.y - 26 - k * 8); c.globalAlpha = 1; }
         if (!s.sleep || p.id === selected) { c.font = '11px Nunito, sans-serif'; c.textAlign = 'center'; c.fillStyle = INK; c.fillText(p.name, s.x, s.y + 26); }
       } });
