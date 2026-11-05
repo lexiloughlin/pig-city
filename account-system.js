@@ -1,0 +1,539 @@
+/**
+ * Pig City Account System
+ * 
+ * Unified authentication and account management across:
+ * - Web browser (pigcity.github.io)
+ * - Mac desktop app (Electron)
+ * - Developer builds
+ * 
+ * Uses Supabase for cloud sync
+ */
+
+const AccountSystem = {
+  // Configuration
+  SUPABASE_URL: 'https://mrbmybiwxayhhneixdgc.supabase.co',
+  SUPABASE_KEY: 'sb_publishable_ftYMUq_X7eiDnKXDb3ac6Q_uZ7Mgbi8',
+  
+  // Local state
+  user: null,
+  session: null,
+  isOnline: navigator.onLine,
+  lastSync: 0,
+  syncInterval: 30000, // 30 seconds
+  
+  // Initialize the account system
+  async init() {
+    // Check if we're in desktop app (no cloud sync)
+    if (window.pigDesktop) {
+      console.log('[Account] Running in desktop app, using local save only');
+      return this.initLocalOnly();
+    }
+
+    // Load cached user session
+    this.restoreSession();
+    
+    // Setup network monitoring
+    window.addEventListener('online', () => this.setOnline(true));
+    window.addEventListener('offline', () => this.setOnline(false));
+
+    // Setup auto-sync
+    setInterval(() => this.autoSync(), this.syncInterval);
+    
+    // Restore user from localStorage
+    try {
+      const cached = localStorage.getItem('pigcity-user-session');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        this.user = parsed.user;
+        this.session = parsed.session;
+        if (this.user) {
+          console.log('[Account] Restored user session:', this.user.email);
+          this.render();
+        }
+      }
+    } catch (e) {
+      console.error('[Account] Failed to restore session:', e);
+    }
+
+    // Check for OAuth redirect
+    this.checkOAuthRedirect();
+  },
+
+  // Desktop-only initialization (no cloud sync)
+  initLocalOnly() {
+    this.isDesktop = true;
+    const localUser = localStorage.getItem('pigcity-local-user');
+    if (localUser) {
+      this.user = JSON.parse(localUser);
+      console.log('[Account] Local user:', this.user.email);
+    }
+  },
+
+  // Restore session from localStorage
+  restoreSession() {
+    try {
+      const cached = localStorage.getItem('pigcity-user-session');
+      if (cached) {
+        const data = JSON.parse(cached);
+        this.user = data.user;
+        this.session = data.session;
+        this.lastSync = data.lastSync || 0;
+      }
+    } catch (e) {
+      console.error('[Account] Session restore failed:', e);
+    }
+  },
+
+  // Save session to localStorage
+  saveSession() {
+    try {
+      localStorage.setItem('pigcity-user-session', JSON.stringify({
+        user: this.user,
+        session: this.session,
+        lastSync: this.lastSync
+      }));
+    } catch (e) {
+      console.error('[Account] Session save failed:', e);
+    }
+  },
+
+  // Check for OAuth redirect after email sign-in
+  checkOAuthRedirect() {
+    const url = new URL(window.location);
+    const access = url.searchParams.get('access_token');
+    const refresh = url.searchParams.get('refresh_token');
+    
+    if (access && refresh) {
+      this.user = {
+        email: 'checking...',
+        id: 'pending'
+      };
+      this.session = { access_token: access, refresh_token: refresh };
+      this.saveSession();
+      this.verifySession().then(() => {
+        window.location.href = url.origin + url.pathname;
+      });
+    }
+  },
+
+  // Verify the current session is valid
+  async verifySession() {
+    if (!this.session || !this.session.access_token) return false;
+    
+    try {
+      const response = await fetch(`${this.SUPABASE_URL}/auth/v1/user`, {
+        headers: {
+          'Authorization': `Bearer ${this.session.access_token}`,
+          'apikey': this.SUPABASE_KEY
+        }
+      });
+      
+      if (!response.ok) {
+        this.logout();
+        return false;
+      }
+      
+      const data = await response.json();
+      this.user = {
+        id: data.id,
+        email: data.email,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at
+      };
+      this.saveSession();
+      return true;
+    } catch (e) {
+      console.error('[Account] Session verification failed:', e);
+      this.logout();
+      return false;
+    }
+  },
+
+  // Sign in with email (web only)
+  async signIn(email) {
+    if (this.isDesktop) return this.signInLocal(email);
+    
+    email = email.trim().toLowerCase();
+    if (!email.includes('@')) {
+      throw new Error('Invalid email address');
+    }
+
+    try {
+      const response = await fetch(`${this.SUPABASE_URL}/auth/v1/otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': this.SUPABASE_KEY
+        },
+        body: JSON.stringify({
+          email: email,
+          data: { email: email },
+          create_user: true
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to send sign-in link');
+      }
+
+      return {
+        success: true,
+        message: `Check ${email} for a sign-in link. Click it to sign in.`
+      };
+    } catch (e) {
+      console.error('[Account] Sign-in failed:', e);
+      throw e;
+    }
+  },
+
+  // Local sign-in for desktop app
+  signInLocal(email) {
+    email = email.trim().toLowerCase();
+    if (!email.includes('@')) {
+      throw new Error('Invalid email address');
+    }
+
+    const userId = 'local-' + btoa(email).slice(0, 16);
+    this.user = {
+      id: userId,
+      email: email,
+      isLocal: true,
+      createdAt: new Date().toISOString()
+    };
+
+    try {
+      localStorage.setItem('pigcity-local-user', JSON.stringify(this.user));
+    } catch (e) {
+      console.error('[Account] Local user save failed:', e);
+    }
+
+    return { success: true, message: `Signed in as ${email}` };
+  },
+
+  // Sign out
+  async logout() {
+    if (this.session && this.session.access_token && !this.isDesktop) {
+      try {
+        await fetch(`${this.SUPABASE_URL}/auth/v1/logout`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${this.session.access_token}`,
+            'apikey': this.SUPABASE_KEY
+          }
+        });
+      } catch (e) {
+        console.error('[Account] Remote logout failed:', e);
+      }
+    }
+
+    this.user = null;
+    this.session = null;
+    try {
+      localStorage.removeItem('pigcity-user-session');
+      localStorage.removeItem('pigcity-local-user');
+    } catch (e) {}
+  },
+
+  // Auto-sync game progress to cloud
+  async autoSync() {
+    if (!this.user || !this.isOnline || this.isDesktop) return;
+    
+    try {
+      await this.syncProgress();
+    } catch (e) {
+      console.error('[Account] Auto-sync failed:', e);
+    }
+  },
+
+  // Sync current game progress to cloud
+  async syncProgress() {
+    if (!this.user) return;
+
+    // Get current game state from window.pigTown (main game object)
+    const T = window.pigTown;
+    if (!T || !T.text) return;
+
+    const townData = {
+      player_id: this.user.id,
+      email: this.user.email,
+      last_played: new Date().toISOString(),
+      platform: this.getPlatform(),
+      app_version: '1.0.0',
+      state: JSON.parse(T.text()),
+      pig_count: (T.pigs || []).length,
+      coin_total: T.coins || 0,
+      building_count: (T.buildings || []).length
+    };
+
+    if (this.isDesktop) {
+      return this.saveTownLocal(townData);
+    }
+
+    return this.saveTownCloud(townData);
+  },
+
+  // Save town to cloud
+  async saveTownCloud(townData) {
+    try {
+      const response = await fetch(`${this.SUPABASE_URL}/rest/v1/player_games`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.session.access_token}`,
+          'apikey': this.SUPABASE_KEY,
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify(townData)
+      });
+
+      if (response.ok) {
+        this.lastSync = Date.now();
+        this.saveSession();
+        console.log('[Account] Progress synced to cloud');
+        return true;
+      } else if (response.status === 409) {
+        // Conflict - local is newer, update instead
+        return this.updateTownCloud(townData);
+      }
+    } catch (e) {
+      console.error('[Account] Cloud save failed:', e);
+      return false;
+    }
+  },
+
+  // Update existing town in cloud
+  async updateTownCloud(townData) {
+    try {
+      const response = await fetch(
+        `${this.SUPABASE_URL}/rest/v1/player_games?email=eq.${townData.email}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.session.access_token}`,
+            'apikey': this.SUPABASE_KEY
+          },
+          body: JSON.stringify({
+            last_played: townData.last_played,
+            platform: townData.platform,
+            state: townData.state,
+            pig_count: townData.pig_count,
+            coin_total: townData.coin_total,
+            building_count: townData.building_count
+          })
+        }
+      );
+
+      if (response.ok) {
+        this.lastSync = Date.now();
+        this.saveSession();
+        return true;
+      }
+    } catch (e) {
+      console.error('[Account] Cloud update failed:', e);
+      return false;
+    }
+  },
+
+  // Save town locally (desktop app)
+  saveTownLocal(townData) {
+    try {
+      const towns = JSON.parse(localStorage.getItem('pigcity-local-towns') || '{}');
+      towns[this.user.id] = {
+        ...townData,
+        savedAt: new Date().toISOString()
+      };
+      localStorage.setItem('pigcity-local-towns', JSON.stringify(towns));
+      this.lastSync = Date.now();
+      return true;
+    } catch (e) {
+      console.error('[Account] Local save failed:', e);
+      return false;
+    }
+  },
+
+  // Load progress from cloud
+  async loadProgress(platform = null) {
+    if (!this.user) return null;
+
+    if (this.isDesktop) {
+      return this.loadProgressLocal();
+    }
+
+    return this.loadProgressCloud(platform);
+  },
+
+  // Load progress from cloud
+  async loadProgressCloud(platform = null) {
+    try {
+      let url = `${this.SUPABASE_URL}/rest/v1/player_games?player_id=eq.${this.user.id}`;
+      if (platform) {
+        url += `&platform=eq.${platform}`;
+      }
+      
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${this.session.access_token}`,
+          'apikey': this.SUPABASE_KEY
+        }
+      });
+
+      if (!response.ok) return null;
+
+      const data = await response.json();
+      return data.length > 0 ? data[0] : null;
+    } catch (e) {
+      console.error('[Account] Load progress failed:', e);
+      return null;
+    }
+  },
+
+  // Load progress locally
+  loadProgressLocal() {
+    try {
+      const towns = JSON.parse(localStorage.getItem('pigcity-local-towns') || '{}');
+      return towns[this.user.id] || null;
+    } catch (e) {
+      console.error('[Account] Local load failed:', e);
+      return null;
+    }
+  },
+
+  // Get list of saves (cloud)
+  async listSaves() {
+    if (!this.user) return [];
+
+    if (this.isDesktop) {
+      try {
+        const towns = JSON.parse(localStorage.getItem('pigcity-local-towns') || '{}');
+        return towns[this.user.id] ? [towns[this.user.id]] : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    try {
+      const response = await fetch(
+        `${this.SUPABASE_URL}/rest/v1/player_games?player_id=eq.${this.user.id}&order=last_played.desc`,
+        {
+          headers: {
+            'Authorization': `Bearer ${this.session.access_token}`,
+            'apikey': this.SUPABASE_KEY
+          }
+        }
+      );
+
+      if (!response.ok) return [];
+      return await response.json();
+    } catch (e) {
+      console.error('[Account] List saves failed:', e);
+      return [];
+    }
+  },
+
+  // Get player stats from cloud
+  async getStats() {
+    if (!this.user) return null;
+
+    try {
+      const response = await fetch(
+        `${this.SUPABASE_URL}/rest/v1/player_stats?player_id=eq.${this.user.id}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${this.session.access_token || ''}`,
+            'apikey': this.SUPABASE_KEY
+          }
+        }
+      );
+
+      if (!response.ok) return null;
+      const data = await response.json();
+      return data.length > 0 ? data[0] : null;
+    } catch (e) {
+      console.error('[Account] Get stats failed:', e);
+      return null;
+    }
+  },
+
+  // Update player stats
+  async updateStats(stats) {
+    if (!this.user) return false;
+
+    try {
+      const response = await fetch(
+        `${this.SUPABASE_URL}/rest/v1/player_stats?player_id=eq.${this.user.id}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.session.access_token || ''}`,
+            'apikey': this.SUPABASE_KEY
+          },
+          body: JSON.stringify({
+            ...stats,
+            updated_at: new Date().toISOString()
+          })
+        }
+      );
+
+      return response.ok;
+    } catch (e) {
+      console.error('[Account] Update stats failed:', e);
+      return false;
+    }
+  },
+
+  // Network state management
+  setOnline(online) {
+    this.isOnline = online;
+    if (online) {
+      console.log('[Account] Online - syncing progress');
+      this.syncProgress();
+    } else {
+      console.log('[Account] Offline - saving locally');
+    }
+  },
+
+  // Get current platform
+  getPlatform() {
+    if (window.pigDesktop) return 'desktop';
+    if (navigator.userAgent.includes('Mobile')) return 'mobile';
+    return 'web';
+  },
+
+  // Render account UI
+  render() {
+    const accountBtn = document.getElementById('accountBtn');
+    if (!accountBtn) return;
+
+    if (this.user) {
+      accountBtn.textContent = `👤 ${this.user.email.split('@')[0]}`;
+      accountBtn.title = `Signed in as ${this.user.email}`;
+      accountBtn.setAttribute('aria-label', `Account - ${this.user.email}`);
+    } else {
+      accountBtn.textContent = '👤 Sign in';
+      accountBtn.title = 'Sign in to sync progress';
+      accountBtn.setAttribute('aria-label', 'Sign in to your account');
+    }
+  },
+
+  // Get account status for UI
+  getStatus() {
+    if (!this.user) return 'not-signed-in';
+    if (!this.isOnline && !this.isDesktop) return 'offline';
+    return 'signed-in';
+  }
+};
+
+// Auto-initialize on page load
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => AccountSystem.init());
+} else {
+  AccountSystem.init();
+}
+
+// Export for use elsewhere
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = AccountSystem;
+}
