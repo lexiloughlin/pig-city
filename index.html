@@ -339,6 +339,10 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
           <div class="traits" id="pTraits"></div>
           <p class="small trait-desc" id="pTraitDesc"></p>
           <div id="pBars"></div>
+          <!-- Game Systems: Pig Needs Display -->
+          <div id="pNeeds" class="small" style="margin-top:8px;padding:6px;background:#fff8f4;border-radius:6px;border-left:4px solid #d9455a"></div>
+          <!-- Game Systems: Relationships Display -->
+          <div id="pRelationships" class="small" style="margin-top:8px;padding:6px;background:#fff8f4;border-radius:6px;border-left:4px solid #e07a9a"></div>
           <div class="jobrow"><label for="jobSel">Job</label><select id="jobSel"></select></div>
           <div class="btns">
             <button class="btn" id="petBtn">Pet</button>
@@ -1109,6 +1113,16 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
       const fb = $('friendBtn'); if (fb) fb.addEventListener('click', () => { selected = fr.id; fr.hop = .5; listSig = ''; renderPig(true); sfx('tap'); });
     }
     $('pBars').innerHTML = BAR.map(([k, l, col]) => `<div class="bar"><span>${l}</span><div class="track"><div class="fill" style="width:${Math.max(0, p[k])}%;background:${col}"></div></div><span class="num">${Math.round(p[k])}</span></div>`).join('');
+    
+    // Game Systems: Display needs if available
+    if (typeof GameSystemsIntegration !== 'undefined') {
+      const needsHTML = GameSystemsIntegration.formatNeedsUI(p);
+      $('pNeeds').textContent = `💓 Needs: ${needsHTML}`;
+      
+      const relsHTML = GameSystemsIntegration.formatRelationshipsUI(p, G.pigs);
+      $('pRelationships').innerHTML = `💕 Relationships:<br>${relsHTML}`;
+    }
+    
     $('pTag').innerHTML += ` · ${pigStatus(p)}`;
     $('carBtn').hidden = !(count('dealer') && p.age >= 90); $('carBtn').textContent = 'New car 80 🪙'; $('carBtn').disabled = G.coins < 80;
     $('petBtn').disabled = p.petCd > 0; $('treatBtn').disabled = G.veg < 1;
@@ -4866,9 +4880,19 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   if (!seen) openTut();
   else if (!seen3) setTimeout(() => toast('✨ Pig City has a brand new 3D look! Drag to look around, scroll or pinch to zoom.'), 400);
   else if (!seen2) setTimeout(() => toast('✨ Pig City update: seasons, night time, pig personalities, Job City, cars, castle interiors and the PCSE!'), 400);
+  // Initialize game systems enhancements
+  GameSystemsIntegration.initialize(G);
+  const originalTick = tick;
+  tick = function(dt) {
+    originalTick(dt);
+    GameSystemsIntegration.update(G, G.pigs, dt);
+  };
+
   requestAnimationFrame(loop);
 })();
 </script>
+<script src="game-systems.js"></script>
+<script src="game-systems-integration.js"></script>
 <!-- Hay Harvest Mini-game Modal -->
 <div class="minigame-overlay" id="minigameOverlay" hidden>
   <div class="minigame-modal">
