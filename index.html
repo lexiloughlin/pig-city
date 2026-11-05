@@ -610,36 +610,115 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     clock:   { name: 'Clock', ic: '🕰️', cat: 'wall', cost: 8, cozy: 1 },
     shelf:   { name: 'Shelf', ic: '📚', cat: 'wall', cost: 10, cozy: 1, w: 2 },
     lights:  { name: 'Fairy Lights', ic: '✨', cat: 'wall', cost: 12, cozy: 2, w: 3 },
-    // Living room & comfort items
+    // Living room - seating
     sofa:    { name: 'Luxury Sofa', ic: '🛋️', cat: 'floor', cost: 40, cozy: 4, w: 2, house: true },
+    chaise:  { name: 'Chaise Lounge', ic: '🛋️', cat: 'floor', cost: 28, cozy: 3, house: true },
     lounger: { name: 'Lounge Chair', ic: '🪑', cat: 'floor', cost: 22, cozy: 3, house: true },
-    sideTable: { name: 'Side Table', ic: '📱', cat: 'floor', cost: 12, cozy: 1, house: true },
+    wingchair: { name: 'Wing Chair', ic: '🪑', cat: 'floor', cost: 20, cozy: 2, house: true },
+    bench:   { name: 'Wooden Bench', ic: '🪵', cat: 'floor', cost: 16, cozy: 2, house: true },
+    // Living room - tables & decor
+    sideTable: { name: 'Side Table', ic: '📦', cat: 'floor', cost: 12, cozy: 1, house: true },
     coffeTable: { name: 'Coffee Table', ic: '🟤', cat: 'floor', cost: 18, cozy: 2, w: 2, house: true },
-    // Entertainment & games
+    console:  { name: 'Console Table', ic: '🎚️', cat: 'floor', cost: 20, cozy: 1, house: true },
+    // Entertainment - music & games
     piano:   { name: 'Piano', ic: '🎹', cat: 'floor', cost: 35, cozy: 3, house: true },
     guitars: { name: 'Guitar Stand', ic: '🎸', cat: 'floor', cost: 20, cozy: 2, house: true },
     boardgames: { name: 'Board Games', ic: '🎲', cat: 'floor', cost: 14, cozy: 2, house: true },
+    gramophone: { name: 'Gramophone', ic: '📻', cat: 'floor', cost: 24, cozy: 2, house: true },
+    // Entertainment - media
+    arcade:  { name: 'Arcade Machine', ic: '🕹️', cat: 'floor', cost: 42, cozy: 3, house: true },
+    projector: { name: 'Projector Setup', ic: '📹', cat: 'floor', cost: 38, cozy: 3, house: true },
     // Bedroom luxuries
     canopy:  { name: 'Canopy Bed', ic: '👑', cat: 'floor', cost: 45, cozy: 4, w: 2, house: true, hcat: 'bed' },
+    bed2:    { name: 'Four-Poster Bed', ic: '🛏️', cat: 'floor', cost: 30, cozy: 3, w: 2, house: true, hcat: 'bed' },
     mirror:  { name: 'Standing Mirror', ic: '🪞', cat: 'floor', cost: 14, cozy: 1, house: true },
     cushions: { name: 'Decorative Cushions', ic: '🎀', cat: 'floor', cost: 10, cozy: 2, house: true },
-    // Wall decorations & art
+    ottoman2: { name: 'Velvet Ottoman', ic: '🟣', cat: 'floor', cost: 16, cozy: 2, house: true },
+    // Work & study
+    desk:    { name: 'Desk', ic: '🖊️', cat: 'floor', cost: 22, cozy: 1, house: true },
+    computer: { name: 'Computer Setup', ic: '💻', cat: 'floor', cost: 28, cozy: 2, house: true },
+    // Wall decorations - art & photos
     wallart: { name: 'Modern Wall Art', ic: '🎨', cat: 'wall', cost: 16, cozy: 1, house: true },
     mirror2: { name: 'Wall Mirror', ic: '👁️', cat: 'wall', cost: 12, cozy: 1, house: true },
     sconce:  { name: 'Wall Sconce', ic: '🕯️', cat: 'wall', cost: 13, cozy: 2, house: true },
+    sconce2: { name: 'Brass Sconce', ic: '💡', cat: 'wall', cost: 15, cozy: 2, house: true },
     garland: { name: 'Garland', ic: '🎄', cat: 'wall', cost: 10, cozy: 2, house: true },
+    garland2: { name: 'Flower Garland', ic: '🌸', cat: 'wall', cost: 12, cozy: 2, house: true },
     portrait2: { name: 'Family Portrait', ic: '👨‍👩‍👧', cat: 'wall', cost: 18, cozy: 2, house: true },
     frames:  { name: 'Photo Frames', ic: '📷', cat: 'wall', cost: 11, cozy: 1, house: true },
+    frames2: { name: 'Gallery Wall', ic: '🖼️', cat: 'wall', cost: 20, cozy: 2, w: 2, house: true },
+    // Wall decorations - patterns & designs
+    wallpaper2: { name: 'Patterned Wallpaper', ic: '🎨', cat: 'wall', cost: 14, cozy: 1, house: true },
+    wainscot: { name: 'Wood Wainscoting', ic: '🪵', cat: 'wall', cost: 16, cozy: 2, house: true },
+    crown:   { name: 'Crown Molding', ic: '👑', cat: 'wall', cost: 12, cozy: 1, house: true },
     // Kitchen upgrades
     microwave: { name: 'Microwave', ic: '🔥', cat: 'kitchen', cost: 16, cozy: 1, house: true },
     dishwasher: { name: 'Dishwasher', ic: '🧼', cat: 'kitchen', cost: 20, cozy: 1, house: true },
     diningTable: { name: 'Dining Table', ic: '🍴', cat: 'kitchen', cost: 24, cozy: 3, w: 2, house: true },
     kitchenIsland: { name: 'Kitchen Island', ic: '🏝️', cat: 'kitchen', cost: 28, cozy: 2, w: 2, house: true },
+    diningChair: { name: 'Dining Chair', ic: '🪑', cat: 'kitchen', cost: 8, cozy: 1, house: true },
+    kitchenBar: { name: 'Bar Counter', ic: '🍷', cat: 'kitchen', cost: 26, cozy: 2, w: 2, house: true },
+    oven:    { name: 'Oven', ic: '🔥', cat: 'kitchen', cost: 28, cozy: 2, house: true },
     // Decorative & comfort
     fireplace: { name: 'Fireplace', ic: '🔥', cat: 'floor', cost: 32, cozy: 4, house: true },
     fountain: { name: 'Indoor Fountain', ic: '💦', cat: 'floor', cost: 26, cozy: 3, house: true },
     fishbowl: { name: 'Fish Bowl', ic: '🐠', cat: 'floor', cost: 12, cozy: 2, house: true },
+    aquarium: { name: 'Large Aquarium', ic: '🐡', cat: 'floor', cost: 32, cozy: 3, house: true },
+    flowers: { name: 'Flower Vase', ic: '💐', cat: 'floor', cost: 10, cozy: 1, house: true },
+    candleStand: { name: 'Candle Stand', ic: '🕯️', cat: 'floor', cost: 8, cozy: 1, house: true },
+    // Lighting
     chandelier: { name: 'Chandelier', ic: '💎', cat: 'wall', cost: 35, cozy: 3, w: 2, house: true },
+    pendant: { name: 'Pendant Light', ic: '💡', cat: 'wall', cost: 18, cozy: 2, house: true },
+    tableLight: { name: 'Table Lamp', ic: '🪔', cat: 'floor', cost: 14, cozy: 2, house: true },
+    stringLight: { name: 'String Lights', ic: '✨', cat: 'wall', cost: 16, cozy: 2, house: true },
+    // Outdoor/Patio (indoor viewing)
+    windowSeat: { name: 'Window Seat', ic: '🪟', cat: 'floor', cost: 20, cozy: 3, house: true },
+    // Specialty items
+    sculpture: { name: 'Abstract Sculpture', ic: '🗿', cat: 'floor', cost: 24, cozy: 2, house: true },
+    globe:   { name: 'Globe', ic: '🌍', cat: 'floor', cost: 14, cozy: 1, house: true },
+    telescope: { name: 'Telescope', ic: '🔭', cat: 'floor', cost: 20, cozy: 1, house: true },
+    bookcase2: { name: 'Tall Bookcase', ic: '📚', cat: 'floor', cost: 22, cozy: 2, house: true },
+    // Bathroom essentials
+    shower:  { name: 'Shower Stall', ic: '🚿', cat: 'kitchen', cost: 22, cozy: 2, house: true },
+    toilet:  { name: 'Toilet', ic: '🚽', cat: 'kitchen', cost: 14, cozy: 1, house: true },
+    bathroom_sink: { name: 'Bathroom Sink', ic: '🧼', cat: 'kitchen', cost: 12, cozy: 1, house: true },
+    towel:   { name: 'Towel Rack', ic: '🧻', cat: 'kitchen', cost: 6, cozy: 1, house: true },
+    mirror_bath: { name: 'Bathroom Mirror', ic: '🪞', cat: 'kitchen', cost: 10, cozy: 1, house: true },
+    // Bedroom - cozy
+    bedtable: { name: 'Bedside Cabinet', ic: '🛏️', cat: 'floor', cost: 12, cozy: 2, house: true, hcat: 'bed' },
+    blanket: { name: 'Cozy Blanket', ic: '🛌', cat: 'floor', cost: 8, cozy: 2, house: true },
+    pillow:  { name: 'Decorative Pillows', ic: '🎀', cat: 'floor', cost: 7, cozy: 1, house: true },
+    // Living room - ambiance
+    incense: { name: 'Incense Burner', ic: '🌫️', cat: 'floor', cost: 11, cozy: 2, house: true },
+    diffuser: { name: 'Diffuser', ic: '💨', cat: 'floor', cost: 13, cozy: 2, house: true },
+    // Relaxation & wellness
+    treadmill: { name: 'Treadmill', ic: '🏃', cat: 'floor', cost: 32, cozy: 1, house: true },
+    yoga:    { name: 'Yoga Mat', ic: '🧘', cat: 'floor', cost: 10, cozy: 2, house: true },
+    weights: { name: 'Dumbbell Set', ic: '💪', cat: 'floor', cost: 18, cozy: 1, house: true },
+    sauna:   { name: 'Hot Tub', ic: '🛁', cat: 'floor', cost: 48, cozy: 5, w: 2, house: true },
+    // Hobbies & crafts
+    easel:   { name: 'Art Easel', ic: '🎨', cat: 'floor', cost: 16, cozy: 2, house: true },
+    loom:    { name: 'Weaving Loom', ic: '🧶', cat: 'floor', cost: 19, cozy: 2, house: true },
+    pottery: { name: 'Pottery Wheel', ic: '🏺', cat: 'floor', cost: 22, cozy: 2, house: true },
+    craft:   { name: 'Craft Table', ic: '✂️', cat: 'floor', cost: 14, cozy: 1, house: true },
+    sewing:  { name: 'Sewing Machine', ic: '🧵', cat: 'floor', cost: 18, cozy: 1, house: true },
+    // Garden room items
+    potted_tree: { name: 'Potted Tree', ic: '🌲', cat: 'floor', cost: 20, cozy: 3, house: true },
+    hanging_garden: { name: 'Hanging Garden', ic: '🌿', cat: 'wall', cost: 18, cozy: 2, house: true },
+    planter: { name: 'Large Planter', ic: '🪴', cat: 'floor', cost: 15, cozy: 2, house: true },
+    // Luxury items
+    jacuzzi: { name: 'Jacuzzi', ic: '♨️', cat: 'floor', cost: 52, cozy: 5, w: 2, house: true },
+    safeBox: { name: 'Safe Box', ic: '💎', cat: 'floor', cost: 26, cozy: 1, house: true },
+    safe:    { name: 'Wall Safe', ic: '🔐', cat: 'wall', cost: 22, cozy: 1, house: true },
+    // Collection displays
+    trophy: { name: 'Trophy Shelf', ic: '🏆', cat: 'wall', cost: 14, cozy: 1, house: true },
+    displayCase: { name: 'Display Case', ic: '🎁', cat: 'floor', cost: 20, cozy: 2, house: true },
+    collectibles: { name: 'Collectibles', ic: '🧩', cat: 'floor', cost: 18, cozy: 2, house: true },
+    // Doors & entryways  
+    gate:    { name: 'Iron Gate', ic: '🚪', cat: 'wall', cost: 19, cozy: 1, house: true },
+    arch:    { name: 'Decorative Arch', ic: '🏛️', cat: 'wall', cost: 21, cozy: 2, house: true },
+    // Ceiling features
+    beam:    { name: 'Exposed Beam', ic: '🪵', cat: 'wall', cost: 17, cozy: 1, house: true },
     remove:  { name: 'Remove', ic: '🧹', cat: 'tool', cost: 0, desc: 'Click furniture to put it away (refunds half)' },
     turn:    { name: 'Turn', ic: '🔄', cat: 'tool', cost: 0, desc: 'Click furniture to turn it to face the other way' }
   };
