@@ -4946,7 +4946,12 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     pdrop:     { name: 'Carrot Drop',       ic: '🥕', n: 2, cost: 420, thrill: 8, appeal: 18, cap: 8,  dur: 7,  land: 'carrot', desc: 'Up the giant carrot... and DROP! Wheeeek!' },
     pflume:    { name: 'Pellet Plunge',     ic: '🛶', n: 3, cost: 520, thrill: 6, appeal: 20, cap: 6,  dur: 9,  land: 'carrot', desc: 'A log flume with a big splashdown. Bring a towel' },
     pcoaster:  { name: 'The Wheekinator',   ic: '🎢', n: 4, cost: 800, thrill: 9, appeal: 30, cap: 12, dur: 10, land: 'cuke',   desc: 'The tallest, loopiest coaster in pig history. The park\'s big headliner' },
-    pskyline:  { name: 'Steel Sprout',      ic: '🌩️', n: 3, cost: 600, thrill: 8, appeal: 28, cap: 8,  dur: 8,  land: 'hay',    desc: 'An intense hypercoaster that hugs tight turns and launches over the hay fields—inspired by Six Flags thrills' }
+    pskyline:  { name: 'Steel Sprout',      ic: '🌩️', n: 3, cost: 600, thrill: 8, appeal: 28, cap: 8,  dur: 8,  land: 'hay',    desc: 'An intense hypercoaster that hugs tight turns and launches over the hay fields—inspired by Six Flags thrills' },
+    pkingda:   { name: 'Kingda Cavy',       ic: '📐', n: 3, cost: 750, thrill: 9, appeal: 32, cap: 10, dur: 9,  land: 'hay',    desc: 'A giga coaster with a vertical lift and mind-bending airtime. Pure adrenaline rush' },
+    peltoki:   { name: 'El Toki',           ic: '🌲', n: 4, cost: 900, thrill: 8, appeal: 34, cap: 12, dur: 11, land: 'carrot', desc: 'Wooden coaster with massive hills and legendary airtime over the carrot fields' },
+    pweektro:  { name: 'Wheektro',          ic: '💜', n: 3, cost: 700, thrill: 8, appeal: 30, cap: 10, dur: 9,  land: 'pop',    desc: 'A multi-loop steel coaster with incredible inversions and barrel rolls' },
+    pgoliath:  { name: 'Goliath Guinea',    ic: '👹', n: 4, cost: 950, thrill: 9, appeal: 36, cap: 12, dur: 12, land: 'carrot', desc: 'The wildest coaster ever: extreme twists, multiple inversions, and insane speed' },
+    pmochi:    { name: 'Mochi\'s Mega Zoomies', ic: '📦', n: 4, cost: 1100, thrill: 10, appeal: 40, cap: 12, dur: 13, land: 'hay', desc: 'Wild turns through a giant hay pile. The ultimate Zoomies experience for ultimate thrill seekers' }
   };
   const STANDS = {
     psnack: { name: 'Timothy Treats',  ic: '🌾', cost: 60,  food: 30,            sell: 2, desc: 'Fresh hay snacks: fills guests up' },
@@ -5544,6 +5549,106 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
           if (rt.riders.length > k * 2) { c.fillStyle = '#d9a066'; ell(c, x - 1, y - 9, 2.6, 2.2); c.fill(); if (rt.riders.length > k * 2 + 1) { c.fillStyle = '#e0a08a'; ell(c, x + 3, y - 9, 2.6, 2.2); c.fill(); } }
         }
         { const [x, y] = IP(o, 1.5, 2.8, 6); c.fillStyle = '#fffaf2'; rr(c, x - 32, y - 34, 64, 12, 6); c.fill(); c.strokeStyle = EDGE; c.lineWidth = 1.2; c.stroke(); c.fillStyle = '#e0483f'; c.font = 'bold 9px Chewy, sans-serif'; c.textAlign = 'center'; c.fillText('STEEL SPROUT', x, y - 27); }
+        break;
+      }
+      case 'pkingda': {
+        const top = 120, p = rt.phase === 'run' ? rt.prog : 0;
+        const liftZ = p < .4 ? 12 + p / .4 * (top - 12) : top;
+        cyl(c, o, 1, 1, .7, 0, 5, '#5f8f2e');
+        cyl(c, o, 1, 1, .15, 5, liftZ - 8, '#7cc35a');
+        const [x, y] = IP(o, 1, 1, liftZ - 8); c.strokeStyle = '#d9ad3c'; c.lineWidth = 1.8; for (let i = 0; i < 12; i++) { const yy = y + i * (liftZ - 20) / 12; c.beginPath(); c.moveTo(x - 8, yy); c.lineTo(x + 8, yy); c.stroke(); }
+        if (p >= .4) { const drop = (p - .4) / .6, z = liftZ - drop * (liftZ - 8), [dx, dy] = IP(o, 1 + Math.sin(drop * Math.PI * 2) * .6, 1, z); c.fillStyle = '#d9a066'; rr(c, dx - 7, dy - 6, 14, 5, 2); c.fill(); c.strokeStyle = EDGE; c.lineWidth = 1; c.stroke(); if (rt.riders.length) { c.fillStyle = '#e0a08a'; ell(c, dx, dy - 8, 3, 2.5); c.fill(); } }
+        { const [sx, sy] = IP(o, 1, 1, top + 8); c.fillStyle = '#fffaf2'; rr(c, sx - 28, sy - 30, 56, 10, 5); c.fill(); c.strokeStyle = EDGE; c.lineWidth = 1; c.stroke(); c.fillStyle = '#5f8f2e'; c.font = 'bold 8px Chewy, sans-serif'; c.textAlign = 'center'; c.fillText('KINGDA CAVY', sx, sy - 23); }
+        break;
+      }
+      case 'peltoki': {
+        if (!drawRideArt.elTokiTrack) {
+          const pts = [], push = (u, v, z, w = 1) => pts.push([u, v, z, w]), line = (a, b2, n, zf, w) => { for (let i = 0; i < n; i++) { const f = i / n; push(a[0] + (b2[0] - a[0]) * f, a[1] + (b2[1] - a[1]) * f, zf(f), w); } };
+          line([.5, 2.7], [1.8, 2.7], 5, () => 6, 1);
+          line([1.8, 2.7], [2.6, .5], 10, f => 6 + f * 60, 2);
+          line([2.6, .5], [2, .3], 8, f => 66 - f * 40, 1.8);
+          line([2, .3], [1.2, 1.2], 8, f => 26 + f * 30, 1.6);
+          line([1.2, 1.2], [1.8, 2.5], 8, f => 56 - f * 35, 1.7);
+          line([1.8, 2.5], [.8, 2.7], 6, () => 21, 1.2);
+          drawRideArt.elTokiTrack = pts;
+        }
+        const pts = drawRideArt.elTokiTrack, P2 = pts.map(([u, v, z]) => IP(o, u, v, z));
+        c.strokeStyle = '#8b6834'; c.lineWidth = 2; pts.forEach(([u, v, z], i) => { if (z > 10 && i % 2 === 0) { const [x, y] = P2[i], [, gy] = IP(o, u, v, 0); c.beginPath(); c.moveTo(x, y); c.lineTo(x, gy); c.stroke(); } });
+        box(c, o, 1.8, 2.7, .5, .3, 0, 4, '#a8784f', { top: '#c99d6f' });
+        const rail = (w, col) => { c.strokeStyle = col; c.lineWidth = w; c.beginPath(); P2.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); c.stroke(); };
+        rail(5, '#8b6834'); rail(2.5, '#d9ad3c');
+        const lens = []; let tot = 0; for (let i = 0; i < P2.length - 1; i++) { const d = Math.hypot(P2[i + 1][0] - P2[i][0], P2[i + 1][1] - P2[i][1]); lens.push(d); tot += d; }
+        const prog = rt.phase === 'run' ? rt.prog : 0; let s = prog * tot, i = 0; while (i < lens.length - 1 && s > lens[i]) { s -= lens[i]; i++; }
+        const f = lens[i] ? s / lens[i] : 0, cx = P2[i][0] + (P2[i + 1][0] - P2[i][0]) * f, cy = P2[i][1] + (P2[i + 1][1] - P2[i][1]) * f;
+        c.fillStyle = '#d9a066'; rr(c, cx - 8, cy - 5, 16, 7, 2.5); c.fill(); c.strokeStyle = EDGE; c.lineWidth = 1; c.stroke();
+        if (rt.riders.length) { c.fillStyle = '#e0a08a'; ell(c, cx - 2, cy - 7, 3, 2.4); c.fill(); ell(c, cx + 4, cy - 7, 3, 2.4); c.fill(); }
+        { const [x, y] = IP(o, 1.8, 2.7, 6); c.fillStyle = '#fffaf2'; rr(c, x - 28, y - 30, 56, 10, 5); c.fill(); c.strokeStyle = EDGE; c.lineWidth = 1; c.stroke(); c.fillStyle = '#a8784f'; c.font = 'bold 8px Chewy, sans-serif'; c.textAlign = 'center'; c.fillText('EL TOKI', x, y - 23); }
+        break;
+      }
+      case 'pweektro': {
+        const prog = rt.phase === 'run' ? rt.prog : 0;
+        cyl(c, o, 1, 1, .5, 0, 5, '#c4b5ec');
+        for (const [lx, ly, baseZ, lsize] of [[1.5, 1.5, 30, 35], [1.5, 3.2, 20, 30]]) {
+          for (let i = 0; i < 16; i++) { const a = i / 16 * Math.PI * 2, r = lsize / 2 * Math.sin(a + Math.PI / 2); const [x, y] = IP(o, lx + Math.cos(a) * (lsize / 2), ly + Math.sin(a) * (lsize / 4), baseZ + r); if (i % 2 === 0) { c.strokeStyle = '#9b8cc4'; c.lineWidth = 2.2; const [gx, gy] = IP(o, lx + Math.cos(a) * (lsize / 2), ly + Math.sin(a) * (lsize / 4), 5); c.beginPath(); c.moveTo(x, y); c.lineTo(gx, gy); c.stroke(); } }
+          c.strokeStyle = '#c4b5ec'; c.lineWidth = 3; c.beginPath(); for (let i = 0; i <= 32; i++) { const a = i / 32 * Math.PI * 2, r = lsize / 2 * Math.sin(a + Math.PI / 2), xx = lx + Math.cos(a) * (lsize / 2), yy = ly + Math.sin(a) * (lsize / 4); const [x, y] = IP(o, xx, yy, baseZ + r); i ? c.lineTo(x, y) : c.moveTo(x, y); } c.stroke();
+        }
+        const [tx, ty] = IP(o, 1.5, 2.4, 8); c.fillStyle = '#d9a066'; rr(c, tx - 6, ty - 5, 12, 6, 2); c.fill(); c.strokeStyle = EDGE; c.lineWidth = 1; c.stroke();
+        if (rt.riders.length) { c.fillStyle = '#e0a08a'; ell(c, tx, ty - 7, 2.8, 2.2); c.fill(); }
+        { const [x, y] = IP(o, 1.5, 3.8, 5); c.fillStyle = '#fffaf2'; rr(c, x - 26, y - 28, 52, 9, 5); c.fill(); c.strokeStyle = EDGE; c.lineWidth = 1; c.stroke(); c.fillStyle = '#c4b5ec'; c.font = 'bold 8px Chewy, sans-serif'; c.textAlign = 'center'; c.fillText('WHEEKTRO', x, y - 21); }
+        break;
+      }
+      case 'pgoliath': {
+        if (!drawRideArt.goliathTrack) {
+          const pts = [], push = (u, v, z, w = 1) => pts.push([u, v, z, w]), line = (a, b2, n, zf, w) => { for (let i = 0; i < n; i++) { const f = i / n; push(a[0] + (b2[0] - a[0]) * f, a[1] + (b2[1] - a[1]) * f, zf(f), w); } }, arc = (cu, cv, r, t0, t1, n, z0, z1, w) => { for (let i = 0; i < n; i++) { const f = i / n, th = t0 + (t1 - t0) * f; push(cu + r * Math.cos(th), cv + r * Math.sin(th), z0 + (z1 - z0) * f, w); } }, D = Math.PI / 180;
+          line([.4, 2.8], [1.5, 2.8], 6, () => 8, 1.2);
+          arc(1.5, 1.8, 1.1, 90 * D, 0, 10, 8, 70, 2.2);
+          line([1.5, .7], [2.8, .7], 6, f => 70 - f * 50, 2.6);
+          arc(2.8, 1.7, 1, 180 * D, 90 * D, 10, 20, 12, 2.4);
+          line([1.8, 1.7], [.5, 1.7], 8, f => 12 + f * 20, 2.2);
+          arc(.5, 2.7, 1, 0, -90 * D, 10, 32, 18, 2.4);
+          line([.5, 3.7], [.4, 2.8], 6, () => 8, 1.2);
+          drawRideArt.goliathTrack = pts;
+        }
+        const pts = drawRideArt.goliathTrack, P2 = pts.map(([u, v, z]) => IP(o, u, v, z));
+        c.strokeStyle = '#c98f6b'; c.lineWidth = 2.4; pts.forEach(([u, v, z], i) => { if (z > 15 && i % 2 === 0) { const [x, y] = P2[i], [, gy] = IP(o, u, v, 0); c.beginPath(); c.moveTo(x, y); c.lineTo(x, gy); c.stroke(); } });
+        box(c, o, 1.5, 2.8, .5, .3, 0, 4, '#a8784f', { top: '#c99d6f' });
+        const rail = (w, col, dy) => { c.strokeStyle = col; c.lineWidth = w; c.beginPath(); P2.forEach(([x, y], i) => i ? c.lineTo(x, y + dy) : c.moveTo(x, y + dy)); c.stroke(); };
+        rail(5, '#c98f6b', 0); rail(3, '#e0483f', -1); rail(1.4, '#ffd36b', -2.2);
+        const lens = []; let tot = 0; for (let i = 0; i < P2.length - 1; i++) { const d = Math.hypot(P2[i + 1][0] - P2[i][0], P2[i + 1][1] - P2[i][1]); lens.push(d); tot += d; }
+        const prog = rt.phase === 'run' ? rt.prog : 0; let s = prog * tot, i = 0; while (i < lens.length - 1 && s > lens[i]) { s -= lens[i]; i++; }
+        const f = lens[i] ? s / lens[i] : 0, cx = P2[i][0] + (P2[i + 1][0] - P2[i][0]) * f, cy = P2[i][1] + (P2[i + 1][1] - P2[i][1]) * f;
+        c.fillStyle = '#d9a066'; rr(c, cx - 8, cy - 5, 16, 7, 2.5); c.fill(); c.strokeStyle = EDGE; c.lineWidth = 1; c.stroke();
+        if (rt.riders.length > 1) { c.fillStyle = '#e0a08a'; ell(c, cx - 3, cy - 7, 3, 2.4); c.fill(); ell(c, cx + 3, cy - 7, 3, 2.4); c.fill(); }
+        { const [x, y] = IP(o, 2.8, 2.8, 5); c.fillStyle = '#fffaf2'; rr(c, x - 32, y - 32, 64, 11, 5); c.fill(); c.strokeStyle = EDGE; c.lineWidth = 1; c.stroke(); c.fillStyle = '#a8784f'; c.font = 'bold 8px Chewy, sans-serif'; c.textAlign = 'center'; c.fillText('GOLIATH GUINEA', x, y - 24); }
+        break;
+      }
+      case 'pmochi': {
+        if (!drawRideArt.mochiTrack) {
+          const pts = [], push = (u, v, z, w = 1) => pts.push([u, v, z, w]), line = (a, b2, n, zf, w) => { for (let i = 0; i < n; i++) { const f = i / n; push(a[0] + (b2[0] - a[0]) * f, a[1] + (b2[1] - a[1]) * f, zf(f), w); } }, arc = (cu, cv, r, t0, t1, n, z0, z1, w) => { for (let i = 0; i < n; i++) { const f = i / n, th = t0 + (t1 - t0) * f; push(cu + r * Math.cos(th), cv + r * Math.sin(th), z0 + (z1 - z0) * f, w); } }, D = Math.PI / 180;
+          line([1, 3.2], [2, 3.2], 6, () => 10, 1.2);
+          arc(2, 2, 1.2, 90 * D, 0, 12, 10, 55, 2.4);
+          line([2, .8], [3.2, .8], 7, f => 55 - f * 35, 2.6);
+          arc(3.2, 1.8, 1.2, 180 * D, 90 * D, 12, 20, 16, 2.8);
+          line([2, 1.8], [.5, 1.8], 8, f => 16 + f * 28, 2.4);
+          arc(.5, 2.8, 1.2, 0, -90 * D, 12, 44, 24, 2.6);
+          line([-.7, 2.8], [-.2, 2], 6, f => 24 + f * 18, 2.2);
+          arc(-.2, 1, 1.2, 0, -180 * D, 12, 42, 18, 2.5);
+          line([1, 1], [1, 3.2], 8, f => 18 + f * 16, 2.2);
+          drawRideArt.mochiTrack = pts;
+        }
+        const pts = drawRideArt.mochiTrack, P2 = pts.map(([u, v, z]) => IP(o, u, v, z));
+        const haypile = [[1.5, 2, 0, 25], [1, 1.2, 0, 22], [2.5, 1, 0, 28]];
+        for (const [hx, hy, hz, hsz] of haypile) { const [x, y] = IP(o, hx, hy, hz); c.fillStyle = '#f4dd8f'; c.globalAlpha = .6; ell(c, x, y, hsz, hsz * .7); c.fill(); c.globalAlpha = 1; }
+        c.strokeStyle = '#a8784f'; c.lineWidth = 2; pts.forEach(([u, v, z], i) => { if (z > 12 && i % 3 === 0) { const [x, y] = P2[i], [, gy] = IP(o, u, v, 0); c.beginPath(); c.moveTo(x, y); c.lineTo(x, gy); c.stroke(); } });
+        box(c, o, 2, 3.2, .6, .3, 0, 4, '#9cc65a', { top: '#c4e4a0' });
+        const rail = (w, col, dy) => { c.strokeStyle = col; c.lineWidth = w; c.beginPath(); P2.forEach(([x, y], i) => i ? c.lineTo(x, y + dy) : c.moveTo(x, y + dy)); c.stroke(); };
+        rail(5.5, '#8b6f4d', 0); rail(3.2, '#c4b5ec', -0.6); rail(1.2, '#f48fb1', -1.8);
+        const lens = []; let tot = 0; for (let i = 0; i < P2.length - 1; i++) { const d = Math.hypot(P2[i + 1][0] - P2[i][0], P2[i + 1][1] - P2[i][1]); lens.push(d); tot += d; }
+        const prog = rt.phase === 'run' ? rt.prog : 0; let s = prog * tot, i = 0; while (i < lens.length - 1 && s > lens[i]) { s -= lens[i]; i++; }
+        const f = lens[i] ? s / lens[i] : 0, cx = P2[i][0] + (P2[i + 1][0] - P2[i][0]) * f, cy = P2[i][1] + (P2[i + 1][1] - P2[i][1]) * f;
+        c.fillStyle = '#d9a066'; rr(c, cx - 9, cy - 6, 18, 8, 3); c.fill(); c.strokeStyle = EDGE; c.lineWidth = 1; c.stroke();
+        if (rt.riders.length > 1) { c.fillStyle = '#e0a08a'; for (let k = 0; k < Math.min(rt.riders.length, 3); k++) { ell(c, cx - 4 + k * 4, cy - 8, 3, 2.5); c.fill(); } }
+        { const [x, y] = IP(o, 2, 3.7, 10); c.fillStyle = '#fffaf2'; rr(c, x - 40, y - 34, 80, 12, 6); c.fill(); c.strokeStyle = EDGE; c.lineWidth = 1.2; c.stroke(); c.fillStyle = '#9cc65a'; c.font = 'bold 9px Chewy, sans-serif'; c.textAlign = 'center'; c.fillText('MOCHI\'S MEGA ZOOMIES', x, y - 26); }
         break;
       }
     }
