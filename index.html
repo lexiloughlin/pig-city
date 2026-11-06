@@ -5552,13 +5552,40 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
         break;
       }
       case 'pkingda': {
-        const top = 120, p = rt.phase === 'run' ? rt.prog : 0;
-        const liftZ = p < .4 ? 12 + p / .4 * (top - 12) : top;
-        cyl(c, o, 1, 1, .7, 0, 5, '#5f8f2e');
-        cyl(c, o, 1, 1, .15, 5, liftZ - 8, '#7cc35a');
-        const [x, y] = IP(o, 1, 1, liftZ - 8); c.strokeStyle = '#d9ad3c'; c.lineWidth = 1.8; for (let i = 0; i < 12; i++) { const yy = y + i * (liftZ - 20) / 12; c.beginPath(); c.moveTo(x - 8, yy); c.lineTo(x + 8, yy); c.stroke(); }
-        if (p >= .4) { const drop = (p - .4) / .6, z = liftZ - drop * (liftZ - 8), [dx, dy] = IP(o, 1 + Math.sin(drop * Math.PI * 2) * .6, 1, z); c.fillStyle = '#d9a066'; rr(c, dx - 7, dy - 6, 14, 5, 2); c.fill(); c.strokeStyle = EDGE; c.lineWidth = 1; c.stroke(); if (rt.riders.length) { c.fillStyle = '#e0a08a'; ell(c, dx, dy - 8, 3, 2.5); c.fill(); } }
-        { const [sx, sy] = IP(o, 1, 1, top + 8); c.fillStyle = '#fffaf2'; rr(c, sx - 28, sy - 30, 56, 10, 5); c.fill(); c.strokeStyle = EDGE; c.lineWidth = 1; c.stroke(); c.fillStyle = '#5f8f2e'; c.font = 'bold 8px Chewy, sans-serif'; c.textAlign = 'center'; c.fillText('KINGDA CAVY', sx, sy - 23); }
+        const top = 140, p = rt.phase === 'run' ? rt.prog : 0;
+        const liftZ = p < .35 ? 12 + p / .35 * (top - 12) : top;
+        box(c, o, .8, 2.8, .7, .3, 0, 4, '#7cc35a', { top: '#9dd87a' });
+        const baseX = 1, baseY = 2.8, towerW = .12;
+        for (let i = 0; i < 20; i++) {
+          const h = i * (liftZ - 8) / 20;
+          const [x, y] = IP(o, baseX, baseY, h);
+          const [xr, yr] = IP(o, baseX + towerW, baseY, h);
+          c.strokeStyle = '#5f8f2e'; c.lineWidth = 1.6; c.beginPath(); c.moveTo(x, y); c.lineTo(xr, yr); c.stroke();
+          if (i % 2 === 0) {
+            const [xl, yl] = IP(o, baseX - towerW, baseY, h);
+            c.beginPath(); c.moveTo(xl, yl); c.lineTo(xr, yr); c.stroke();
+          }
+        }
+        const [topx, topy] = IP(o, baseX, baseY, top);
+        c.strokeStyle = '#5f8f2e'; c.lineWidth = 2.2;
+        c.beginPath(); c.moveTo(topx - 16, topy - 2); c.lineTo(topx + 16, topy - 2); c.stroke();
+        c.strokeStyle = '#7cc35a'; c.lineWidth = 1;
+        for (let i = 0; i < 4; i++) { c.beginPath(); c.moveTo(topx - 14 + i * 10, topy - 2); c.lineTo(topx - 14 + i * 10, topy + 4); c.stroke(); }
+        if (p < .35) {
+          const [tx, ty] = IP(o, baseX + Math.sin(p * Math.PI * 2) * .08, baseY, liftZ);
+          c.fillStyle = '#d9a066'; rr(c, tx - 6, ty - 5, 12, 6, 2.2); c.fill();
+          c.strokeStyle = EDGE; c.lineWidth = 1; c.stroke();
+          if (rt.riders.length) { c.fillStyle = '#e0a08a'; ell(c, tx, ty - 7, 2.8, 2.2); c.fill(); }
+        } else {
+          const dropProg = (p - .35) / .65;
+          const dropX = baseX - .8 * dropProg;
+          const dropZ = top - dropProg * (top - 12);
+          const [dx, dy] = IP(o, dropX, baseY - .4 * dropProg, dropZ);
+          c.fillStyle = '#d9a066'; rr(c, dx - 6, dy - 5, 12, 6, 2.2); c.fill();
+          c.strokeStyle = EDGE; c.lineWidth = 1; c.stroke();
+          if (rt.riders.length) { c.fillStyle = '#e0a08a'; ell(c, dx, dy - 7, 2.8, 2.2); c.fill(); }
+        }
+        { const [sx, sy] = IP(o, baseX, baseY - .4, 8); c.fillStyle = '#fffaf2'; rr(c, sx - 32, sy - 32, 64, 11, 5); c.fill(); c.strokeStyle = EDGE; c.lineWidth = 1; c.stroke(); c.fillStyle = '#5f8f2e'; c.font = 'bold 8px Chewy, sans-serif'; c.textAlign = 'center'; c.fillText('KINGDA CAVY', sx, sy - 24); }
         break;
       }
       case 'peltoki': {
