@@ -583,6 +583,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     sushi:   { name: 'Sushi Spot', ic: '🍣', cat: 'cbiz', cost: 70, desc: '2 jobs. Workers in Job City get happier at lunch', city: true },
     pcse:    { name: 'PCSE Tower', ic: '🏛️', cat: 'cbiz', cost: 160, desc: 'The Pig City Stock Exchange! 2×2, 3 trader jobs, opens the PCSE', city: true },
     bbb:     { name: 'Bron Corp', ic: '💰', cat: 'cbiz', cost: 250, desc: 'The top bank in Pig City! The tallest 2×2 skyscraper, 4 banker jobs with the best pay in town, and CEO Bronson moves in to run it', city: true },
+    squealtopia: { name: 'Squealtopia HQ', ic: '🎢', cat: 'cbiz', cost: 280, desc: '🎡 The ultimate pig amusement park! A massive 2×2 HQ with 5 fantastic jobs - park designers, thrill engineers, and fun directors earn top 🪙. Builds attraction when complete!', city: true },
     dealer:  { name: 'Zoomies Motors', ic: '🚗', cat: 'cbiz', cost: 130, desc: '2 jobs. Unlocks buying new cars for your pigs', city: true },
     citytree: { name: 'Street Tree', ic: '🌳', cat: 'cdecor', cost: 10, desc: 'Shady sidewalk tree. City workers feel happier.', city: true },
     streetlamp: { name: 'Street Lamp', ic: '💡', cat: 'cdecor', cost: 15, desc: 'Lights up the city at night', city: true },
@@ -785,7 +786,8 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     sushi:   { title: 'Sushi Chef', place: 'Sushi Spot', emoji: '🍣', pay: 2, every: 5 },
     dealer:  { title: 'Car Seller', place: 'Zoomies Motors', emoji: '🚗', pay: 3, every: 6 },
     pcse:    { title: 'Trader', place: 'PCSE Tower', emoji: '📈', pay: 3, every: 5, slots: [3, 4, 5] },
-    bbb:     { title: 'Banker', place: 'Bron Corp', emoji: '💰', pay: 5, every: 5, slots: [4, 5, 6] }
+    bbb:     { title: 'Banker', place: 'Bron Corp', emoji: '💰', pay: 5, every: 5, slots: [4, 5, 6] },
+    squealtopia: { title: 'Thrill Engineer', place: 'Squealtopia HQ', emoji: '🎢', pay: 4, every: 4, slots: [4, 5, 6, 7] }
   };
   const MULT = [1, 1.5, 2], CAP = [4, 6, 8], BEDS = [3, 4, 6], SLOT_N = [2, 3, 4];
   const L = b => b.lvl || 1;
@@ -803,7 +805,8 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     office: ['Wheek Tech HQ', 'Wheek Tech Tower', 'Wheek Tech Campus'], factory: ['Hay Factory', 'Big Hay Factory', 'Robo Hay Works'],
     market: ['Veggie Market', 'Veggie Supermarket', 'Veggie Mega Mart'], sushi: ['Sushi Spot', 'Sushi House', 'Sushi Palace'],
     dealer: ['Zoomies Motors', 'Zoomies Showroom', 'Zoomies Gigafactory'], pcse: ['PCSE Tower', 'PCSE Grand Hall', 'PCSE Sky Exchange'],
-    bbb: ['Bron Corp', 'Bron Corp Tower', 'Bron Corp Sky Vault']
+    bbb: ['Bron Corp', 'Bron Corp Tower', 'Bron Corp Sky Vault'],
+    squealtopia: ['Squealtopia HQ', 'Squealtopia Resort', 'Squealtopia Mega Park']
   };
   const lvName = (b, l = L(b)) => (LV_NAMES[b.type] || [B[b.type].name])[l - 1];
   function perkText(t, l) {
@@ -818,7 +821,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
       case 'vet': return `Sick pigs heal ${l}× faster`;
       case 'hospital': return `${BEDS[l - 1]} hospital beds`;
       case 'cafe': case 'salon': case 'toys': return `${SLOT_N[l - 1]} jobs`;
-      case 'office': case 'factory': case 'market': case 'sushi': case 'dealer': case 'pcse': case 'bbb': return `${(JOBS[t].slots || SLOT_N)[l - 1]} jobs` + (t === 'bbb' ? ' · best pay in town' : t === 'dealer' ? ' · sells new cars' : t === 'factory' ? ' · +2 🌾 per shift' : t === 'market' ? ' · +1 🫑 per shift' : '');
+      case 'office': case 'factory': case 'market': case 'sushi': case 'dealer': case 'pcse': case 'bbb': case 'squealtopia': return `${(JOBS[t].slots || SLOT_N)[l - 1]} jobs` + (t === 'bbb' ? ' · best pay in town' : t === 'squealtopia' ? ' · top 🎢 engineers, amazing pay' : t === 'dealer' ? ' · sells new cars' : t === 'factory' ? ' · +2 🌾 per shift' : t === 'market' ? ' · +1 🫑 per shift' : '');
       case 'sitter': return `${l} pig sitter${l > 1 ? 's' : ''}`;
       case 'roomba': return ['Normal speed', 'Fast', 'Super fast'][l - 1];
     }
