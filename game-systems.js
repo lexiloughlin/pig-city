@@ -145,7 +145,7 @@ const GameSystems = {
 
   // ============= ACHIEVEMENT SYSTEM =============
 
-  ACHIEVEMENTS = {
+  ACHIEVEMENTS: {
     'love-birds': {
       name: 'Love is in the Air 💕',
       desc: 'Get your first marriage',
@@ -226,7 +226,7 @@ const GameSystems = {
 
   // ============= RANDOM EVENTS SYSTEM =============
 
-  EVENTS = [
+  EVENTS: [
     {
       id: 'celebrity-visit',
       name: '⭐ Celebrity Pig Spotted!',

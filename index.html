@@ -37,6 +37,15 @@ body {
   padding: 12px max(16px, env(safe-area-inset-left, 0px)) 24px;
 }
 [hidden] { display: none !important; }
+#parkPanel .pstars { font-size: 24px; color: #e9b93b; letter-spacing: 2px; margin: -4px 0 8px; }
+#parkPanel .pgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 10px; }
+#parkPanel .pgrid > div { background: #fff7f9; border: 2px solid #f3c6d3; border-radius: 12px; padding: 6px 10px; display: flex; flex-direction: column; }
+#parkPanel .pgrid b { font-size: 20px; }
+#parkPanel .pprice { display: flex; align-items: center; gap: 8px; }
+#parkPanel .pprice .btn { padding: 2px 12px; font-size: 18px; margin: 0; }
+#parkPanel .prow, #parkPanel .psel { display: flex; flex-direction: column; padding: 6px 10px; border-radius: 10px; background: #fffaf2; border: 2px solid #f0e2cf; margin-bottom: 6px; cursor: pointer; }
+#parkPanel .psel { border-color: #e9b93b; cursor: default; }
+#parkPanel .prow:hover { border-color: #f48fb1; }
 .wrap { max-width: 1500px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
 header { display: flex; align-items: end; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 8vw, 56px); line-height: .95; margin: 0; color: var(--wood-dark); text-shadow: 3px 3px 0 var(--ink); }
@@ -259,6 +268,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
       <div class="viewtabs" id="viewtabs" role="tablist">
         <button class="vtab" data-v="home" role="tab">🏡 Home Town</button>
         <button class="vtab" data-v="city" role="tab">🏙️ Job City</button>
+        <button class="vtab" data-v="park" role="tab">🎢 Squealtopia</button>
         <button class="vtab" data-v="dash" role="tab">📊 Jobs Dashboard</button>
         <button class="vtab" data-v="pcse" role="tab">📈 PCSE</button>
         <button class="vtab inside" data-v="inside" role="tab" id="insideTab" hidden>🏰 Inside</button>
@@ -357,6 +367,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
         <div id="goals"></div>
         <div class="badges" id="badges"></div>
       </div>
+      <div class="panel" id="parkPanel" hidden></div>
       <div class="panel" id="hoodPanel">
         <h2>Neighborhoods <span class="tag" id="hoodMap"></span></h2>
         <div id="hoods"></div>
@@ -412,6 +423,22 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   </div>
 </div>
 
+<!-- Hay Harvest Mini-game Modal -->
+<div class="minigame-overlay" id="minigameOverlay" hidden>
+  <div class="minigame-modal">
+    <h2>🌾 Hay Harvest Game</h2>
+    <div class="stats">
+      <div>Time: <span id="gameTime">30</span>s</div>
+      <div>Collected: <span id="gameScore">0</span></div>
+      <div>Reward: <span id="gameReward">0</span> 🪙</div>
+    </div>
+    <canvas id="minigameCanvas" class="game-canvas" width="450" height="240"></canvas>
+    <div class="btns" id="gameButtons">
+      <button class="btn alt" id="startBtn">Start Game</button>
+      <button class="btn ghost" id="closeBtn">Close</button>
+    </div>
+  </div>
+</div>
 <script>
 (() => {
   const WHITE = '#fbf6ee', INK = '#3b2a1a';
@@ -857,8 +884,8 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
 
   // ---------- state ----------
   let G, nextId = 1, view = 'home', insideB = null;
-  const bl = () => view === 'city' ? G.city : view === 'inside' ? [] : G.buildings;
-  const allB = () => G.buildings.concat(G.city || []);
+  const bl = () => view === 'city' ? G.city : view === 'inside' ? [] : view === 'park' ? ensurePark().rides : G.buildings;
+  const allB = () => G.buildings.concat(G.city || [], (G.park && G.park.rides) || []);
   const pigMap = p => p.trip ? p.trip.legs[p.trip.i].map : (p.loc || 'home');
   const pigPos = p => p.trip ? { x: p.trip.x, y: p.trip.y } : { x: p.x, y: p.y };
   function newTown() {
@@ -995,7 +1022,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   const at = (x, y) => bl().find(b => covers(b, x, y));
   const workersAt = b => b.x === undefined ? [] : G.pigs.filter(q => q.job && q.job.x === b.x && q.job.y === b.y && (q.job.map || 'home') === (b.map || 'home'));
   const maxWorkers = t => Math.max(0, ...allB().filter(b => b.type === t).map(b => workersAt(b).length));
-  const jobOf = p => p.job && (p.job.map === 'city' ? G.city : G.buildings).find(b => b.x === p.job.x && b.y === p.job.y && JOBS[b.type]);
+  const jobOf = p => p.job && listFor(p.job.map).find(b => b.x === p.job.x && b.y === p.job.y && JOBS[b.type]);
   const jobPlaces = () => allB().filter(b => JOBS[b.type]);
   const ceoOf = p => p.banker ? 'bank' : p.bronson ? 'bbb' : null;
   const jobTitle = (p, b) => ceoOf(p) === b.type ? 'CEO' : JOBS[b.type].title;
@@ -1249,7 +1276,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     let html = `<option value="">No job (just relaxing)</option>`;
     for (const b of places) {
       const key = (b.map || 'home') + ':' + b.x + ',' + b.y, n = workersAt(b).length, mine = cur === key, j = JOBS[b.type];
-      html += `<option value="${key}" ${mine ? 'selected' : ''} ${!mine && n >= slotsOf(b) ? 'disabled' : ''}>${j.emoji} ${jobTitle(p, b)} at ${j.place}${b.map === 'city' ? ' 🏙️' : ''} (${n}/${slotsOf(b)})</option>`;
+      html += `<option value="${key}" ${mine ? 'selected' : ''} ${!mine && n >= slotsOf(b) ? 'disabled' : ''}>${j.emoji} ${jobTitle(p, b)} at ${j.place}${b.map === 'city' ? ' 🏙️' : b.map === 'park' ? ' 🎢' : ''} (${n}/${slotsOf(b)})</option>`;
     }
     if (!places.length) html += '<option disabled>Build a Café, Salon or Toy Shop to create jobs</option>';
     sel.innerHTML = html; sel.value = cur;
@@ -1259,7 +1286,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     const v = e.target.value;
     p.job = null; p.working = false;
     if (!v) { p.noJob = true; toast(`${p.name} is taking some time off to relax. 🌸`); }
-    else { const [m, xy] = v.split(':'), [x, y] = xy.split(',').map(Number); const b = (m === 'city' ? G.city : G.buildings).find(q => q.x === x && q.y === y); if (b) hire(p, b); }
+    else { const [m, xy] = v.split(':'), [x, y] = xy.split(',').map(Number); const b = listFor(m).find(q => q.x === x && q.y === y); if (b) hire(p, b); }
     jobSig = ''; listSig = ''; e.target.blur(); renderPig(); save();
   });
 
@@ -1567,6 +1594,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     ptrs.set(e.pointerId, cssPt(e)); dragMoved = false;
     if (view === 'inside' && !isHouse()) return;
     if (tool === 'broom' && view === 'home') { sweeping = true; scoopNear(toWorld(e), 22); return; }
+    if (view === 'park' && tool === 'ppath' && ptrs.size === 1) { parkPaint = true; lastPP = null; parkPaintAt(e); return; }
     if (tool === 'bridge' && (view === 'home' || view === 'city') && ptrs.size === 1) { const w = toWorld(e), x = Math.floor(w.x / T), y = Math.floor(w.y / T); bridgeLine = { s: [x, y], e: [x, y], path: bridgePath(mapOfView(), [x, y], [x, y]) }; return; }
     if ((tool === 'road' || tool === 'path') && (view === 'home' || view === 'city') && ptrs.size === 1) { paintMode = tool; paintTile(e); return; }
     if ((tool === 'zone' || tool === 'island') && (view === 'home' || view === 'city') && ptrs.size === 1) { const w = toWorld(e), x = Math.floor(w.x / T), y = Math.floor(w.y / T); zoneDrag = { x0: x, y0: y, x1: x, y1: y, kind: tool }; return; }
@@ -1578,6 +1606,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     if (!ptrs.has(e.pointerId)) return;
     ptrs.set(e.pointerId, cssPt(e));
     if (sweeping) { scoopNear(w, 22); return; }
+    if (parkPaint) { parkPaintAt(e); return; }
     if (paintMode) { paintTile(e); return; }
     if (bridgeLine) { const x = Math.floor(w.x / T), y = Math.floor(w.y / T); if (x !== bridgeLine.e[0] || y !== bridgeLine.e[1]) { bridgeLine.e = [x, y]; bridgeLine.path = bridgePath(mapOfView(), bridgeLine.s, [x, y]); } return; }
     if (zoneDrag) { zoneDrag.x1 = Math.max(WORLD.x0, Math.min(WORLD.x1 - 1, Math.floor(w.x / T))); zoneDrag.y1 = Math.max(WORLD.y0, Math.min(WORLD.y1 - 1, Math.floor(w.y / T))); return; }
@@ -1588,7 +1617,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
       if (dragMoved) { const cm = cam(); cm.x = drag.cx - dx / cm.z; cm.y = drag.cy - dy / cm.z; clampCam(cm); canvas.style.cursor = 'grabbing'; }
     }
   });
-  const endPtr = e => { if (bridgeLine) { if (e.type === 'pointerup') buildBridgeLine(); bridgeLine = null; } if (zoneDrag && e.type === 'pointerup') finishZone(); zoneDrag = null; if (paintMode) { if (paintMode === 'bridge') bridgeReport(); paintMode = null; lastPaint = null; save(); } ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch0 = null; if (!ptrs.size) { drag = null; sweeping = false; canvas.style.cursor = ''; } };
+  const endPtr = e => { if (parkPaint) { parkPaint = false; lastPP = null; ppCache = null; save(); } if (bridgeLine) { if (e.type === 'pointerup') buildBridgeLine(); bridgeLine = null; } if (zoneDrag && e.type === 'pointerup') finishZone(); zoneDrag = null; if (paintMode) { if (paintMode === 'bridge') bridgeReport(); paintMode = null; lastPaint = null; save(); } ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch0 = null; if (!ptrs.size) { drag = null; sweeping = false; canvas.style.cursor = ''; } };
   canvas.addEventListener('pointerup', endPtr); canvas.addEventListener('pointercancel', endPtr);
   canvas.addEventListener('pointerleave', () => { hover = null; });
   function zoomAt(sx, sy, f) {
@@ -1607,7 +1636,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   const keysDown = new Set();
   window.addEventListener('keyup', e => keysDown.delete(e.key.toLowerCase()));
   function panKeys(dt) {
-    if (view !== 'home' && view !== 'city' && !isHouse()) return;
+    if (view !== 'home' && view !== 'city' && view !== 'park' && !isHouse()) return;
     const cm = cam(), sp = 420 * dt / cm.z;
     if (keysDown.has('arrowleft') || keysDown.has('a')) cm.x -= sp;
     if (keysDown.has('arrowright') || keysDown.has('d')) cm.x += sp;
@@ -1621,6 +1650,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     if (isHouse()) { houseClick(cssPt(e)); return; }
     if (view === 'inside') { const wi = { x: w.x / IS, y: w.y / IS }; insideClick(wi, Math.floor(wi.x / T), Math.floor(wi.y / T)); return; }
     const sp = cssPt(e), s = scrToIso(sp.x, sp.y);
+    if (view === 'park') { parkClick(tx, ty, w); return; }
     if (builder) { builderClick(s, tx, ty); return; }
     if (tool === 'broom' || tool === 'road' || tool === 'path' || tool === 'zone' || tool === 'bridge' || tool === 'island') return;
     if (tool === 'bulldoze') {
@@ -1978,7 +2008,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   }
 
   // ---------- views ----------
-  const curCats = () => view === 'city' ? CITY_CATS : view === 'inside' ? (insideB && insideB.type === 'hutch' ? HOUSE_CATS : IN_CATS) : CATS;
+  const curCats = () => view === 'park' ? PARK_CATS : view === 'city' ? CITY_CATS : view === 'inside' ? (insideB && insideB.type === 'hutch' ? HOUSE_CATS : IN_CATS) : CATS;
   const TD = k => view === 'inside' ? F[k] : B[k];
   function drawTabs() {
     tabsEl.innerHTML = '';
@@ -2032,13 +2062,14 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     $('insideTab').hidden = !insideB;
     if (v !== 'inside') houseRoom = null;
     if (insideB) $('insideTab').textContent = insideB.type === 'hutch' ? `🏰 Castle #${G.buildings.filter(q => q.type === 'hutch').indexOf(insideB) + 1}` : `${B[insideB.type].ic} ${lvName(insideB)}`;
-    const map = v === 'home' || v === 'city' || v === 'inside';
+    const map = v === 'home' || v === 'city' || v === 'inside' || v === 'park';
     $('stage').hidden = !map; $('buildPanel').hidden = !map; $('dash').hidden = v !== 'dash'; $('pcse').hidden = v !== 'pcse';
-    $('buildTitle').textContent = v === 'city' ? 'Build downtown 🏙️' : v === 'inside' ? `Decorate ${insideName(insideB)} ${isWork(insideB) ? '🪴' : '🛋️'}` : 'Build';
+    $('buildTitle').textContent = v === 'park' ? `Build ${PARK_NAME} 🎢` : v === 'city' ? 'Build downtown 🏙️' : v === 'inside' ? `Decorate ${insideName(insideB)} ${isWork(insideB) ? '🪴' : '🛋️'}` : 'Build';
     drawTabs(); drawTools(); renderBld(); renderCozy();
     $('buildBar').hidden = !(v === 'home' || v === 'city');
-    roomLabels(); $('zoombar').hidden = v === 'inside' && !isHouse(); $('zWalls').hidden = !isHouse(); $('zMap').hidden = v === 'inside'; hoodSig = '';
-    if (map) { resize(); if ((v === 'home' || v === 'city') && !cams[v].init) { camHome(v); cams[v].init = true; } if (isHouse()) houseCamHome(); }
+    roomLabels(); $('zoombar').hidden = v === 'inside' && !isHouse(); $('zWalls').hidden = !isHouse(); $('zMap').hidden = v === 'inside' || v === 'park'; hoodSig = ''; parkPanelSig = ''; pSel = null; renderParkPanel();
+    if (map) { resize(); if ((v === 'home' || v === 'city' || v === 'park') && !cams[v].init) { camHome(v); cams[v].init = true; } if (isHouse()) houseCamHome(); }
+    if (v === 'park' && !G.parkSeen) { G.parkSeen = true; ensurePark(); setTimeout(() => toast(`🎢 Welcome to ${PARK_NAME}! Build rides next to the paths, hire Ride Operators, and set your ticket price. Tourists start coming once you have rides.`), 200); }
     if (v === 'city' && G.cityNew) { G.cityNew = false; setTimeout(() => toast('🏙️ Welcome to Job City! Pigs with jobs here drive in around 8am and home after 5pm.'), 200); }
     if (v === 'dash') renderDash(); if (v === 'pcse') { stockSig = ''; renderStocks(); }
     renderIsleTabs();
@@ -2051,6 +2082,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   // ---------- jobs dashboard ----------
   function pigStatus(p) {
     if (p.state) return '🏥 At the hospital';
+    if (p.loc === 'park') { const a = parkAgents.find(q => q.p === p); return a && a.work ? (a.state === 'staff' ? `🎟️ Running a ride at ${PARK_NAME}` : `🚗 Heading to work at ${PARK_NAME}`) : `🎢 Having fun at ${PARK_NAME}`; }
     if (p.trip) return p.trip.to === 'city' ? '🚗 Driving to work' : '🚗 Driving home';
     const jb = jobOf(p);
     if (pigMap(p) === 'city') return p.working ? '💼 Working downtown' : '🚶 Walking to the car';
@@ -2448,13 +2480,13 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   const cozyOf = b => { const its = b && (b.type === 'hutch' && b.house ? b.house.items : b.room ? b.room.items : null); return its ? its.reduce((s, it) => s + (F[it.k] ? F[it.k].cozy : 0), 0) : 0; };
   function logPay(p, b, pay) {
     const J = G.jd; J.total += pay; J.pig[p.id] = (J.pig[p.id] || 0) + pay;
-    const k = (b.map === 'city' ? '🏙️ ' : '🏡 ') + JOBS[b.type].place; J.place[k] = (J.place[k] || 0) + pay;
+    const k = (b.map === 'city' ? '🏙️ ' : b.map === 'park' ? '🎢 ' : '🏡 ') + JOBS[b.type].place; J.place[k] = (J.place[k] || 0) + pay;
   }
 
   // ---------- simulation ----------
   function tick(dt) {
     refreshZones(dt);
-    worldTick(dt); insideTick(dt); houseTick(dt);
+    worldTick(dt); insideTick(dt); houseTick(dt); parkTick(dt);
     G.time += dt;
     const parks = lvlSum('park') * (evOn('spa') ? 1.5 : 1), vets = lvlSum('vet');
     const decor = G.buildings.reduce((s, b) => s + (DECOR[b.type] || 0) * (zoneBonus.get(b) === 'park' ? 2 : 1), 0), lanterns = count('lantern');
@@ -2491,6 +2523,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
       p.age += dt; p.petCd = Math.max(0, p.petCd - dt); p.hop = Math.max(0, p.hop - dt);
       if (!p.leaveH) { p.leaveH = 7.3 + Math.random() * .9; p.backH = 16.8 + Math.random() * .9; }
       if (p.trip) { driveTick(p, dt); p.food = Math.max(0, p.food - .3 * dt); p.water = Math.max(0, p.water - .3 * dt); continue; }
+      if (parkPigTick(p, dt)) continue; // at the amusement park (or just leaving for it)
       // hospital: check in when sick, get treated, come out healthy
       let hosp = p.hosp && G.buildings.find(b => b.type === 'hospital' && b.x === p.hosp.x && b.y === p.hosp.y);
       if (p.state && !hosp) { p.state = null; p.hosp = null; }
@@ -2558,7 +2591,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
       p.working = false;
       const cityJob = wb && wb.map === 'city';
       if (inCity && !cityJob) { startHome(p); continue; } // job gone while downtown: drive home
-      if (wb && !p.state) {
+      if (wb && wb.map !== 'park' && !p.state) {
         const able = p.food > 30 && p.water > 30 && p.joy > 20 && p.health > 60;
         if (cityJob) {
           const onShift = hourH >= p.leaveH && hourH < p.backH;
@@ -3856,7 +3889,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
 
   // ---------- camera ----------
   let vw = 640, vh = 440, dprNow = 1;
-  const cams = { home: { x: 0, y: 0, z: .9 }, city: { x: 0, y: 0, z: .9 }, inside: { x: 0, y: 0, z: 1 } };
+  const cams = { home: { x: 0, y: 0, z: .9 }, city: { x: 0, y: 0, z: .9 }, inside: { x: 0, y: 0, z: 1 }, park: { x: 0, y: 0, z: .8 } };
   const cam = () => cams[view] || cams.home;
   // soft round lights: one pre-drawn gradient per colour, stamped with drawImage (much cheaper than a new gradient per light per frame)
   const glowCache = new Map();
@@ -3918,9 +3951,9 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   // what part of the iso world is on screen right now (with a margin)
   function viewRect(m = 0) { const cm = cam(), hw = vw / 2 / cm.z + m, hh = vh / 2 / cm.z + m; return { x0: cm.x - hw, x1: cm.x + hw, y0: cm.y - hh, y1: cm.y + hh }; }
   function bOnScreen(b, R) { const n = sz(b.type), o = iso(b.x * T, b.y * T); return o.x + n * HW + 40 > R.x0 && o.x - n * HW - 40 < R.x1 && o.y + 2 * n * HH + 30 > R.y0 && o.y - htOf(b) - 120 < R.y1; }
-  function camHome(v) { const c0 = cams[v], p = iso(9 * T, 6.5 * T); c0.x = p.x; c0.y = p.y; c0.z = Math.max(.5, Math.min(1, vw / 980)); }
+  function camHome(v) { if (v === 'park') { const c0 = cams.park, p = iso((PCOLS / 2 + 4) * T, (PROWS / 2) * T); c0.x = p.x; c0.y = p.y - 40; c0.z = Math.max(.45, Math.min(.85, vw / 1300)); return; } const c0 = cams[v], p = iso(9 * T, 6.5 * T); c0.x = p.x; c0.y = p.y; c0.z = Math.max(.5, Math.min(1, vw / 980)); }
   function clampCam(cm) {
-    const gbc = groundBounds(), xs = [gbc.x0 + 2 * HW, gbc.x1 - 2 * HW], ys = [gbc.y0 + 120, gbc.y1 - 60];
+    const gbc = view === 'park' ? parkBounds() : groundBounds(), xs = [gbc.x0 + 2 * HW, gbc.x1 - 2 * HW], ys = [gbc.y0 + 120, gbc.y1 - 60];
     cm.x = Math.max(xs[0], Math.min(xs[1], cm.x)); cm.y = Math.max(ys[0], Math.min(ys[1], cm.y)); cm.z = Math.max(.4, Math.min(isHouse() ? 3.6 : 2.4, cm.z));
   }
   const scrToIso = (sx, sy) => { const cm = cam(); return { x: (sx - vw / 2) / cm.z + cm.x, y: (sy - vh / 2) / cm.z + cm.y }; };
@@ -4884,10 +4917,731 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     const o = iso(x * T, y * T); c.save(); if (dash) { c.setLineDash([5, 4]); c.lineDashOffset = -G.time * 12; }
     poly(c, [IP(o, 0, 0), IP(o, n, 0), IP(o, n, n), IP(o, 0, n)], fill, stroke, dash ? 2.2 : 1.5); c.restore();
   }
+  // ================= SQUEALTOPIA: the pig amusement park =================
+  // A third map with its own rides, paths, guests and jobs. Rides cycle (load -> run -> unload),
+  // guests walk the paths, queue, ride and buy snacks; town pigs visit when they're free and can work
+  // as ride operators. Everything saves in G.park (guests and ride animation are just for show).
+  const PCOLS = 34, PROWS = 26, P_BLVD = 13, P_AVE = 16, PARK_NAME = 'Squealtopia';
+  const P_OPEN = 9, P_CLOSE = 21;
+  const LANDS = {
+    hay:    { name: 'Hay Hollow',      col: '#f4dd8f', e: '🌾' },
+    cuke:   { name: 'Cucumber Canyon', col: '#c3e8a8', e: '🥒' },
+    carrot: { name: 'Carrot Coast',    col: '#ffcfa6', e: '🥕' },
+    pop:    { name: 'Popcorn Plaza',   col: '#f8d3e2', e: '🍿' }
+  };
+  const landOf = (x, y) => x < P_AVE ? (y < P_BLVD ? 'hay' : 'carrot') : (y < P_BLVD ? 'cuke' : 'pop');
+  const RIDES = {
+    pcarousel: { name: 'Cucumber Carousel', ic: '🎠', n: 2, cost: 120, thrill: 1, appeal: 8,  cap: 8,  dur: 7,  land: 'cuke',   desc: 'A gentle carousel of cucumber steeds. Little pigs love it' },
+    pteacups:  { name: 'Popcorn Teacups',   ic: '🍵', n: 2, cost: 160, thrill: 3, appeal: 10, cap: 9,  dur: 7,  land: 'pop',    desc: 'Spinning popcorn-bucket cups. Popcorning guaranteed' },
+    pbumper:   { name: 'Bumper Pigs',       ic: '🚙', n: 3, cost: 220, thrill: 4, appeal: 12, cap: 6,  dur: 8,  land: 'pop',    desc: 'Bonk! Little cars in a covered arena' },
+    pswings:   { name: 'Zoomies Swings',    ic: '🪁', n: 2, cost: 260, thrill: 5, appeal: 14, cap: 10, dur: 8,  land: 'hay',    desc: 'Swing chairs that fly out wide as the tower spins' },
+    pferris:   { name: 'Hay Wheel',         ic: '🎡', n: 3, cost: 320, thrill: 2, appeal: 14, cap: 12, dur: 10, land: 'hay',    desc: 'A giant Ferris wheel with hay-bale gondolas and the best view in Pig City' },
+    pdrop:     { name: 'Carrot Drop',       ic: '🥕', n: 2, cost: 420, thrill: 8, appeal: 18, cap: 8,  dur: 7,  land: 'carrot', desc: 'Up the giant carrot... and DROP! Wheeeek!' },
+    pflume:    { name: 'Pellet Plunge',     ic: '🛶', n: 3, cost: 520, thrill: 6, appeal: 20, cap: 6,  dur: 9,  land: 'carrot', desc: 'A log flume with a big splashdown. Bring a towel' },
+    pcoaster:  { name: 'The Wheekinator',   ic: '🎢', n: 4, cost: 800, thrill: 9, appeal: 30, cap: 12, dur: 10, land: 'cuke',   desc: 'The tallest, loopiest coaster in pig history. The park\'s big headliner' }
+  };
+  const STANDS = {
+    psnack: { name: 'Timothy Treats',  ic: '🌾', cost: 60,  food: 30,            sell: 2, desc: 'Fresh hay snacks: fills guests up' },
+    pdrink: { name: 'Cucumber Cooler', ic: '🥤', cost: 60,  water: 35,           sell: 2, desc: 'Cucumber water slushies: keeps guests cool' },
+    ppop:   { name: 'Pellet Popcorn',  ic: '🍿', cost: 70,  food: 15, joy: 8,   sell: 3, desc: 'Popcorn (pellet-shaped, obviously)' },
+    pplush: { name: 'Plushie Shop',    ic: '🧸', cost: 110, joy: 15,            sell: 5, desc: 'Squishy pig plushies: big smiles, big coins' }
+  };
+  const PDECOR = {
+    ptree:     { name: 'Park Tree',     ic: '🌳', cost: 15, appeal: 1,   desc: 'A round, shady tree' },
+    pflowers:  { name: 'Flower Bed',    ic: '🌷', cost: 10, appeal: .8,  desc: 'Tulips in park colors' },
+    pflag:     { name: 'Flag Pole',     ic: '🚩', cost: 20, appeal: 1.5, desc: 'A tall pole with a waving park flag' },
+    pbench:    { name: 'Park Bench',    ic: '🪑', cost: 15, appeal: .8,  desc: 'Tired little paws need a rest' },
+    plamp:     { name: 'Park Lamp',     ic: '🏮', cost: 15, appeal: .8,  desc: 'Glows at night' },
+    ptopiary:  { name: 'Pig Topiary',   ic: '🐹', cost: 40, appeal: 3,   desc: 'A hedge trimmed into a guinea pig' },
+    pfountain: { name: 'Fountain',      ic: '⛲', cost: 80, appeal: 5,   desc: 'A splashy fountain (2×2)' }
+  };
+  const PARK_CATS = [['pride', '🎢 Rides'], ['pfood', '🍿 Food & shops'], ['pdecor', '🌳 Park decor'], ['pplan', '🧱 Paths & tools']];
+  for (const [k, r] of Object.entries(RIDES)) { B[k] = { name: r.name, ic: r.ic, cat: 'pride', cost: r.cost, park: true, desc: `${r.desc} · Thrill ${'⚡'.repeat(Math.ceil(r.thrill / 2))} · ${r.n}×${r.n} · ${LANDS[r.land].e} best in ${LANDS[r.land].name}` }; SIZE[k] = r.n; JOBS[k] = { title: 'Ride Operator', place: r.name, emoji: '🎟️', pay: 2, every: 6, slots: k === 'pcoaster' ? [2, 2, 2] : [1, 1, 1] }; }
+  for (const [k, s] of Object.entries(STANDS)) { B[k] = { name: s.name, ic: s.ic, cat: 'pfood', cost: s.cost, park: true, desc: s.desc }; JOBS[k] = { title: k === 'pplush' ? 'Shopkeeper' : 'Snack Seller', place: s.name, emoji: s.ic, pay: 2, every: 6, slots: [1, 1, 1] }; }
+  for (const [k, d] of Object.entries(PDECOR)) B[k] = { name: d.name, ic: d.ic, cat: 'pdecor', cost: d.cost, park: true, desc: d.desc };
+  SIZE.pfountain = 2;
+  B.ppath = { name: 'Park Path', ic: '🧱', cat: 'pplan', cost: 2, park: true, desc: 'Guests can only walk on paths. Every ride and stand needs a path next to it' };
+  B.pbull = { name: 'Bulldoze', ic: '💥', cat: 'pplan', cost: 0, park: true, desc: 'Click a ride, stand, decoration or path to remove it (half your coins back)' };
+  const isRide = t => !!RIDES[t], isStand = t => !!STANDS[t];
+  function listFor(m) { return m === 'city' ? G.city : m === 'park' ? ensurePark().rides : G.buildings; }
+
+  function ensurePark() {
+    if (G.park && Array.isArray(G.park.rides)) return G.park;
+    const P = G.park = { rides: [], paths: [], price: 8, pv: 1, stats: { guests: 0, snacks: 0, rides: 0, coins: 0 }, today: { day: dayNum(), guests: 0, coins: 0 }, rating: 0, opened: false };
+    for (let x = 1; x < PCOLS; x++) P.paths.push(x + ',' + P_BLVD);
+    for (let y = 2; y < PROWS - 1; y++) if (y !== P_BLVD) P.paths.push(P_AVE + ',' + y);
+    for (let x = 6; x < 27; x++) { if (x !== P_AVE) { P.paths.push(x + ',6'); P.paths.push(x + ',20'); } }
+    for (const [x, y] of [[6, 7], [6, 8], [6, 9], [6, 10], [6, 11], [6, 12], [26, 7], [26, 8], [26, 9], [26, 10], [26, 11], [26, 12], [6, 14], [6, 15], [6, 16], [6, 17], [6, 18], [6, 19], [26, 14], [26, 15], [26, 16], [26, 17], [26, 18], [26, 19]]) P.paths.push(x + ',' + y);
+    const put = (type, x, y) => P.rides.push({ type, x, y, map: 'park', t: 0 });
+    put('pcarousel', 18, 11); put('psnack', 15, 14); put('pdrink', 17, 14);
+    for (const [x, y] of [[30, 11], [30, 15], [28, 11], [28, 15], [24, 4], [9, 4], [3, 9], [3, 17], [12, 23], [22, 23]]) put('ptree', x, y);
+    for (const [x, y] of [[32, 11], [32, 15], [31, 11], [31, 15]]) put('pflag', x, y);
+    put('pflowers', 29, 12); put('pflowers', 29, 14);
+    return P;
+  }
+  // ---------- paths ----------
+  let ppCache = null;
+  function ppSet() { const P = ensurePark(); if (!ppCache || ppCache.P !== P || ppCache.pv !== P.pv) ppCache = { P, pv: P.pv, set: new Set(P.paths), dist: null, entries: new Map() }; return ppCache; }
+  const isPPath = (x, y) => ppSet().set.has(x + ',' + y);
+  const inPark = (x, y) => x >= 0 && y >= 0 && x < PCOLS && y < PROWS;
+  const isGateTile = (x, y) => x === PCOLS - 1 && y >= P_BLVD - 1 && y <= P_BLVD + 1;
+  const pAt = (x, y) => ensurePark().rides.find(b => covers(b, x, y));
+  function pFits(type, x, y, ignore) {
+    const n = sz(type);
+    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) {
+      const u = x + i, v = y + j;
+      if (!inPark(u, v) || isGateTile(u, v) || isPPath(u, v)) return false;
+      if (ensurePark().rides.some(b => b !== ignore && covers(b, u, v))) return false;
+    }
+    return true;
+  }
+  // walking distance (in path tiles) from the gate to every path tile
+  function gateDist() {
+    const pc = ppSet(); if (pc.dist) return pc.dist;
+    const d = new Map(), q = [[PCOLS - 1, P_BLVD]]; d.set((PCOLS - 1) + ',' + P_BLVD, 0);
+    for (let i = 0; i < q.length; i++) { const [x, y] = q[i], k0 = d.get(x + ',' + y); for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const k = (x + dx) + ',' + (y + dy); if (!d.has(k) && pc.set.has(k)) { d.set(k, k0 + 1); q.push([x + dx, y + dy]); } } }
+    return (pc.dist = d);
+  }
+  // the path tile next to a ride/stand that guests line up on (null = no path reaches it)
+  function entryOf(b) {
+    const pc = ppSet(); if (pc.entries.has(b)) return pc.entries.get(b);
+    const n = sz(b.type), d = gateDist(); let best = null, bd = 1e9;
+    for (let i = -1; i <= n; i++) for (let j = -1; j <= n; j++) {
+      if ((i === -1 || i === n) === (j === -1 || j === n)) continue; // edges only, no corners, no inside
+      const k = (b.x + i) + ',' + (b.y + j); if (d.has(k) && d.get(k) < bd) { bd = d.get(k); best = [b.x + i, b.y + j]; }
+    }
+    pc.entries.set(b, best); return best;
+  }
+  function pRoute(from, to) {
+    const pc = ppSet(), key = (x, y) => x + ',' + y, prev = new Map([[key(...from), null]]), q = [from];
+    for (let i = 0; i < q.length && i < 4000; i++) {
+      const [x, y] = q[i];
+      if (x === to[0] && y === to[1]) { const out = []; let c = [x, y]; while (c) { out.unshift([(c[0] + .5) * T, (c[1] + .5) * T]); c = prev.get(key(...c)); } return out; }
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = x + dx, ny = y + dy, k = key(nx, ny); if (prev.has(k) || !pc.set.has(k)) continue; prev.set(k, [x, y]); q.push([nx, ny]); }
+    }
+    return null;
+  }
+  const tileOf = a => [Math.floor(a.x / T), Math.floor(a.y / T)];
+  function nearestPathTile(a) {
+    const [tx, ty] = tileOf(a); if (isPPath(tx, ty)) return [tx, ty];
+    let best = null, bd = 1e9; for (const k of ppSet().set) { const [x, y] = k.split(',').map(Number), d = (x - tx) ** 2 + (y - ty) ** 2; if (d < bd) { bd = d; best = [x, y]; } }
+    return best;
+  }
+
+  // ---------- ride state (just for show, rebuilt after loading) ----------
+  const rideRT = new Map();
+  const rtOf = b => { let r = rideRT.get(b); if (!r) rideRT.set(b, r = { phase: 'load', t: 0, riders: [], queue: [], anim: Math.random() * 10, spd: 0, prog: 0 }); return r; };
+  let parkAgents = [], agentId = 1, parkSpawnT = 0, rateT = 0, parkPaint = false, lastPP = null, pSel = null, parkPanelSig = '';
+  const staffed = b => parkAgents.some(a => a.work && a.target === b && a.state === 'staff');
+  const rideOpen = b => !!entryOf(b);
+  const appealOf = b => { const R = RIDES[b.type]; if (!R) return 0; return R.appeal * (1 + .3 * (L(b) - 1)) * (landOf(b.x, b.y) === R.land ? 1.25 : 1); };
+  function parkRating() {
+    const P = ensurePark(); let tot = 0, types = new Set(), stands = new Set(), decor = 0;
+    for (const b of P.rides) {
+      if (isRide(b.type)) { tot += appealOf(b) * (rideOpen(b) ? (staffed(b) ? 1 : .75) : .2); if (rideOpen(b)) types.add(b.type); }
+      else if (isStand(b.type)) { if (entryOf(b)) stands.add(b.type); }
+      else if (PDECOR[b.type]) decor += PDECOR[b.type].appeal;
+    }
+    tot += Math.min(25, decor) + stands.size * 4 + types.size * 3;
+    return Math.min(5, tot / 26);
+  }
+  const fairPrice = () => Math.round(3 + ensurePark().rating * 2.4);
+  const parkOpenNow = () => { const h = hourNow(); return h >= P_OPEN && h < P_CLOSE; };
+
+  // ---------- guests ----------
+  const GUEST_SKINS = [
+    { base: '#d9a066', blaze: WHITE, ear: '#e0a08a' }, { base: '#f4efe6', rear: '#c96d2c', ear: '#e9b8a8' }, { base: '#8a5a3c', band: WHITE, ear: '#6b4630', dark: true },
+    { base: '#efe3c8', head: '#d27b2f', ear: '#c98a6a' }, { base: '#bfbab4', fluffy: true, ear: '#9a8f88' }, { base: '#e8c27a', cheek: WHITE, ear: '#d9a37f' },
+    { base: '#2b2426', band: '#e5a25a', ear: '#4a3a36', dark: true }, { base: '#f7f2ea', eyePatch: '#3d271b', ear: '#e7b1a6' }, { base: '#c8833f', fluffy: true, ear: '#a8693a' }
+  ];
+  const LOT = { x: PCOLS + 1, y: 4, cols: 4, road: PCOLS + 7 };
+  const slotPos = i => ({ x: (LOT.x + .6 + (i % LOT.cols) * 1.25) * T, y: (LOT.y + .6 + Math.floor(i / LOT.cols) * 1.1) * T });
+  const gateOut = () => ({ x: (PCOLS + .35) * T, y: (P_BLVD + .5) * T }), gateIn = () => ({ x: (PCOLS - .5) * T, y: (P_BLVD + .5) * T });
+  function freeSlot() { const used = new Set(parkAgents.filter(a => a.slot !== undefined).map(a => a.slot)); for (let i = 0; i < 64; i++) if (!used.has(i)) return i; return 63; }
+  function newAgent(o) { const a = Object.assign({ id: agentId++, face: -1, hop: 0, rides: 0, want: 2 + Math.floor(Math.random() * 4), joy: 60 + Math.random() * 25, food: 70, water: 70, path: null, t: 0 }, o); parkAgents.push(a); return a; }
+  function spawnGuest() {
+    const bus = { x: (LOT.road + .5) * T, y: (P_BLVD + .5 + (Math.random() - .5) * 3) * T };
+    newAgent({ skin: pick(GUEST_SKINS), kid: Math.random() < .3, x: bus.x, y: bus.y, state: 'toGate', path: [[gateOut().x, bus.y], [gateOut().x, gateOut().y], [gateIn().x, gateIn().y]], paid: false });
+  }
+  function arriveTownPig(p, work) {
+    p.loc = 'park'; p.working = false; p.nap = 0;
+    const slot = freeSlot(), s = slotPos(slot);
+    const a = newAgent({ p, skin: p.skin, kid: p.age < 90, slot, work: !!work, x: (LOT.road + .5) * T, y: (PROWS + 7) * T, state: 'drive', carPath: [[(LOT.road + .5) * T, s.y], [s.x, s.y]], want: 2 + Math.floor(Math.random() * 3) });
+    a.carX = a.x; a.carY = a.y; a.parked = false;
+    return a;
+  }
+  function sendHome(a) {
+    const p = a.p; parkAgents = parkAgents.filter(q => q !== a);
+    for (const r of rideRT.values()) { r.queue = r.queue.filter(q => q !== a); r.riders = r.riders.filter(q => q !== a); }
+    if (!p) return;
+    p.loc = 'home'; p.working = false;
+    const hc = residents().get(p.id);
+    p.x = hc ? (hc.x + 1) * T : W / 2; p.y = hc ? (hc.y + 2) * T + 8 : H / 2; p.tx = p.x; p.ty = p.y; p.hop = .5;
+    if (!a.work && a.rides) popup(p.x, p.y - 22, `Home from ${PARK_NAME}! 🎢`, '#c96a85');
+  }
+  // keep every town pig that is "at the park" attached to a walking agent (after loading a save, etc.)
+  function syncTownAgents() {
+    for (const p of G.pigs) if (p.loc === 'park' && !parkAgents.some(a => a.p === p)) {
+      const s = slotPos(freeSlot());
+      const a = newAgent({ p, skin: p.skin, kid: p.age < 90, slot: freeSlot(), work: !!(p.job && p.job.map === 'park'), x: gateIn().x, y: gateIn().y, state: 'choose' });
+      a.carX = s.x; a.carY = s.y; a.parked = true;
+    }
+    parkAgents = parkAgents.filter(a => !a.p || (G.pigs.includes(a.p) && a.p.loc === 'park'));
+  }
+  // called from the main pig loop: returns true when the park is looking after this pig this tick
+  function parkPigTick(p, dt) {
+    if (p.loc === 'park') return true; // moved by parkTick
+    if (pigMap(p) !== 'home' || p.state || p.trip || p.nap > 0) return false;
+    const P = G.park; if (!P || !P.rides.length) return false;
+    const h = hourNow(), wb = jobOf(p);
+    if (wb && wb.map === 'park') {
+      const shift = h >= Math.max(P_OPEN, p.leaveH) && h < Math.min(P_CLOSE - .5, p.backH);
+      if (shift && p.food > 30 && p.water > 30 && p.joy > 20 && p.health > 60 && p.age >= 90) { arriveTownPig(p, true); popup(p.x, p.y - 22, `Off to work at ${PARK_NAME} 🎟️`, '#1f2f5c'); return true; }
+      return false;
+    }
+    if (!parkOpenNow() || h > P_CLOSE - 2.5 || p.food < 45 || p.water < 45 || p.health < 70) return false;
+    if (wb && wb.map === 'city' && h >= p.leaveH - .7 && h < p.backH) return false; // about to commute
+    if (p.working) return false;
+    const visitors = parkAgents.filter(a => a.p && !a.work).length; if (visitors >= 6) return false;
+    const rate = .004 * (p.joy < 60 ? 2 : 1) * (has(p, 'zoomies') ? 1.6 : 1) * (.25 + .75 * (P.rating || 0) / 5) * (G.weather.k === 'rain' ? .3 : 1);
+    if (Math.random() < rate * dt) { arriveTownPig(p, false); popup(p.x, p.y - 22, `Going to ${PARK_NAME}! 🎢`, '#c96a85'); return true; }
+    return false;
+  }
+  function chooseNext(a) {
+    const P = ensurePark(), h = hourNow();
+    const p = a.p;
+    if (a.work) {
+      const wb = jobOf(p);
+      if (!wb || wb.map !== 'park' || h >= Math.min(P_CLOSE - .5, p.backH) || p.food < 20 || p.water < 20) return leave(a);
+      const e = entryOf(wb); if (!e) return leave(a);
+      return goTo(a, e, wb);
+    }
+    const tooLate = h >= P_CLOSE - .25 || !parkOpenNow();
+    const hungry = (p ? p.food : a.food) < 45, thirsty = (p ? p.water : a.water) < 45;
+    if (tooLate || a.rides >= a.want || (p && (p.health < 50 || p.food < 18 || p.water < 18))) return leave(a);
+    if (p) { const wb = jobOf(p); if (wb && wb.map === 'city' && h >= p.leaveH - .5 && h < p.backH) return leave(a); }
+    const opts = [];
+    for (const b of P.rides) {
+      const e = entryOf(b); if (!e) continue;
+      if (isRide(b.type)) {
+        const R = RIDES[b.type], rt = rtOf(b), fit = a.kid ? (R.thrill <= 4 ? 1.6 : .35) : p && has(p, 'zoomies') ? 1 + R.thrill / 6 : p && has(p, 'shy') ? (R.thrill <= 4 ? 1.4 : .6) : 1;
+        opts.push({ b, e, w: appealOf(b) * fit / (1 + rt.queue.length / R.cap) * (b === a.last ? .15 : 1) });
+      } else if (isStand(b.type)) {
+        const S = STANDS[b.type]; let w = 2;
+        if (S.food && hungry) w = 25; if (S.water && thirsty) w = 25; if (b.type === 'pplush' && a.rides >= 1) w = 5;
+        opts.push({ b, e, w: w * (b === a.last ? .1 : 1) });
+      }
+    }
+    if (!opts.length) return leave(a);
+    let r = Math.random() * opts.reduce((s, o) => s + o.w, 0), o = opts[0];
+    for (const q of opts) { r -= q.w; if (r <= 0) { o = q; break; } }
+    return goTo(a, o.e, o.b);
+  }
+  function goTo(a, e, b) {
+    const from = nearestPathTile(a); if (!from) return leave(a);
+    const route = pRoute(from, e); if (!route) return leave(a);
+    a.path = route; a.target = b; a.state = a.work ? 'toWork' : 'walk';
+  }
+  function leave(a) {
+    a.target = null; a.state = 'leaving';
+    const from = nearestPathTile(a), route = from && pRoute(from, [PCOLS - 1, P_BLVD]);
+    const go = a.p ? [[gateOut().x, gateOut().y], [a.carX || gateOut().x, a.carY || gateOut().y]] : [[gateOut().x, gateOut().y], [(LOT.road + .5) * T, gateOut().y + (Math.random() - .5) * 2 * T]];
+    a.path = (route || []).concat(go);
+  }
+  function stepAlong(a, dt, sp) {
+    if (!a.path || !a.path.length) return true;
+    const [tx, ty] = a.path[0], dx = tx - a.x, dy = ty - a.y, d = Math.hypot(dx, dy);
+    if (d <= sp * dt) { a.x = tx; a.y = ty; a.path.shift(); return !a.path.length; }
+    a.x += dx / d * sp * dt; a.y += dy / d * sp * dt; if (Math.abs(dx - dy) > .5) a.face = dx - dy > 0 ? 1 : -1;
+    return false;
+  }
+  function payAt(x, y, n, txt) { if (n <= 0) return; G.coins += n; const P = ensurePark(); P.stats.coins += n; P.today.coins += n; popup(x, y, txt || `+${n} 🪙`, '#a77c4c', 'park'); }
+
+  function parkTick(dt) {
+    const P = G.park; if (!P) return;
+    if (P.today.day !== dayNum()) P.today = { day: dayNum(), guests: 0, coins: 0 };
+    syncTownAgents();
+    rateT -= dt; if (rateT <= 0) { rateT = 2; P.rating = parkRating(); }
+    // tourists arrive by bus while the park is open
+    if (parkOpenNow() && P.rides.some(b => isRide(b.type))) {
+      const price = P.price, fair = fairPrice(), priceF = price <= 0 ? 1.6 : Math.max(.15, Math.min(1.6, fair / price));
+      const h = hourNow(), busy = h < 11 ? .6 : h < 17 ? 1.2 : .8, wx = G.weather.k === 'rain' ? .35 : G.weather.k === 'snow' ? .55 : 1, sn = season().name === 'Summer' ? 1.3 : season().name === 'Winter' ? .7 : 1;
+      const rate = P.rating * .11 * priceF * busy * wx * sn * (evOn('tourists') ? 2 : 1);
+      const cap = 10 + Math.round(P.rating * 8);
+      parkSpawnT -= dt * rate;
+      if (parkSpawnT <= 0) { parkSpawnT = .6 + Math.random() * .8; if (parkAgents.filter(a => !a.p).length < cap) spawnGuest(); }
+    }
+    // rides: load -> run -> unload
+    for (const b of P.rides) {
+      if (!isRide(b.type)) continue;
+      const R = RIDES[b.type], rt = rtOf(b), cap = staffed(b) ? R.cap : Math.ceil(R.cap / 2);
+      rt.queue = rt.queue.filter(a => parkAgents.includes(a) && a.state === 'queue');
+      if (rt.phase === 'load') {
+        rt.t += dt;
+        while (rt.queue.length && rt.riders.length < cap) { const a = rt.queue.shift(); a.state = 'ride'; rt.riders.push(a); }
+        if (rt.riders.length && (rt.riders.length >= cap || rt.t > 2.5)) { rt.phase = 'run'; rt.t = 0; }
+      } else {
+        rt.t += dt; rt.prog = Math.min(1, rt.t / R.dur);
+        if (rt.t >= R.dur) {
+          const e = entryOf(b);
+          for (const a of rt.riders) {
+            if (!parkAgents.includes(a)) continue;
+            a.rides++; a.last = b; a.hop = .6; P.stats.rides++;
+            const jy = 8 + R.thrill * 2.2 * (a.kid && R.thrill > 5 ? .4 : 1);
+            if (a.p) { a.p.joy = Math.min(100, a.p.joy + jy); } else a.joy = Math.min(100, a.joy + jy);
+            if (e) { a.x = (e[0] + .5) * T + (Math.random() - .5) * 14; a.y = (e[1] + .5) * T + (Math.random() - .5) * 14; }
+            a.state = 'choose';
+          }
+          if (rt.riders.length && Math.random() < .5) popup((b.x + sz(b.type) / 2) * T, (b.y + sz(b.type) / 2) * T - 30, R.thrill >= 6 ? 'WHEEEEK! 😱' : 'Again! 💖', '#c96a85', 'park');
+          rt.riders = []; rt.phase = 'load'; rt.t = 0; rt.prog = 0;
+        }
+      }
+      rt.spd += ((rt.phase === 'run' ? 1 : 0) - rt.spd) * Math.min(1, dt * 1.5);
+      rt.anim += dt * rt.spd;
+    }
+    // guests and town pigs
+    for (const a of parkAgents.slice()) {
+      a.hop = Math.max(0, a.hop - dt);
+      const p = a.p, sp = (a.work ? 44 : a.kid ? 30 : 26) * (p && has(p, 'zoomies') ? 1.4 : 1);
+      if (p) {
+        p.food = Math.max(0, p.food - .3 * dt); p.water = Math.max(0, p.water - .35 * dt);
+        p.joy = Math.max(0, Math.min(100, p.joy + (a.work ? -.05 : .12) * dt));
+        p.health = Math.max(0, Math.min(100, p.health + ((p.food < 12 || p.water < 12) ? -1.2 : .3) * dt));
+      } else { a.food -= .4 * dt; a.water -= .45 * dt; }
+      switch (a.state) {
+        case 'drive': {
+          const [tx, ty] = a.carPath[0], dx = tx - a.carX, dy = ty - a.carY, d = Math.hypot(dx, dy), v = 110 * dt;
+          if (d > v) { a.carX += dx / d * v; a.carY += dy / d * v; a.carDir = dx - dy > 0 ? 1 : -1; }
+          else { a.carX = tx; a.carY = ty; a.carPath.shift(); if (!a.carPath.length) { a.parked = true; a.x = a.carX + 10; a.y = a.carY + 12; a.state = 'toGate'; a.path = [[gateOut().x, a.y], [gateOut().x, gateOut().y], [gateIn().x, gateIn().y]]; } }
+          break;
+        }
+        case 'toGate':
+          if (stepAlong(a, dt, sp)) {
+            if (!a.p) { P.stats.guests++; P.today.guests++; payAt(a.x, a.y - 24, P.price, P.price > 0 ? `+${P.price} 🎟️` : ''); if (!P.opened) { P.opened = true; toast(`🎢 ${PARK_NAME} has its first guests! Ticket money goes straight to your coins.`); } }
+            a.state = 'choose';
+          }
+          break;
+        case 'choose': chooseNext(a); break;
+        case 'walk': case 'toWork':
+          if (a.target && !P.rides.includes(a.target)) { a.state = 'choose'; break; }
+          if (stepAlong(a, dt, sp)) {
+            const b = a.target;
+            if (a.state === 'toWork') { a.state = 'staff'; a.t = 0; break; }
+            if (isRide(b.type)) { a.state = 'queue'; rtOf(b).queue.push(a); }
+            else { // stands
+              const S = STANDS[b.type], sold = staffed(b) || Math.random() < .6;
+              if (sold) {
+                if (p) { if (S.food) p.food = Math.min(100, p.food + S.food); if (S.water) p.water = Math.min(100, p.water + S.water); if (S.joy) p.joy = Math.min(100, p.joy + S.joy); popup(a.x, a.y - 22, S.ic, '#c96a85', 'park'); }
+                else { a.food += S.food || 0; a.water += S.water || 0; a.joy += S.joy || 0; P.stats.snacks++; payAt(a.x, a.y - 22, S.sell * (staffed(b) ? 1 : 1), `+${S.sell} 🪙 ${S.ic}`); }
+              }
+              a.last = b; a.state = 'snack'; a.t = 1.5 + Math.random();
+            }
+          }
+          break;
+        case 'snack': a.t -= dt; if (a.t <= 0) a.state = 'choose'; break;
+        case 'queue': if (!a.target || !P.rides.includes(a.target)) a.state = 'choose'; else if (hourNow() >= P_CLOSE) { rtOf(a.target).queue = rtOf(a.target).queue.filter(q => q !== a); leave(a); } break;
+        case 'ride': if (!a.target || !P.rides.includes(a.target)) a.state = 'choose'; break;
+        case 'staff': {
+          const wb = a.target;
+          if (!wb || !P.rides.includes(wb) || jobOf(p) !== wb) { a.state = 'choose'; p.working = false; break; }
+          const h = hourNow(); p.working = true;
+          if (h >= Math.min(P_CLOSE - .5, p.backH) || p.food < 20 || p.water < 20) { p.working = false; leave(a); break; }
+          const J = JOBS[wb.type]; p.workT = (p.workT || 0) + dt;
+          if (p.workT >= J.every) { p.workT -= J.every; G.coins += J.pay; G.stats.jobPay += J.pay; logPay(p, wb, J.pay); popup(a.x, a.y - 22, `+${J.pay} 🪙 ${J.emoji}`, '#1f2f5c', 'park'); }
+          break;
+        }
+        case 'leaving':
+          if (stepAlong(a, dt, sp)) {
+            if (!a.p) { parkAgents = parkAgents.filter(q => q !== a); break; }
+            a.state = 'driveOut'; a.carPath = [[(LOT.road + .5) * T, a.carY], [(LOT.road + .5) * T, -8 * T]];
+          }
+          break;
+        case 'driveOut': {
+          const [tx, ty] = a.carPath[0], dx = tx - a.carX, dy = ty - a.carY, d = Math.hypot(dx, dy), v = 110 * dt;
+          if (d > v) { a.carX += dx / d * v; a.carY += dy / d * v; a.carDir = dx - dy > 0 ? 1 : -1; }
+          else { a.carX = tx; a.carY = ty; a.carPath.shift(); if (!a.carPath.length) sendHome(a); }
+          break;
+        }
+      }
+    }
+  }
+
+  // ---------- building in the park ----------
+  function parkPaintAt(e) {
+    const w = toWorld(e), x = Math.floor(w.x / T), y = Math.floor(w.y / T);
+    const tiles = []; if (lastPP) { let [cx, cy] = lastPP; while (cx !== x || cy !== y) { if (cx !== x) cx += Math.sign(x - cx); else cy += Math.sign(y - cy); tiles.push([cx, cy]); } } else tiles.push([x, y]);
+    lastPP = [x, y];
+    const P = ensurePark(); let n = 0;
+    for (const [u, v] of tiles) {
+      if (!inPark(u, v) || isPPath(u, v) || pAt(u, v)) continue;
+      if (G.coins < B.ppath.cost) { toast(`You need ${B.ppath.cost} 🪙 for each path tile.`); break; }
+      G.coins -= B.ppath.cost; P.paths.push(u + ',' + v); P.pv++; n++;
+    }
+    if (n) { sfx('scoop'); hudRes(); }
+  }
+  let clickW = { x: 0, y: 0 };
+  function parkClick(tx, ty, wpt) {
+    clickW = wpt || { x: (tx + .5) * T, y: (ty + .5) * T };
+    const P = ensurePark();
+    if (tool === 'ppath') return;
+    if (tool === 'pbull') {
+      const b = pAt(tx, ty);
+      if (b) {
+        for (const q of workersAt(b)) { q.job = null; q.working = false; }
+        P.rides.splice(P.rides.indexOf(b), 1); P.pv++; rideRT.delete(b); if (pSel === b) pSel = null;
+        const back = Math.floor(B[b.type].cost / 2); G.coins += back; popup((tx + .5) * T, (ty + .5) * T, `+${back} 🪙`, INK, 'park'); sfx('tap'); hudRes(); save(); return;
+      }
+      if (isPPath(tx, ty) && !isGateTile(tx, ty)) { P.paths = P.paths.filter(k => k !== tx + ',' + ty); P.pv++; G.coins += 1; sfx('tap'); hudRes(); save(); }
+      return;
+    }
+    if (tool && B[tool] && B[tool].park) {
+      if (!pFits(tool, tx, ty)) { toast(isPPath(tx, ty) ? "You can't build on a path. Pick an empty grass spot next to one." : sz(tool) > 1 ? `${B[tool].name} needs a free ${sz(tool)}×${sz(tool)} patch of grass inside the park (it grows down from where you click).` : 'Something is already there.'); return; }
+      if (G.coins < B[tool].cost) { toast(`You need ${B[tool].cost} 🪙 for ${B[tool].name}.`); return; }
+      G.coins -= B[tool].cost; const nb = { type: tool, x: tx, y: ty, map: 'park', t: 0 }; P.rides.push(nb); P.pv++; G.stats.built++; sfx('build');
+      popup((tx + sz(tool) / 2) * T, ty * T, 'Built! 🎉', '#5f8f2e', 'park');
+      if (isRide(tool) || isStand(tool)) {
+        if (!entryOf(nb)) setTimeout(() => toast(`🧱 ${B[tool].name} needs a Park Path touching one side so guests can reach it.`), 300);
+        else if (isRide(tool)) toast(`${RIDES[tool].ic} ${RIDES[tool].name} is open! Hire a Ride Operator (any grown-up pig can pick the job) to run it at full speed.${landOf(tx, ty) === RIDES[tool].land ? ` On-theme in ${LANDS[RIDES[tool].land].name}: +25% fun! ✨` : ''}`);
+        if (G.pigs.length) for (const p of G.pigs.filter(q => q.age >= 90 && !q.job && !q.noJob)) { if (workersAt(nb).length >= slotsOf(nb)) break; hire(p, nb); }
+      }
+      if (G.coins < B[tool].cost) tool = null;
+      hudRes(); syncTools(); save(); return;
+    }
+    const w = { x: (tx + .5) * T, y: (ty + .5) * T };
+    let best = null, bd = 22; for (const a of parkAgents) { if (!a.p || a.state === 'ride' || a.state === 'drive' || a.state === 'driveOut') continue; const d = Math.hypot(a.x - clickW.x, a.y - clickW.y); if (d < bd) { bd = d; best = a; } }
+    if (best) { selected = best.p.id; best.hop = .5; renderPig(true); listSig = ''; sfx('wheek'); return; }
+    const b = pAt(tx, ty); pSel = b || null; parkPanelSig = ''; renderParkPanel(); if (b) sfx('tap');
+  }
+
+  // ---------- drawing ----------
+  const parkGround = {};
+  function parkBounds() { const pts = [iso(-3 * T, -3 * T), iso((PCOLS + 10) * T, -3 * T), iso((PCOLS + 10) * T, (PROWS + 9) * T), iso(-3 * T, (PROWS + 9) * T)]; return { x0: Math.min(...pts.map(p => p.x)) - 40, x1: Math.max(...pts.map(p => p.x)) + 40, y0: Math.min(...pts.map(p => p.y)) - 160, y1: Math.max(...pts.map(p => p.y)) + 80 }; }
+  function buildParkGround() {
+    const gb = parkBounds(), cv = document.createElement('canvas');
+    cv.width = Math.ceil(gb.x1 - gb.x0); cv.height = Math.ceil(gb.y1 - gb.y0);
+    const c = cv.getContext('2d'); c.setTransform(1, 0, 0, 1, -gb.x0, -gb.y0);
+    const S = season(), O = { x: 0, y: 0 }, si = seasonIdx(), D = 30;
+    const slab = (x0, y0, x1, y1, top, l, r) => {
+      poly(c, [IP(O, x0, y1), IP(O, x1, y1), [IP(O, x1, y1)[0], IP(O, x1, y1)[1] + D], [IP(O, x0, y1)[0], IP(O, x0, y1)[1] + D]], l, 'rgba(40,28,18,.35)');
+      poly(c, [IP(O, x1, y0), IP(O, x1, y1), [IP(O, x1, y1)[0], IP(O, x1, y1)[1] + D], [IP(O, x1, y0)[0], IP(O, x1, y0)[1] + D]], r, 'rgba(40,28,18,.35)');
+      poly(c, [IP(O, x0, y0), IP(O, x1, y0), IP(O, x1, y1), IP(O, x0, y1)], top, null);
+    };
+    // the whole island: park + parking lot + road
+    slab(-1, -1, PCOLS + 9, PROWS + 2, shade(S.grass, -.05), '#c98f6b', '#a8735a');
+    const pc = ppSet();
+    for (let y = -1; y < PROWS + 2; y++) for (let x = -1; x < PCOLS + 9; x++) {
+      const inside = inPark(x, y), road = x === LOT.road, lot = x >= LOT.x && x < LOT.x + 5 && y >= LOT.y - 1 && y < LOT.y + 16;
+      let col;
+      if (road) col = '#b9b4cf';
+      else if (lot) col = (x + y) % 2 ? '#c9c4d8' : '#c3bed3';
+      else if (inside) { const L0 = LANDS[landOf(x, y)].col; col = pc.set.has(x + ',' + y) ? ((x + y) % 2 ? '#fff4e2' : '#fbecd6') : si === 3 ? ((x + y) % 2 ? '#eef3f5' : '#e6edf0') : shade(L0, (x + y) % 2 ? .1 : 0); }
+      else col = shade(S.grass, (x + y) % 2 ? .04 : -.02);
+      poly(c, [IP(O, x, y), IP(O, x + 1, y), IP(O, x + 1, y + 1), IP(O, x, y + 1)], col, road || lot ? 'rgba(0,0,0,.06)' : inside && pc.set.has(x + ',' + y) ? 'rgba(180,140,100,.25)' : 'rgba(255,255,255,.08)');
+      if (inside && pc.set.has(x + ',' + y) && (x * 7 + y * 3) % 4 === 0) { const [px, py] = IP(O, x + .5, y + .5); c.fillStyle = 'rgba(244,163,184,.55)'; ell(c, px, py, 3, 1.6); c.fill(); }
+    }
+    // lot stripes + road line
+    c.strokeStyle = '#fffaf2'; c.lineWidth = 1.6;
+    for (let i = 0; i < 16; i++) for (let col = 0; col <= LOT.cols; col++) { const a = IP(O, LOT.x + .02 + col * 1.25, LOT.y + i * 1.1), b2 = IP(O, LOT.x + .02 + col * 1.25, LOT.y + i * 1.1 + .7); c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(b2[0], b2[1]); c.stroke(); }
+    c.setLineDash([8, 7]); { const a = IP(O, LOT.road + .5, -1), b2 = IP(O, LOT.road + .5, PROWS + 2); c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(b2[0], b2[1]); c.stroke(); } c.setLineDash([]);
+    // hedge around the park (with a gap for the gate)
+    const hedge = (u0, v0, u1, v1) => { const a = IP(O, u0, v0, 0), b2 = IP(O, u1, v1, 0); c.strokeStyle = '#5a9a3a'; c.lineWidth = 7; c.lineCap = 'round'; c.beginPath(); c.moveTo(a[0], a[1] - 4); c.lineTo(b2[0], b2[1] - 4); c.stroke(); c.strokeStyle = '#78b45a'; c.lineWidth = 4; c.beginPath(); c.moveTo(a[0], a[1] - 6); c.lineTo(b2[0], b2[1] - 6); c.stroke(); };
+    hedge(0, 0, PCOLS, 0); hedge(0, 0, 0, PROWS); hedge(0, PROWS, PCOLS, PROWS); hedge(PCOLS, 0, PCOLS, P_BLVD - 1); hedge(PCOLS, P_BLVD + 2, PCOLS, PROWS);
+    // land names painted on the ground
+    c.textAlign = 'center'; c.font = 'bold 15px Chewy, "Comic Sans MS", sans-serif';
+    for (const [k, [u, v]] of Object.entries({ hay: [7.5, 2.4], cuke: [24, 2.4], carrot: [7.5, 23.6], pop: [24, 23.6] })) {
+      const [px, py] = IP(O, u, v), Lk = LANDS[k];
+      c.fillStyle = 'rgba(255,255,255,.85)'; rr(c, px - 68, py - 12, 136, 22, 11); c.fill(); c.strokeStyle = 'rgba(59,42,26,.25)'; c.lineWidth = 1.5; c.stroke();
+      c.fillStyle = INK; c.fillText(`${Lk.e} ${Lk.name}`, px, py + 4);
+    }
+    return { cv, gb };
+  }
+  function parkGroundFor() { const key = seasonIdx() + ':' + ensurePark().pv; const g = parkGround.c; if (!g || g.key !== key || g.P !== G.park) parkGround.c = { key, P: G.park, val: buildParkGround() }; return parkGround.c.val; }
+
+  // --- ride art (o = top corner of the ride's footprint) ---
+  function drawRideArt(c, b, o, rt) {
+    const t = rt.anim, n = sz(b.type), night = darkness() > .4, bulb = k => night ? (Math.sin(G.time * 4 + k) > 0 ? '#fff3a0' : '#ffd36b') : ['#f48fb1', '#ffd36b', '#9fe0ff', '#c4f0a0'][k % 4];
+    c.save(); c.lineJoin = 'round'; c.lineCap = 'round';
+    switch (b.type) {
+      case 'pcarousel': {
+        cyl(c, o, 1, 1, .9, 0, 6, '#fbe3ea');
+        const rot = t * 1.2, pts = [];
+        for (let k = 0; k < 8; k++) { const a = rot + k * Math.PI / 4; pts.push({ k, u: 1 + Math.cos(a) * .62, v: 1 + Math.sin(a) * .62 }); }
+        pts.sort((a2, b2) => (a2.u + a2.v) - (b2.u + b2.v));
+        const drawPole = q => { const [x0, y0] = IP(o, q.u, q.v, 6), [, y1] = IP(o, q.u, q.v, 34); c.strokeStyle = '#e9b93b'; c.lineWidth = 1.6; c.beginPath(); c.moveTo(x0, y0); c.lineTo(x0, y1); c.stroke(); const bob = Math.sin(t * 3 + q.k) * 3, [hx, hy] = IP(o, q.u, q.v, 16 + bob); c.fillStyle = q.k % 2 ? '#7cc35a' : '#9fd97a'; ell(c, hx, hy, 7, 3.6); c.fill(); c.strokeStyle = EDGE; c.lineWidth = 1; c.stroke(); c.fillStyle = '#5a9a3a'; ell(c, hx + 6, hy - 2, 2.6, 2.2); c.fill(); };
+        pts.filter(q => q.u + q.v < 2).forEach(drawPole);
+        cyl(c, o, 1, 1, .22, 6, 28, '#f6a5c0');
+        pts.filter(q => q.u + q.v >= 2).forEach(drawPole);
+        cone(c, o, 1, 1, .98, 34, 20, '#f48fb1');
+        { const [x, y] = IP(o, 1, 1, 34); for (let k = 0; k < 10; k++) { const a = k / 10 * Math.PI * 2, rx = .98 * HW * 1.414, ry = .98 * HH * 1.414; c.fillStyle = bulb(k); ell(c, x + Math.cos(a) * rx, y + Math.sin(a) * ry, 1.8, 1.8); c.fill(); } flag(c, x, y - 20, '#7cc35a'); }
+        break;
+      }
+      case 'pteacups': {
+        cyl(c, o, 1, 1, .92, 0, 4, '#fff3c4');
+        const rot = t * .9, cups = [];
+        for (let k = 0; k < 4; k++) { const a = rot + k * Math.PI / 2; cups.push({ k, u: 1 + Math.cos(a) * .52, v: 1 + Math.sin(a) * .52 }); }
+        cups.sort((a2, b2) => (a2.u + a2.v) - (b2.u + b2.v));
+        for (const q of cups) {
+          const col = ['#f48fb1', '#9fe0ff', '#c4b5ec', '#ffd36b'][q.k];
+          cyl(c, o, q.u, q.v, .24, 4, 9, col);
+          const [x, y] = IP(o, q.u, q.v, 13); c.fillStyle = '#fffaf2'; for (let i = 0; i < 5; i++) { const a = t * 4 + i * 1.3; ell(c, x + Math.cos(a) * 4, y + Math.sin(a) * 2 - 2, 2.2, 2); c.fill(); }
+          c.strokeStyle = 'rgba(255,255,255,.8)'; c.lineWidth = 1.4; c.beginPath(); c.moveTo(x - 6, y + 3); c.lineTo(x + 6, y + 3); c.stroke();
+        }
+        break;
+      }
+      case 'pbumper': {
+        box(c, o, .1, .1, 2.8, 2.8, 0, 4, '#6c6f86', { top: '#545770' });
+        for (const [u, v] of [[.15, .15], [2.75, .15], [2.75, 2.75], [.15, 2.75]]) box(c, o, u, v, .1, .1, 4, 30, '#ffd36b');
+        const cars = [];
+        for (let k = 0; k < 5; k++) { const ph = k * 1.7; cars.push({ k, u: 1.5 + Math.sin(t * (.9 + k * .13) + ph) * 1.05, v: 1.5 + Math.cos(t * (.7 + k * .11) + ph * 1.3) * 1.05 }); }
+        cars.sort((a2, b2) => (a2.u + a2.v) - (b2.u + b2.v));
+        for (const q of cars) { const col = ['#f48fb1', '#9fe0ff', '#7cc35a', '#ffd36b', '#c4b5ec'][q.k]; box(c, o, q.u - .2, q.v - .2, .4, .4, 4, 6, col); const [x, y] = IP(o, q.u, q.v, 10); c.strokeStyle = '#3b2a1a'; c.lineWidth = 1; c.beginPath(); c.moveTo(x, y); c.lineTo(x, IP(o, q.u, q.v, 34)[1]); c.stroke(); c.fillStyle = '#d9a066'; ell(c, x, y - 2, 3, 2.6); c.fill(); }
+        // striped canopy (open sides)
+        poly(c, [IP(o, .15, .15, 34), IP(o, 2.85, .15, 34), IP(o, 2.85, 2.85, 34), IP(o, .15, 2.85, 34)], 'rgba(244,143,177,.35)', '#e07a9a', 1.5);
+        for (let i = 0; i < 9; i++) { const u0 = .15 + i * .3; poly(c, [IP(o, u0, 2.85, 34), IP(o, u0 + .3, 2.85, 34), IP(o, u0 + .3, 2.85, 29), IP(o, u0, 2.85, 29)], i % 2 ? '#fffaf2' : '#f48fb1', EDGE, .8); poly(c, [IP(o, 2.85, u0, 34), IP(o, 2.85, u0 + .3, 34), IP(o, 2.85, u0 + .3, 29), IP(o, 2.85, u0, 29)], i % 2 ? '#fffaf2' : '#f48fb1', EDGE, .8); }
+        break;
+      }
+      case 'pswings': {
+        cyl(c, o, 1, 1, .5, 0, 5, '#c4b5ec');
+        const fly = rt.spd, rot = t * 1.6, seats = [];
+        for (let k = 0; k < 10; k++) { const a = rot + k * Math.PI / 5, r = .35 + .5 * fly; seats.push({ k, a, u: 1 + Math.cos(a) * r, v: 1 + Math.sin(a) * r }); }
+        const top = 50, hub = IP(o, 1, 1, top);
+        const sw = q => { const z = top - 20 + 8 * fly, [x, y] = IP(o, q.u, q.v, z); c.strokeStyle = '#8a7fb8'; c.lineWidth = 1; c.beginPath(); c.moveTo(IP(o, 1 + Math.cos(q.a) * .3, 1 + Math.sin(q.a) * .3, top - 2)[0], IP(o, 1 + Math.cos(q.a) * .3, 1 + Math.sin(q.a) * .3, top - 2)[1]); c.lineTo(x, y); c.stroke(); c.fillStyle = ['#f48fb1', '#ffd36b', '#9fe0ff', '#7cc35a'][q.k % 4]; rr(c, x - 3, y - 1, 6, 4, 1.5); c.fill(); c.strokeStyle = EDGE; c.stroke(); };
+        seats.filter(q => q.u + q.v < 2).forEach(sw);
+        cyl(c, o, 1, 1, .14, 5, top - 5, '#fff3c4');
+        seats.filter(q => q.u + q.v >= 2).forEach(sw);
+        cone(c, o, 1, 1, .42, top, 14, '#c4b5ec'); { const [x, y] = IP(o, 1, 1, top + 14); flag(c, x, y, '#f48fb1'); }
+        break;
+      }
+      case 'pferris': {
+        const cu = 1.5, cv = 1.5, hz = 66, R = 1.25, rz = 48, th0 = t * .35;
+        box(c, o, .4, 1.25, 2.2, .5, 0, 5, '#d9b38c');
+        const at = (th, dz = 0) => IP(o, cu + Math.cos(th) * R, cv, hz + Math.sin(th) * rz + dz);
+        // legs
+        c.strokeStyle = '#a8784f'; c.lineWidth = 3; for (const dv of [-.35, .35]) { const [hx, hy] = IP(o, cu, cv + dv, hz); for (const du of [-.7, .7]) { const [gx, gy] = IP(o, cu + du, cv + dv, 4); c.beginPath(); c.moveTo(gx, gy); c.lineTo(hx, hy); c.stroke(); } }
+        // rim + spokes
+        c.strokeStyle = '#e9b93b'; c.lineWidth = 2.4; c.beginPath(); for (let i = 0; i <= 40; i++) { const [x, y] = at(i / 40 * Math.PI * 2); i ? c.lineTo(x, y) : c.moveTo(x, y); } c.stroke();
+        c.lineWidth = 1.2; const [hx, hy] = IP(o, cu, cv, hz); for (let k = 0; k < 8; k++) { const [x, y] = at(th0 + k * Math.PI / 4); c.beginPath(); c.moveTo(hx, hy); c.lineTo(x, y); c.stroke(); }
+        for (let k = 0; k < 8; k++) { const [x, y] = at(th0 + k * Math.PI / 4); c.fillStyle = ['#f4dd8f', '#ecc55a'][k % 2]; c.strokeStyle = EDGE; c.lineWidth = 1; rr(c, x - 6, y, 12, 9, 2); c.fill(); c.stroke(); c.fillStyle = '#d9ad3c'; c.fillRect(x - 5, y + 3, 10, 1.4); c.fillStyle = bulb(k); ell(c, x, y - 1, 1.6, 1.6); c.fill(); }
+        c.fillStyle = '#f48fb1'; ell(c, hx, hy, 5, 5); c.fill(); c.strokeStyle = EDGE; c.stroke();
+        break;
+      }
+      case 'pdrop': {
+        // a giant carrot tower; the ring climbs slowly and drops fast
+        const top = 112, p = rt.phase === 'run' ? rt.prog : 0, rise = .72;
+        const zr = 6 + (p < rise ? p / rise : p < .8 ? 1 : Math.max(0, 1 - ((p - .8) / .2) ** .5)) * (top - 22);
+        cyl(c, o, 1, 1, .62, 0, 5, '#f6c58f');
+        cone(c, o, 1, 1, .32, 5, top - 5, '#f08a3c');
+        { const [x, y] = IP(o, 1, 1, top - 4); c.strokeStyle = '#d06e28'; c.lineWidth = 1; for (let i = 1; i < 7; i++) { const yy = y + (top - 10) * i / 7, w = 4 + i * 1.2; c.beginPath(); c.moveTo(x - w, yy); c.lineTo(x - w + 4, yy + 2); c.stroke(); } }
+        { const [x, y] = IP(o, 1, 1, top - 2); c.fillStyle = '#5fae48'; for (const [dx, h, w] of [[-5, 16, 4], [0, 22, 4.5], [5, 15, 4]]) { c.beginPath(); c.ellipse(x + dx, y - h / 2, w, h / 2, dx * .04, 0, Math.PI * 2); c.fill(); c.strokeStyle = EDGE; c.lineWidth = 1; c.stroke(); } }
+        cyl(c, o, 1, 1, .46, zr, 7, '#ffd36b');
+        { const [x, y] = IP(o, 1, 1, zr + 7); for (let k = 0; k < 8; k++) { const a = k / 8 * Math.PI * 2; c.fillStyle = bulb(k); ell(c, x + Math.cos(a) * 20, y + Math.sin(a) * 10 + 4, 1.6, 1.6); c.fill(); } }
+        break;
+      }
+      case 'pflume': {
+        // trough path in (u, v, z): station -> lift hill -> curve -> big drop -> splash pool
+        const L0 = [[.4, 2.5, 4], [1.4, 2.5, 4], [2.5, 2.5, 4], [2.6, 1.6, 18], [2.6, .6, 38], [1.8, .4, 40], [1, .4, 40], [.5, .6, 38], [.5, 1.2, 22], [.5, 1.7, 4], [.45, 2.2, 4]];
+        const P2 = L0.map(([u, v, z]) => IP(o, u, v, z));
+        c.fillStyle = '#7fc1ea'; { const [px, py] = IP(o, .6, 2.2); ell(c, px, py, 26, 11); c.fill(); c.strokeStyle = EDGE; c.lineWidth = 1; c.stroke(); }
+        for (const [u, v, z] of L0) if (z > 6) { const [x, y] = IP(o, u, v, z), [, gy] = IP(o, u, v, 0); c.strokeStyle = '#a8784f'; c.lineWidth = 2; c.beginPath(); c.moveTo(x, y); c.lineTo(x, gy); c.stroke(); }
+        const line = (w, col) => { c.strokeStyle = col; c.lineWidth = w; c.beginPath(); P2.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); c.stroke(); };
+        line(11, '#a8784f'); line(7, '#7fc1ea'); line(2, 'rgba(255,255,255,.6)');
+        // the log
+        const lens = []; let tot = 0; for (let i = 1; i < P2.length; i++) { const d = Math.hypot(P2[i][0] - P2[i - 1][0], P2[i][1] - P2[i - 1][1]); lens.push(d); tot += d; }
+        const prog = rt.phase === 'run' ? rt.prog : 0; let s = prog * tot, i = 0; while (i < lens.length - 1 && s > lens[i]) { s -= lens[i]; i++; }
+        const f = lens[i] ? s / lens[i] : 0, lx = P2[i][0] + (P2[i + 1][0] - P2[i][0]) * f, ly = P2[i][1] + (P2[i + 1][1] - P2[i][1]) * f;
+        c.fillStyle = '#8a5a34'; rr(c, lx - 9, ly - 6, 18, 7, 3); c.fill(); c.strokeStyle = EDGE; c.lineWidth = 1; c.stroke();
+        if (rt.riders.length) { c.fillStyle = '#d9a066'; ell(c, lx - 3, ly - 8, 3, 2.6); c.fill(); ell(c, lx + 4, ly - 8, 3, 2.6); c.fill(); }
+        if (rt.phase === 'run' && prog > .82 && prog < .95) { c.fillStyle = 'rgba(255,255,255,.85)'; const [px, py] = IP(o, .55, 1.9); for (let k = 0; k < 9; k++) { const a = k / 9 * Math.PI - Math.PI, r = 8 + (prog - .82) * 120; ell(c, px + Math.cos(a) * r, py + Math.sin(a) * r * .6 - 4, 2.4, 2.4); c.fill(); } }
+        break;
+      }
+      case 'pcoaster': {
+        // a closed loop with a lift hill and a vertical loop
+        if (!drawRideArt.track) {
+          // station -> corner -> lift hill -> crest -> big drop -> vertical loop -> corner -> camelback hill -> corner
+          const pts = [], push = (u, v, z, w = 1) => pts.push([u, v, z, w]);
+          const line = (a, b2, n, zf, w) => { for (let i = 0; i < n; i++) { const f = i / n; push(a[0] + (b2[0] - a[0]) * f, a[1] + (b2[1] - a[1]) * f, zf(f), w); } };
+          const arc = (cu, cv, r, t0, t1, n, z0, z1, w) => { for (let i = 0; i < n; i++) { const f = i / n, th = t0 + (t1 - t0) * f; push(cu + r * Math.cos(th), cv + r * Math.sin(th), z0 + (z1 - z0) * f, w); } };
+          const D = Math.PI / 180;
+          line([.9, 3.5], [2.6, 3.5], 6, () => 6, 1.4);                         // station
+          arc(2.6, 2.9, .6, 90 * D, 0, 5, 6, 12, 1.2);                           // corner
+          line([3.2, 2.9], [3.2, .9], 12, f => 12 + f * 80, 3.2);                // clack-clack lift hill
+          arc(2.6, .9, .6, 0, -90 * D, 5, 92, 94, 1.4);                          // crest
+          line([2.6, .3], [1.95, .3], 10, f => 94 - 84 * Math.sin(f * Math.PI / 2), .45); // big drop
+          for (let i = 0; i < 22; i++) { const ph = i / 22 * Math.PI * 2; push(1.95 - i / 22 * .5 - Math.sin(ph) * .32, .3, 10 + (1 - Math.cos(ph)) * 30, .7); } // loop
+          arc(.9, .9, .6, -90 * D, -180 * D, 5, 10, 10, .9);                     // corner
+          line([.3, .9], [.3, 2.9], 10, f => 10 + Math.sin(f * Math.PI) * 34, .8); // camelback
+          arc(.9, 2.9, .6, 180 * D, 90 * D, 5, 10, 6, 1.1);                      // corner into the station
+          drawRideArt.track = pts;
+        }
+        const pts = drawRideArt.track, P2 = pts.map(([u, v, z]) => IP(o, u, v, z));
+        // supports
+        c.strokeStyle = '#c9c3dd'; c.lineWidth = 2; pts.forEach(([u, v, z], i) => { if (z > 12 && i % 2 === 0) { const [x, y] = P2[i], [, gy] = IP(o, u, v, 0); c.beginPath(); c.moveTo(x, y); c.lineTo(x, gy); c.stroke(); } });
+        box(c, o, .8, 3.2, 1.9, .6, 0, 6, '#c3e8a8', { top: '#e3f5d6' }); for (const u of [.85, 2.6]) box(c, o, u, 3.25, .06, .06, 6, 16, '#7cc35a'); poly(c, [IP(o, .8, 3.2, 22), IP(o, 2.7, 3.2, 22), IP(o, 2.7, 3.8, 22), IP(o, .8, 3.8, 22)], '#9fd97a', EDGE, 1);
+        const rail = (w, col, dy) => { c.strokeStyle = col; c.lineWidth = w; c.beginPath(); P2.forEach(([x, y], i) => i ? c.lineTo(x, y + dy) : c.moveTo(x, y + dy)); c.closePath(); c.stroke(); };
+        rail(5, '#5b3b2a', 0); rail(3, '#e0483f', -1); rail(1.2, '#ffd36b', -2.5);
+        // train
+        const lens = []; let tot = 0; for (let i = 0; i < P2.length; i++) { const j = (i + 1) % P2.length, d = Math.hypot(P2[j][0] - P2[i][0], P2[j][1] - P2[i][1]); lens.push(d); tot += d; }
+        const prog = rt.phase === 'run' ? rt.prog : 0;
+        // each piece of track has a "time weight": the train crawls up the lift and flies down the drop
+        if (!drawRideArt.tw) { const w = pts.map((q, i) => lens[i] * q[3]), sum = w.reduce((x, y) => x + y, 0); let acc = 0; drawRideArt.tw = w.map(x => (acc += x) / sum); }
+        const tw = drawRideArt.tw; let seg = 0; while (seg < tw.length - 1 && tw[seg] < prog) seg++;
+        const t0 = seg ? tw[seg - 1] : 0, along = lens.slice(0, seg).reduce((x, y) => x + y, 0) + lens[seg] * Math.min(1, Math.max(0, (prog - t0) / ((tw[seg] - t0) || 1)));
+        for (let k = 0; k < 4; k++) {
+          let s = (along - k * 15 + tot * 2) % tot, i = 0; while (s > lens[i] && i < lens.length - 1) { s -= lens[i]; i++; }
+          const j = (i + 1) % P2.length, f = lens[i] ? s / lens[i] : 0, x = P2[i][0] + (P2[j][0] - P2[i][0]) * f, y = P2[i][1] + (P2[j][1] - P2[i][1]) * f;
+          c.fillStyle = ['#7cc35a', '#9fd97a', '#7cc35a', '#9fd97a'][k]; rr(c, x - 7, y - 8, 14, 7, 2.5); c.fill(); c.strokeStyle = EDGE; c.lineWidth = 1; c.stroke();
+          if (rt.riders.length > k * 3) { c.fillStyle = '#d9a066'; ell(c, x - 2, y - 10, 2.8, 2.4); c.fill(); c.fillStyle = '#e0a08a'; ell(c, x - 4, y - 12, 1.2, 1.2); c.fill(); }
+        }
+        { const [x, y] = IP(o, 1.75, 3.5, 6); c.fillStyle = '#fffaf2'; rr(c, x - 36, y - 40, 72, 15, 7); c.fill(); c.strokeStyle = EDGE; c.lineWidth = 1.2; c.stroke(); c.fillStyle = '#e0483f'; c.font = 'bold 10px Chewy, sans-serif'; c.textAlign = 'center'; c.fillText('WHEEKINATOR', x, y - 29); }
+        break;
+      }
+    }
+    c.restore();
+  }
+  function drawStandArt(c, b, o) {
+    const S = STANDS[b.type], col = { psnack: '#f4dd8f', pdrink: '#9fd97a', ppop: '#f48fb1', pplush: '#c4b5ec' }[b.type];
+    box(c, o, .18, .22, .64, .56, 0, 16, '#fffaf2');
+    qL(c, o, .78, .26, .74, 8, 10, col);
+    for (let i = 0; i < 4; i++) poly(c, [IP(o, .1 + i * .2, .86, 24), IP(o, .3 + i * .2, .86, 24), IP(o, .3 + i * .2, .92, 18), IP(o, .1 + i * .2, .92, 18)], i % 2 ? '#fffaf2' : col, EDGE, .8);
+    box(c, o, .12, .16, .76, .7, 24, 3, col);
+    const [x, y] = IP(o, .5, .5, 34); c.font = '13px sans-serif'; c.textAlign = 'center'; c.fillText(S.ic, x, y + Math.sin(G.time * 2 + b.x) * 1.5);
+  }
+  function drawDecorArt(c, b, o) {
+    const t = G.time || 0, si = seasonIdx(), night = darkness() > .4;
+    switch (b.type) {
+      case 'ptree': { cyl(c, o, .5, .5, .07, 0, 14, '#8a5a34'); const [x, y] = IP(o, .5, .5, 14); const leaf = si === 2 ? '#e8a04c' : si === 3 ? '#f4f7f8' : si === 0 ? '#f6b7c8' : '#6fbf5a'; for (const [dx, dy, r] of [[-6, -6, 9], [6, -6, 9], [0, -14, 10]]) { c.fillStyle = leaf; ell(c, x + dx, y + dy, r, r * .9); c.fill(); c.strokeStyle = EDGE; c.lineWidth = 1; c.stroke(); } break; }
+      case 'pflowers': { const [x, y] = IP(o, .5, .5); c.fillStyle = '#6fae48'; ell(c, x, y, 16, 7); c.fill(); for (let i = 0; i < 9; i++) { c.fillStyle = ['#f48fb1', '#ffd36b', '#c4b5ec'][i % 3]; ell(c, x - 11 + (i % 5) * 5.5, y - 2 + Math.floor(i / 5) * 4, 2.4, 2.2); c.fill(); } break; }
+      case 'pflag': { const [x, y] = IP(o, .5, .5), top = y - 56; c.strokeStyle = '#c9c3dd'; c.lineWidth = 2.2; c.beginPath(); c.moveTo(x, y); c.lineTo(x, top); c.stroke(); const w = Math.sin(t * 4 + b.x + b.y) * 2.2, col = ['#e0483f', '#ffd36b', '#7cc35a', '#5aa9e0', '#c4b5ec', '#f48fb1'][(b.x + b.y * 3) % 6]; c.fillStyle = col; c.beginPath(); c.moveTo(x, top); c.quadraticCurveTo(x + 9, top + 1 + w, x + 18, top + 2 + w * 1.4); c.lineTo(x + 18, top + 12 + w * 1.4); c.quadraticCurveTo(x + 9, top + 11 + w, x, top + 10); c.closePath(); c.fill(); c.strokeStyle = EDGE; c.lineWidth = 1; c.stroke(); c.fillStyle = '#fffaf2'; ell(c, x + 9, top + 6 + w, 2.4, 2.4); c.fill(); break; }
+      case 'pbench': box(c, o, .2, .38, .6, .24, 4, 2, '#a8784f'); box(c, o, .2, .36, .6, .06, 6, 6, '#a8784f'); for (const u of [.22, .72]) box(c, o, u, .4, .05, .18, 0, 4, '#5b3b2a'); break;
+      case 'plamp': { cyl(c, o, .5, .5, .05, 0, 30, '#5c6670'); const [x, y] = IP(o, .5, .5, 32); c.fillStyle = night ? '#fff3a0' : '#f3d9a0'; ell(c, x, y, 4.5, 4.5); c.fill(); c.strokeStyle = EDGE; c.stroke(); break; }
+      case 'ptopiary': { cyl(c, o, .5, .5, .3, 0, 6, '#c98f6b'); const [x, y] = IP(o, .5, .5, 8); c.save(); c.translate(x, y - 10); c.scale(.32, .32); drawPig(c, { base: '#5fae48', ear: '#4a8f38', nose: '#4a8f38' }); c.restore(); break; }
+      case 'pfountain': { cyl(c, o, 1, 1, .8, 0, 7, '#d9d4e6'); const [x, y] = IP(o, 1, 1, 7); c.fillStyle = '#7fc1ea'; ell(c, x, y, 34, 16); c.fill(); cyl(c, o, 1, 1, .12, 7, 14, '#d9d4e6'); c.fillStyle = 'rgba(255,255,255,.85)'; for (let k = 0; k < 10; k++) { const a = k / 10 * Math.PI * 2, ph = (t * 1.5 + k * .1) % 1, r = ph * 22; ell(c, x + Math.cos(a) * r, y - 22 + ph * 26 - Math.sin(ph * Math.PI) * 14 + Math.sin(a) * r * .4, 2, 2); c.fill(); } break; }
+    }
+  }
+  function drawGate(c) {
+    const o = iso((PCOLS - 1) * T, (P_BLVD - 1) * T), t = G.time || 0;
+    // two towers and a striped arch across the boulevard
+    for (const v of [.1, 2.9]) { cyl(c, o, .55, v, .32, 0, 64, '#fff1e6'); cone(c, o, .55, v, .4, 64, 26, '#f48fb1'); const [x, y] = IP(o, .55, v, 90); flag(c, x, y, ['#e0483f', '#5aa9e0'][v > 1 ? 1 : 0]); }
+    for (let i = 0; i < 8; i++) { const v0 = .25 + i * .3125; poly(c, [IP(o, .55, v0, 58), IP(o, .55, v0 + .3125, 58), IP(o, .55, v0 + .3125, 46), IP(o, .55, v0, 46)], i % 2 ? '#fffaf2' : '#f48fb1', EDGE, 1); }
+    poly(c, [IP(o, .4, .2, 58), IP(o, .7, .2, 58), IP(o, .7, 2.8, 58), IP(o, .4, 2.8, 58)], '#ffd36b', EDGE, 1.2);
+    const [bx, by] = IP(o, .55, 1.5, 68); c.fillStyle = '#fffaf2'; rr(c, bx - 58, by - 16, 116, 26, 12); c.fill(); c.strokeStyle = EDGE; c.lineWidth = 1.6; c.stroke();
+    c.font = 'bold 15px Chewy, "Comic Sans MS", sans-serif'; c.textAlign = 'center'; c.fillStyle = '#e0483f'; c.fillText(PARK_NAME.toUpperCase(), bx, by + 3);
+    // ticket booth
+    box(c, o, 1.2, -.9, .5, .5, 0, 18, '#fbe3ea', { top: '#f48fb1' }); { const [x, y] = IP(o, 1.45, -.65, 26); c.font = '11px sans-serif'; c.fillText('🎟️', x, y); }
+    // a row of colorful flags along the lot (one flag per land, plus two for luck)
+    for (let i = 0; i < 6; i++) { const [x, y] = IP(iso(0, 0), PCOLS + .2, 3 + i * 4.2, 0), top = y - 46; c.strokeStyle = '#c9c3dd'; c.lineWidth = 2; c.beginPath(); c.moveTo(x, y); c.lineTo(x, top); c.stroke(); const w = Math.sin(t * 4 + i) * 2; c.fillStyle = ['#e0483f', '#ffd36b', '#7cc35a', '#5aa9e0', '#c4b5ec', '#f48fb1'][i]; c.beginPath(); c.moveTo(x, top); c.lineTo(x + 16, top + 3 + w); c.lineTo(x, top + 10); c.closePath(); c.fill(); c.strokeStyle = EDGE; c.lineWidth = 1; c.stroke(); }
+  }
+  function drawAgent(c, a) {
+    const P = iso(a.x, a.y), sc = a.kid ? .26 : .34, hop = a.hop > 0 ? Math.abs(Math.sin(a.hop * 16)) * 5 : 0;
+    c.save(); c.translate(P.x, P.y - hop); c.fillStyle = 'rgba(0,0,0,.14)'; ell(c, 1, 8 + hop, 12 * sc / .34, 3); c.fill();
+    if (a.p && a.p.id === selected) { c.strokeStyle = '#fff'; c.lineWidth = 2.5; ell(c, 0, 8 + hop, 16, 5.5); c.stroke(); }
+    c.scale(a.face * sc, sc); drawPig(c, a.skin, {}); c.restore();
+    c.textAlign = 'center';
+    if (a.state === 'staff') { c.font = '11px sans-serif'; c.fillText('🎟️', P.x, P.y - 16 + Math.sin(G.time * 3 + a.id) * 1.2); }
+    else if (a.p && (a.state === 'walk' || a.state === 'queue') && a.id % 3 === 0) { c.font = 'bold 9px Nunito, sans-serif'; c.lineWidth = 3; c.strokeStyle = 'rgba(255,255,255,.85)'; c.strokeText(a.p.name, P.x, P.y - 15); c.fillStyle = INK; c.fillText(a.p.name, P.x, P.y - 15); }
+    else if (a.state === 'snack' && a.target) { c.font = '10px sans-serif'; const S = STANDS[a.target.type]; if (S) c.fillText(S.ic, P.x + 8, P.y - 12); }
+  }
+  function drawPark(c) {
+    const P = ensurePark();
+    c.setTransform(dprNow, 0, 0, dprNow, 0, 0);
+    drawWater(c);
+    setCamTransform(c);
+    const gr = parkGroundFor(), gb = gr.gb; c.drawImage(gr.cv, gb.x0, gb.y0, gb.x1 - gb.x0, gb.y1 - gb.y0);
+    // placement preview
+    if (hover && tool && B[tool] && B[tool].park && tool !== 'pbull') {
+      if (tool === 'ppath') { const ok = inPark(hover.x, hover.y) && !isPPath(hover.x, hover.y) && !pAt(hover.x, hover.y); footprint(c, hover.x, hover.y, 1, ok ? 'rgba(255,255,255,.5)' : 'rgba(217,69,90,.3)', ok ? '#fff' : '#d9455a'); }
+      else { const ok = pFits(tool, hover.x, hover.y) && G.coins >= B[tool].cost; footprint(c, hover.x, hover.y, sz(tool), ok ? 'rgba(255,255,255,.5)' : 'rgba(217,69,90,.32)', ok ? '#fff' : '#d9455a'); }
+    }
+    if (hover && tool === 'pbull') { const b = pAt(hover.x, hover.y); if (b) footprint(c, b.x, b.y, sz(b.type), 'rgba(217,69,90,.4)', '#fff'); else if (isPPath(hover.x, hover.y)) footprint(c, hover.x, hover.y, 1, 'rgba(217,69,90,.4)', '#fff'); }
+    if (pSel && P.rides.includes(pSel)) { footprint(c, pSel.x, pSel.y, sz(pSel.type), null, '#e9b93b', true); const e = entryOf(pSel); if (e) footprint(c, e[0], e[1], 1, 'rgba(233,185,59,.35)', '#e9b93b'); }
+    const VR = viewRect(140), items = [], dw = (x, y) => (x + y) / T;
+    const onS = (x, y) => { const q = iso(x, y); return q.x > VR.x0 && q.x < VR.x1 && q.y > VR.y0 - 120 && q.y < VR.y1 + 60; };
+    for (const b of P.rides) {
+      const n = sz(b.type); if (!onS((b.x + n / 2) * T, (b.y + n / 2) * T)) continue;
+      const o = iso(b.x * T, b.y * T);
+      items.push({ d: b.x + b.y + n - .01, f: () => { if (isRide(b.type)) drawRideArt(c, b, o, rtOf(b)); else if (isStand(b.type)) drawStandArt(c, b, o); else drawDecorArt(c, b, o); } });
+    }
+    if (hover && tool && B[tool] && B[tool].park && !['ppath', 'pbull'].includes(tool) && pFits(tool, hover.x, hover.y)) {
+      const hb = { type: tool, x: hover.x, y: hover.y }, o = iso(hb.x * T, hb.y * T), n = sz(tool);
+      items.push({ d: hb.x + hb.y + n, f: () => { c.globalAlpha = .55; if (isRide(tool)) drawRideArt(c, hb, o, { anim: G.time, spd: 0, phase: 'load', prog: 0, riders: [] }); else if (isStand(tool)) drawStandArt(c, hb, o); else drawDecorArt(c, hb, o); c.globalAlpha = 1; } });
+    }
+    items.push({ d: (PCOLS - 1) + (P_BLVD + 2) - .01, f: () => drawGate(c) });
+    // queue lines: guests wait in a neat row on the entry tile
+    for (const b of P.rides) { if (!isRide(b.type)) continue; const rt = rtOf(b), e = entryOf(b); if (!e) continue; rt.queue.forEach((a, i) => { const ang = i * .9, r = 4 + i * 2.2; a.x = (e[0] + .5) * T + Math.cos(ang) * r; a.y = (e[1] + .5) * T + Math.sin(ang) * r; }); }
+    for (const a of parkAgents) {
+      if (a.state === 'ride') continue;
+      if (a.p && a.carX !== undefined && (a.parked || a.state === 'drive' || a.state === 'driveOut')) { const cp = iso(a.carX, a.carY), driving = a.state === 'drive' || a.state === 'driveOut'; items.push({ d: dw(a.carX, a.carY), f: () => drawCar(c, cp.x, cp.y, a.carDir || -1, a.p.car, driving ? a.p.skin : null, driving) }); }
+      if (a.state === 'drive' || a.state === 'driveOut') continue;
+      if (!onS(a.x, a.y)) continue;
+      items.push({ d: dw(a.x, a.y), f: () => drawAgent(c, a) });
+    }
+    items.sort((a, b2) => a.d - b2.d).forEach(i => i.f());
+    // status bubbles over rides
+    c.textAlign = 'center'; c.font = '12px sans-serif';
+    for (const b of P.rides) {
+      if (!isRide(b.type) && !isStand(b.type)) continue;
+      const n = sz(b.type), [x, y] = IP(iso(b.x * T, b.y * T), n / 2, n / 2, isRide(b.type) ? 48 + n * 14 : 40);
+      const bob = Math.sin(G.time * 3 + b.x) * 2;
+      if (!entryOf(b)) { c.fillStyle = 'rgba(255,255,255,.92)'; rr(c, x - 14, y - 12 + bob, 28, 20, 10); c.fill(); c.fillStyle = INK; c.fillText('🧱', x, y + 3 + bob); }
+      else if (isRide(b.type) && !staffed(b) && workersAt(b).length === 0) { c.fillStyle = 'rgba(255,255,255,.92)'; rr(c, x - 14, y - 12 + bob, 28, 20, 10); c.fill(); c.fillStyle = INK; c.fillText('👷', x, y + 3 + bob); }
+    }
+    // night: dim + lights
+    const dk = darkness();
+    if (dk > 0) {
+      c.setTransform(dprNow, 0, 0, dprNow, 0, 0); c.fillStyle = `rgba(22,26,64,${.42 * dk})`; c.fillRect(0, 0, vw, vh);
+      setCamTransform(c); c.save(); c.globalCompositeOperation = 'lighter';
+      for (const b of P.rides) {
+        const n = sz(b.type), o = iso(b.x * T, b.y * T), [x, y] = IP(o, n / 2, n / 2);
+        if (b.type === 'plamp') glowAt(c, x, y - 32, 55, .6 * dk);
+        else if (isRide(b.type)) glowAt(c, x, y - 30 - n * 8, 40 + n * 20, .45 * dk, ['255,180,220', '255,220,140', '170,220,255'][(b.x + b.y) % 3]);
+        else if (isStand(b.type)) glowAt(c, x, y - 18, 30, .4 * dk);
+      }
+      { const o = iso((PCOLS - 1) * T, (P_BLVD - 1) * T), [x, y] = IP(o, .55, 1.5, 60); glowAt(c, x, y, 90, .6 * dk); }
+      c.restore();
+    }
+    // popups
+    setCamTransform(c); c.textAlign = 'center'; c.font = '13px Chewy, "Comic Sans MS", sans-serif';
+    for (const q of popups) { if (q.map !== 'park' && q.map !== 'any') continue; const p2 = iso(q.x, q.y); c.globalAlpha = Math.min(1, q.life / .4); c.lineWidth = 3.5; c.strokeStyle = '#fff'; c.strokeText(q.text, p2.x, p2.y - 10); c.fillStyle = q.color; c.fillText(q.text, p2.x, p2.y - 10); }
+    c.globalAlpha = 1; c.setTransform(dprNow, 0, 0, dprNow, 0, 0);
+    for (const q of confetti) { c.globalAlpha = Math.min(1, q.life / .5); c.save(); c.translate(q.x, q.y); c.rotate(q.r); c.fillStyle = q.c; c.fillRect(-3, -1.5, 6, 3); c.restore(); }
+    c.globalAlpha = 1;
+    // closed sign at night
+    if (!parkOpenNow()) { c.font = 'bold 14px Nunito, sans-serif'; c.textAlign = 'left'; const txt = `🌙 ${PARK_NAME} is closed. Open ${P_OPEN}am to ${P_CLOSE - 12}pm`; const w = c.measureText(txt).width; c.fillStyle = 'rgba(255,255,255,.9)'; rr(c, 10, vh - 34, w + 20, 24, 10); c.fill(); c.fillStyle = INK; c.fillText(txt, 20, vh - 17); }
+  }
+
+  // ---------- park panel (side) ----------
+  function renderParkPanel() {
+    const el = $('parkPanel'); if (!el) return;
+    const on = view === 'park'; el.hidden = !on; $('hoodPanel').hidden = on;
+    if (!on) return;
+    const P = ensurePark(), stars = P.rating || 0, guests = parkAgents.filter(a => !a.p && a.state !== 'drive').length, pigs = parkAgents.filter(a => a.p).length;
+    const rides = P.rides.filter(b => isRide(b.type));
+    const sel = pSel && P.rides.includes(pSel) ? pSel : null;
+    const sig = [Math.round(stars * 10), guests, pigs, P.today.coins, P.today.guests, P.price, rides.map(b => b.type + b.x + b.y + (entryOf(b) ? 1 : 0) + (staffed(b) ? 1 : 0) + workersAt(b).length + rtOf(b).queue.length).join(','), sel ? sel.x + ',' + sel.y : '', parkOpenNow()].join('|');
+    if (sig === parkPanelSig) return; parkPanelSig = sig;
+    const full = Math.floor(stars), half = stars - full >= .5;
+    const starStr = '★'.repeat(full) + (half ? '½' : '') + '☆'.repeat(5 - full - (half ? 1 : 0));
+    const row = b => { const R = RIDES[b.type], e = entryOf(b), st = staffed(b), w = workersAt(b).length, q = rtOf(b).queue.length; const onShift = workersAt(b).some(p => { const h = hourNow(); return h >= Math.max(P_OPEN, p.leaveH || 0) && h < Math.min(P_CLOSE - .5, p.backH || 24); }); const status = !e ? '🧱 needs a path' : st ? `🟢 running · ${q} in line` : w && onShift ? `🚗 operator on the way · ${q} in line` : w ? `🌙 operator off duty, self-serve · ${q} in line` : `🟡 no operator, half speed · ${q} in line`; return `<div class="prow" data-x="${b.x}" data-y="${b.y}"><b>${R.ic} ${R.name}</b><span class="small">${status}</span></div>`; };
+    el.innerHTML = `<h2>🎢 ${PARK_NAME}</h2>
+      <div class="pstars" title="Park rating: more rides, on-theme rides, operators, food and decorations raise it">${starStr} <span class="small">${stars.toFixed(1)} / 5</span></div>
+      <div class="pgrid"><div><b>${guests}</b><span class="small">guests now</span></div><div><b>${pigs}</b><span class="small">your pigs here</span></div><div><b>${P.today.guests}</b><span class="small">tickets today</span></div><div><b>${P.today.coins}</b><span class="small">🪙 earned today</span></div></div>
+      <div class="pprice"><span>🎟️ Ticket price</span><button class="btn ghost" id="pPriceDn" aria-label="Lower ticket price">−</button><b>${P.price} 🪙</b><button class="btn ghost" id="pPriceUp" aria-label="Raise ticket price">+</button></div>
+      <p class="small" style="margin:4px 0 10px">${P.price > fairPrice() + 2 ? '😬 Guests think that\'s pricey, so fewer will come.' : P.price < fairPrice() - 3 ? '🤑 A bargain! Lots of guests, but less money each.' : `👍 A fair price for a ${stars.toFixed(1)}-star park is about ${fairPrice()} 🪙.`} ${parkOpenNow() ? `Open until ${P_CLOSE - 12}pm.` : `Closed. Opens at ${P_OPEN}am.`}</p>
+      ${sel ? `<div class="psel"><b>${B[sel.type].ic} ${B[sel.type].name}</b><span class="small">${isRide(sel.type) ? `Thrill ${RIDES[sel.type].thrill}/10 · fits ${RIDES[sel.type].cap} riders · ${LANDS[landOf(sel.x, sel.y)].e} ${LANDS[landOf(sel.x, sel.y)].name}${landOf(sel.x, sel.y) === RIDES[sel.type].land ? ' (on-theme ✨)' : ` (best in ${LANDS[RIDES[sel.type].land].name})`}` : isStand(sel.type) ? `Sells ${STANDS[sel.type].ic} for ${STANDS[sel.type].sell} 🪙` : 'Decoration: makes the park prettier'}${JOBS[sel.type] ? ` · ${workersAt(sel).length}/${slotsOf(sel)} ${JOBS[sel.type].title}${slotsOf(sel) > 1 ? 's' : ''}` : ''}</span></div>` : ''}
+      <h3 style="margin:8px 0 4px;font-size:15px">Rides</h3>
+      ${rides.length ? rides.map(row).join('') : '<p class="small">No rides yet. Pick one in 🎢 Rides below and click next to a path.</p>'}
+      <p class="small" style="margin-top:8px">💡 Rides placed in their own land get +25% fun. Any grown-up pig can take a Ride Operator job from their pig card.</p>`;
+    const P0 = P;
+    $('pPriceDn').onclick = () => { P0.price = Math.max(0, P0.price - 1); parkPanelSig = ''; renderParkPanel(); sfx('tap'); save(); };
+    $('pPriceUp').onclick = () => { P0.price = Math.min(30, P0.price + 1); parkPanelSig = ''; renderParkPanel(); sfx('tap'); save(); };
+    el.querySelectorAll('.prow').forEach(r => r.onclick = () => { const b = P0.rides.find(q => q.x === +r.dataset.x && q.y === +r.dataset.y); if (!b) return; pSel = b; const n = sz(b.type), p2 = iso((b.x + n / 2) * T, (b.y + n / 2) * T), cm = cam(); cm.x = p2.x; cm.y = p2.y - 30; clampCam(cm); parkPanelSig = ''; renderParkPanel(); sfx('tap'); });
+  }
+
   function draw() {
     const c = ctx;
     if (view === 'dash' || view === 'pcse') return;
     if (isHouse()) { drawHouse(c); return; }
+    if (view === 'park') { drawPark(c); return; }
     if (view === 'inside') { c.setTransform(canvas.width / OW, 0, 0, canvas.height / OH, 0, 0); drawInside(c); return; }
     c.setTransform(dprNow, 0, 0, dprNow, 0, 0);
     drawWater(c);
@@ -4986,24 +5740,28 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     const dt = Math.min(.1, (t - last) / 1000 || 0); last = t;
     if (!paused) for (let i = 0; i < G.speed; i++) tick(dt);
     panKeys(dt); draw(); sweepSprites(dt);
-    uiT -= dt; if (uiT <= 0) { uiT = .25; hudRes(); hudList(); renderPig(); syncTools(); hudGoals(); renderBld(); renderStocks(); renderBanner(); renderDash(); renderHoods(); renderIsleTabs(); }
+    uiT -= dt; if (uiT <= 0) { uiT = .25; hudRes(); hudList(); renderPig(); syncTools(); hudGoals(); renderBld(); renderStocks(); renderBanner(); renderDash(); renderHoods(); renderIsleTabs(); renderParkPanel(); }
     saveT -= dt; if (saveT <= 0) { saveT = 5; save(); }
     requestAnimationFrame(loop);
   }
   document.addEventListener('visibilitychange', () => { if (document.hidden) save(); });
   setView('home'); syncBaby(); hudRes(); renderPig(); hudGoals(); syncSound(); syncSpeed(); initMiniGame();
   let seen = false, seen2 = false, seen3 = false;
-  try { seen = !!localStorage.getItem('pigcity-seen'); seen2 = !!localStorage.getItem('pigcity-seen2'); seen3 = !!localStorage.getItem('pigcity-seen3'); localStorage.setItem('pigcity-seen', '1'); localStorage.setItem('pigcity-seen2', '1'); localStorage.setItem('pigcity-seen3', '1'); } catch (e) {} } catch (e) {}
+  try { seen = !!localStorage.getItem('pigcity-seen'); seen2 = !!localStorage.getItem('pigcity-seen2'); seen3 = !!localStorage.getItem('pigcity-seen3'); localStorage.setItem('pigcity-seen', '1'); localStorage.setItem('pigcity-seen2', '1'); localStorage.setItem('pigcity-seen3', '1'); } catch (e) {}
   if (!seen) openTut();
   else if (!seen3) setTimeout(() => toast('✨ Pig City has a brand new 3D look! Drag to look around, scroll or pinch to zoom.'), 400);
   else if (!seen2) setTimeout(() => toast('✨ Pig City update: seasons, night time, pig personalities, Job City, cars, castle interiors and the PCSE!'), 400);
-  // Initialize game systems enhancements
-  GameSystemsIntegration.initialize(G);
-  const originalTick = tick;
-  tick = function(dt) {
-    originalTick(dt);
-    GameSystemsIntegration.update(G, G.pigs, dt);
-  };
+  // Initialize game systems enhancements (game-systems*.js load after this script, so wait for them)
+  window.addEventListener('load', () => {
+    if (typeof GameSystemsIntegration === 'undefined') return;
+    window.toast = toast; // the add-on systems show messages with toast() (window.toast was the #toast element)
+    try { GameSystemsIntegration.initialize(G); } catch (e) { console.error('game systems init failed', e); return; }
+    const originalTick = tick;
+    tick = function (dt) {
+      originalTick(dt);
+      try { GameSystemsIntegration.update(G, G.pigs, dt); } catch (e) { console.error('game systems update failed', e); }
+    };
+  });
 
   requestAnimationFrame(loop);
 })();
@@ -5012,22 +5770,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
 <script src="game-systems-integration.js"></script>
 <script src="account-system.js"></script>
 <script src="account-ui.js"></script>
-<!-- Hay Harvest Mini-game Modal -->
-<div class="minigame-overlay" id="minigameOverlay" hidden>
-  <div class="minigame-modal">
-    <h2>🌾 Hay Harvest Game</h2>
-    <div class="stats">
-      <div>Time: <span id="gameTime">30</span>s</div>
-      <div>Collected: <span id="gameScore">0</span></div>
-      <div>Reward: <span id="gameReward">0</span> 🪙</div>
-    </div>
-    <canvas id="minigameCanvas" class="game-canvas" width="450" height="240"></canvas>
-    <div class="btns" id="gameButtons">
-      <button class="btn alt" id="startBtn">Start Game</button>
-      <button class="btn ghost" id="closeBtn">Close</button>
-    </div>
-  </div>
-</div>
+
 <script src="assets/cloud.js"></script>
 </body>
 </html>
