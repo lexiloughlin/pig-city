@@ -23,6 +23,7 @@ Founders: Toki, Mochi, Poke, Miso Soup and Masaki (who runs Masaki Capital). Bui
 - ⛶ Big map mode: a much bigger map window, plus a full-width toggle
 - 🏰 Castle interiors: go inside any castle, pick wallpaper and floors, and place beds, hidey huts, couches and fairy lights. Cozy rooms keep pigs happy, and they sleep in their beds at night
 - 🎺 Town events like the Hay Festival, Pig Parade and Market Boom
+- 🎢 Squealtopia, a full pig theme park, with a special fan-made hello for the Six Flags team
 - ⏩ Pause / 1× / 2× / 3× speed, sound effects with mute, and a quick how-to-play guide
 
 Play: https://lexiloughlin.github.io/pig-city/

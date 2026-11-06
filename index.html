@@ -46,6 +46,13 @@ body {
 #parkPanel .prow, #parkPanel .psel { display: flex; flex-direction: column; padding: 6px 10px; border-radius: 10px; background: #fffaf2; border: 2px solid #f0e2cf; margin-bottom: 6px; cursor: pointer; }
 #parkPanel .psel { border-color: #e9b93b; cursor: default; }
 #parkPanel .prow:hover { border-color: #f48fb1; }
+#parkPanel .sixflags-note { margin: 0 0 10px; padding: 10px; border: 2px solid #e9b93b; border-radius: 14px; background: linear-gradient(135deg, #fff7e2, #fff0f5); }
+#parkPanel .sixflags-pennants { display: flex; gap: 4px; margin-bottom: 7px; }
+#parkPanel .sixflags-pennants span { width: 18px; height: 22px; background: var(--flag-color); clip-path: polygon(0 0, 100% 0, 100% 72%, 0 100%); }
+#parkPanel .sixflags-note strong, #parkPanel .sixflags-note span, #parkPanel .sixflags-note small { display: block; }
+#parkPanel .sixflags-note strong { font-family: var(--font-display); font-size: 18px; font-weight: 400; }
+#parkPanel .sixflags-note span { font-size: 13px; line-height: 1.35; margin-top: 2px; }
+#parkPanel .sixflags-note small { margin-top: 6px; color: var(--muted); font-size: 11px; line-height: 1.3; }
 .wrap { max-width: 1500px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
 header { display: flex; align-items: end; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 8vw, 56px); line-height: .95; margin: 0; color: var(--wood-dark); text-shadow: 3px 3px 0 var(--ink); }
@@ -5623,6 +5630,12 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     const starStr = '★'.repeat(full) + (half ? '½' : '') + '☆'.repeat(5 - full - (half ? 1 : 0));
     const row = b => { const R = RIDES[b.type], e = entryOf(b), st = staffed(b), w = workersAt(b).length, q = rtOf(b).queue.length; const onShift = workersAt(b).some(p => { const h = hourNow(); return h >= Math.max(P_OPEN, p.leaveH || 0) && h < Math.min(P_CLOSE - .5, p.backH || 24); }); const status = !e ? '🧱 needs a path' : st ? `🟢 running · ${q} in line` : w && onShift ? `🚗 operator on the way · ${q} in line` : w ? `🌙 operator off duty, self-serve · ${q} in line` : `🟡 no operator, half speed · ${q} in line`; return `<div class="prow" data-x="${b.x}" data-y="${b.y}"><b>${R.ic} ${R.name}</b><span class="small">${status}</span></div>`; };
     el.innerHTML = `<h2>🎢 ${PARK_NAME}</h2>
+      <div class="sixflags-note">
+        <div class="sixflags-pennants" aria-hidden="true">${['#e0483f', '#ffd36b', '#7cc35a', '#5aa9e0', '#c4b5ec', '#f48fb1'].map(color => `<span style="--flag-color:${color}"></span>`).join('')}</div>
+        <strong>A little hello to the Six Flags team</strong>
+        <span>Thanks for taking a look at Pig City! I made a little corner of Squealtopia just for you—hope it brings a few extra smiles.</span>
+        <small>An independent fan-made tribute; not affiliated with Six Flags.</small>
+      </div>
       <div class="pstars" title="Park rating: more rides, on-theme rides, operators, food and decorations raise it">${starStr} <span class="small">${stars.toFixed(1)} / 5</span></div>
       <div class="pgrid"><div><b>${guests}</b><span class="small">guests now</span></div><div><b>${pigs}</b><span class="small">your pigs here</span></div><div><b>${P.today.guests}</b><span class="small">tickets today</span></div><div><b>${P.today.coins}</b><span class="small">🪙 earned today</span></div></div>
       <div class="pprice"><span>🎟️ Ticket price</span><button class="btn ghost" id="pPriceDn" aria-label="Lower ticket price">−</button><b>${P.price} 🪙</b><button class="btn ghost" id="pPriceUp" aria-label="Raise ticket price">+</button></div>
