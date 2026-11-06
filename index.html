@@ -529,7 +529,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     { name: 'Miso Soup', skin: { base: '#201b1c', band: WHITE, cheek: '#c9752f', ear: '#3a2f2c', dark: true } },
     { name: 'Masaki', skin: { base: '#2b3552', head: '#e6b866', suit: true, ear: '#d48f72', nose: '#d97b7b', glasses: true }, banker: true }
   ];
-  // Bronson moves to town as CEO once Big Bronson Bank opens in Job City
+  // Bronson moves to town as CEO once Bron Corp opens in Job City
   const BRONSON = { name: 'Bronson', skin: { base: '#25272e', head: '#e8cfa6', suit: true, tie: '#e9b93b', pocket: '#e9b93b', ear: '#d99a80', nose: '#d97b7b', chin: '#f6efe2' } };
   const COATS = [
     { c: '#c96d2c', dark: false }, { c: '#1e1b20', dark: true }, { c: '#d27b2f', dark: false }, { c: '#e6b866', dark: false },
@@ -567,6 +567,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     salon:  { name: 'Fluff Salon', ic: '✂️', cat: 'biz', cost: 90, desc: '2 jobs: stylists pamper pigs' },
     toys:   { name: 'Toy Shop', ic: '🧸', cat: 'biz', cost: 75, desc: '2 jobs: makes the whole town happier' },
     haymill: { name: 'Hay Mill', ic: '🌾', cat: 'biz', cost: 85, desc: 'Play the Hay Harvest game to earn bonus 🪙. Once per day!' },
+    roller:  { name: 'Roller Coaster', ic: '🎢', cat: 'biz', cost: 120, desc: 'Play the Pressure Rush game to race your pig and earn bonus 🪙. 3 free plays then wait!' },
     hospital: { name: 'Pig Hospital', ic: '🏥', cat: 'help', cost: 150, desc: 'Sick pigs check in and come out healthy (3 beds, 2×2)' },
     vet:    { name: 'Vet', ic: '🩺', cat: 'help', cost: 120, desc: 'Sick pigs heal faster' },
     sitter: { name: 'Pig Sitter', ic: '👩‍🌾', cat: 'help', cost: 90, desc: 'Hires a sitter who pets, feeds & restocks' },
@@ -581,7 +582,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     market:  { name: 'Veggie Market', ic: '🥕', cat: 'cbiz', cost: 90, desc: '3 jobs. Every shift brings home 🫑', city: true },
     sushi:   { name: 'Sushi Spot', ic: '🍣', cat: 'cbiz', cost: 70, desc: '2 jobs. Workers in Job City get happier at lunch', city: true },
     pcse:    { name: 'PCSE Tower', ic: '🏛️', cat: 'cbiz', cost: 160, desc: 'The Pig City Stock Exchange! 2×2, 3 trader jobs, opens the PCSE', city: true },
-    bbb:     { name: 'Big Bronson Bank', ic: '💰', cat: 'cbiz', cost: 250, desc: 'The top bank in Pig City! The tallest 2×2 skyscraper, 4 banker jobs with the best pay in town, and CEO Bronson moves in to run it', city: true },
+    bbb:     { name: 'Bron Corp', ic: '💰', cat: 'cbiz', cost: 250, desc: 'The top bank in Pig City! The tallest 2×2 skyscraper, 4 banker jobs with the best pay in town, and CEO Bronson moves in to run it', city: true },
     dealer:  { name: 'Zoomies Motors', ic: '🚗', cat: 'cbiz', cost: 130, desc: '2 jobs. Unlocks buying new cars for your pigs', city: true },
     citytree: { name: 'Street Tree', ic: '🌳', cat: 'cdecor', cost: 10, desc: 'Shady sidewalk tree. City workers feel happier.', city: true },
     streetlamp: { name: 'Street Lamp', ic: '💡', cat: 'cdecor', cost: 15, desc: 'Lights up the city at night', city: true },
@@ -784,7 +785,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     sushi:   { title: 'Sushi Chef', place: 'Sushi Spot', emoji: '🍣', pay: 2, every: 5 },
     dealer:  { title: 'Car Seller', place: 'Zoomies Motors', emoji: '🚗', pay: 3, every: 6 },
     pcse:    { title: 'Trader', place: 'PCSE Tower', emoji: '📈', pay: 3, every: 5, slots: [3, 4, 5] },
-    bbb:     { title: 'Banker', place: 'Big Bronson Bank', emoji: '💰', pay: 5, every: 5, slots: [4, 5, 6] }
+    bbb:     { title: 'Banker', place: 'Bron Corp', emoji: '💰', pay: 5, every: 5, slots: [4, 5, 6] }
   };
   const MULT = [1, 1.5, 2], CAP = [4, 6, 8], BEDS = [3, 4, 6], SLOT_N = [2, 3, 4];
   const L = b => b.lvl || 1;
@@ -802,7 +803,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     office: ['Wheek Tech HQ', 'Wheek Tech Tower', 'Wheek Tech Campus'], factory: ['Hay Factory', 'Big Hay Factory', 'Robo Hay Works'],
     market: ['Veggie Market', 'Veggie Supermarket', 'Veggie Mega Mart'], sushi: ['Sushi Spot', 'Sushi House', 'Sushi Palace'],
     dealer: ['Zoomies Motors', 'Zoomies Showroom', 'Zoomies Gigafactory'], pcse: ['PCSE Tower', 'PCSE Grand Hall', 'PCSE Sky Exchange'],
-    bbb: ['Big Bronson Bank', 'Big Bronson Bank Tower', 'Big Bronson Bank Sky Vault']
+    bbb: ['Bron Corp', 'Bron Corp Tower', 'Bron Corp Sky Vault']
   };
   const lvName = (b, l = L(b)) => (LV_NAMES[b.type] || [B[b.type].name])[l - 1];
   function perkText(t, l) {
@@ -831,7 +832,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     social:  { e: '🦋', name: 'Social Butterfly', desc: 'Loves company. Gets a big mood boost hanging out with its best friend.' },
     sleepy:  { e: '😴', name: 'Sleepy', desc: 'Naps a lot, especially at night and on benches. Stays calm, so joy drops slower.' },
     zoomies: { e: '⚡', name: 'Zoomies', desc: 'Runs fast and popcorns when happy. Play Parks count double for this pig.' },
-    brainy:  { e: '🧠', name: 'Brainy', desc: 'A natural analyst. Earns 50% more at Masaki Capital and Big Bronson Bank.' },
+    brainy:  { e: '🧠', name: 'Brainy', desc: 'A natural analyst. Earns 50% more at Masaki Capital and Bron Corp.' },
     fancy:   { e: '💅', name: 'Fancy', desc: 'Loves being pampered. Earns more as a stylist and loves decorations.' },
     shy:     { e: '🌷', name: 'Shy', desc: 'Prefers quiet. Messy poop bothers this pig less, but parties are a lot.' }
   };
@@ -934,7 +935,8 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     { s: 'VEG', name: 'Veggie Ventures', base: 30, vol: .20, drift: .015, tip: 'grows with gardens' },
     { s: 'FLUF', name: 'Fluff Corp', base: 45, vol: .26, drift: .018, tip: 'up when pigs are pampered' },
     { s: 'ZOOM', name: 'Zoomies Motors', base: 60, vol: .45, drift: .025, tip: 'electric pig cars, very swingy' },
-    { s: 'POOP', name: 'Roomba Robotics', base: 8, vol: .60, drift: .020, tip: 'a meme stock, wild rides' }
+    { s: 'POOP', name: 'Roomba Robotics', base: 8, vol: .60, drift: .020, tip: 'a meme stock, wild rides' },
+    { s: 'FUNPIG', name: 'Squealtopia Parks', base: 75, vol: .55, drift: .032, tip: '🎢 the ultimate pig amusement park! thrilling rides, risky biz' }
   ];
   const HIST = 80;
   function initMarket() {
@@ -1040,7 +1042,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     const m = G.pigs.find(q => q.banker); if (m) p.friend = m.id;
     G.pigs.push(p);
     popup(x, y - 24, 'CEO in town! 💰', '#1f2f5c');
-    toast('💰 Bronson moved to Pig City to run Big Bronson Bank as CEO!');
+    toast('💰 Bronson moved to Pig City to run Bron Corp as CEO!');
   }
   function hire(p, b, quiet) {
     const used = workersAt(b).map(q => q.job.slot);
@@ -1050,6 +1052,15 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     if (ceoOf(p) === b.type && slot !== 0) { const q = workersAt(b).find(w => w.job.slot === 0); if (q) q.job.slot = slot; slot = 0; }
     p.job = { x: b.x, y: b.y, slot, map: b.map || 'home' }; p.workT = 0; p.noJob = false; G.stats.hires++;
     if (!quiet) { toast(`${p.name} got a job as ${/^[AEIOU]/.test(jobTitle(p, b)) ? 'an' : 'a'} ${jobTitle(p, b)} at ${JOBS[b.type].place}! ${JOBS[b.type].emoji}`); popup(p.x, p.y - 22, 'Hired! ' + JOBS[b.type].emoji, '#1f2f5c'); }
+    
+    // Easter egg: Lexi Loughlin hire makes FUNPIG stock jump!
+    if (p.name && p.name.toLowerCase().includes('lexi') && G.mkt && G.mkt.st && G.mkt.st.FUNPIG) {
+      G.mkt.st.FUNPIG.shock += 2.5;
+      if (!quiet) {
+        toast('📰 BREAKING: Squealtopia hires legendary intern Lexi Loughlin! FUNPIG 📈🚀');
+        G.mkt.news = '🎢 SQUEALTOPIA HIRES LEXI LOUGHLIN as Director of Fun! New roller coaster coming soon? FUNPIG SURGES +18% on hiring news! 🚀🐷';
+      }
+    }
     return true;
   }
   const workSpot = (b, slot) => { const n = sz(b.type); return { x: b.x * T + 7 + (slot % 3) * (n * T - 14) / 2, y: (b.y + n) * T + 7 + Math.floor(slot / 3) * 10 }; };
@@ -1092,14 +1103,14 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
       mk('sw-wall', WALLS, 'wall'); mk('sw-floor', FLOORS, 'floor');
       if (HS) { const tb = document.createElement('div'); tb.innerHTML = '<p class="small" style="margin:10px 0 6px"><b>Wall trim</b></p><div class="swatches" id="sw-trim"></div>'; box.appendChild(tb);
         ['None', 'Wainscot', 'Scallops', 'Both'].forEach((nm, i) => { const s = document.createElement('button'); s.className = 'swatch'; s.style.background = i === 0 ? '#fff' : i === 1 ? 'linear-gradient(#f7dfe2 55%, #fffaf2 55%)' : i === 2 ? 'repeating-linear-gradient(90deg,#f6b3c4 0 9px,#fffaf2 9px 18px)' : 'linear-gradient(#f6b3c4 22%, #f7dfe2 22% 60%, #fffaf2 60%)'; s.textContent = nm; s.setAttribute('aria-pressed', (R.trim || 0) === i ? 'true' : 'false'); s.addEventListener('click', () => { R.trim = i; sfx('tap'); save(); drawTools(); }); $('sw-trim').appendChild(s); }); }
-      $('toolHint').textContent = 'Wallpaper and floors are free. Try a few!';
+      $('toolHint').textContent = 'Wallpaper and floors are available. Try a few!';
       return;
     }
     const defs = view === 'inside' ? F : B;
     Object.entries(defs).filter(([, b]) => (isHouse() ? (b.hcat || b.cat) === cat : b.cat === cat) && !(b.house && view === 'inside' && !isHouse())).forEach(([k, b]) => {
       const el = document.createElement('button');
       el.className = 'tool'; el.dataset.k = k; el.setAttribute('aria-pressed', 'false'); el.title = b.desc || `Coziness +${b.cozy}`;
-      el.innerHTML = `${isHouse() && k !== 'remove' && k !== 'turn' ? '<canvas class="thumb" width="168" height="120"></canvas>' : `<span class="ic" aria-hidden="true">${b.ic}</span>`}<b>${b.name}</b>${b.cost ? `<span class="cost">${b.cost} 🪙</span>` : '<span class="cost">free</span>'}`;
+      el.innerHTML = `${isHouse() && k !== 'remove' && k !== 'turn' ? '<canvas class="thumb" width="168" height="120"></canvas>' : `<span class="ic" aria-hidden="true">${b.ic}</span>`}<b>${b.name}</b>${b.cost ? `<span class="cost">${b.cost} 🪙</span>` : '<span class="cost">0 🪙</span>'}`;
       if (isHouse() && k !== 'remove' && k !== 'turn') furnThumb(k, el.querySelector('canvas'));
       el.addEventListener('click', () => { tool = tool === k ? null : k; sfx('tap'); syncTools(); });
       el.addEventListener('pointerenter', () => { hoverTool = k; syncTools(); });
@@ -1456,6 +1467,260 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     renderBld();
   });
 
+  // ---------- Roller Coaster Mini-game ----------
+  let rollerPlaysLeft = 3;
+  let rollerLastReset = 0;
+  const ROLLER_COOLDOWN = 12 * 60 * 60 * 1000; // 12 hours between reset
+  const ROLLER_REWARD = 75;
+  const ROLLER_PENALTY = 20;
+
+  let rollerState = {
+    running: false,
+    time: 0,
+    maxTime: 8,
+    pressure: 0,
+    maxPressure: 100,
+    holding: false,
+    success: false,
+    gameCanvas: null,
+    gameCtx: null,
+  };
+
+  function resetRollerPlays() {
+    if (Date.now() - rollerLastReset >= ROLLER_COOLDOWN) {
+      rollerPlaysLeft = 3;
+      rollerLastReset = Date.now();
+      save();
+    }
+  }
+
+  function startRollerCoaster() {
+    resetRollerPlays();
+    if (rollerPlaysLeft <= 0) {
+      const timeLeft = Math.ceil((ROLLER_COOLDOWN - (Date.now() - rollerLastReset)) / (60 * 60 * 1000));
+      toast(`No plays left! Come back in ${timeLeft}h.`);
+      return;
+    }
+    
+    $('minigameOverlay').hidden = false;
+    rollerState.running = true;
+    rollerState.time = 0;
+    rollerState.pressure = 0;
+    rollerState.holding = false;
+    rollerState.success = false;
+    rollerPlaysLeft--;
+
+    const canvas = rollerState.gameCanvas;
+    const ctx = rollerState.gameCtx;
+
+    const gameLoop = setInterval(() => {
+      if (!rollerState.running) { clearInterval(gameLoop); return; }
+      rollerState.time += 0.016;
+      
+      // Pressure decreases over time if not holding
+      if (!rollerState.holding) {
+        rollerState.pressure = Math.max(0, rollerState.pressure - 2);
+      }
+      
+      if (rollerState.time >= rollerState.maxTime) {
+        endRollerCoaster(gameLoop);
+        return;
+      }
+      
+      renderRollerGame(ctx, canvas);
+    }, 16);
+
+    // Mouse/touch hold for pressure
+    const handleStart = () => { rollerState.holding = true; sfx('tap'); };
+    const handleEnd = () => { rollerState.holding = false; };
+    canvas.addEventListener('pointerdown', handleStart);
+    canvas.addEventListener('pointerup', handleEnd);
+    canvas.addEventListener('pointerleave', handleEnd);
+
+    $('minigameOverlay').addEventListener('close-game', () => {
+      clearInterval(gameLoop);
+      canvas.removeEventListener('pointerdown', handleStart);
+      canvas.removeEventListener('pointerup', handleEnd);
+      canvas.removeEventListener('pointerleave', handleEnd);
+    });
+  }
+
+  function renderRollerGame(ctx, canvas) {
+    // Build pressure
+    if (rollerState.holding && rollerState.pressure < rollerState.maxPressure) {
+      rollerState.pressure = Math.min(rollerState.maxPressure, rollerState.pressure + 3);
+    }
+
+    // Background
+    ctx.fillStyle = '#87CEEB';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Draw coaster track with multiple hills and curves
+    const progress = Math.min(1, rollerState.time / rollerState.maxTime);
+    const trackSegments = 50;
+    
+    // Create track path
+    ctx.strokeStyle = '#8B4513';
+    ctx.lineWidth = 12;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    
+    ctx.beginPath();
+    let firstPoint = true;
+    for (let i = 0; i <= trackSegments; i++) {
+      const t = i / trackSegments;
+      const x = 30 + t * (canvas.width - 60);
+      
+      // Multiple hill curves
+      let y = canvas.height - 80;
+      y -= Math.sin(t * Math.PI * 3) * 120; // Multiple hills
+      y -= Math.sin(t * Math.PI * 2) * 60;  // Wavy motion
+      
+      if (firstPoint) {
+        ctx.moveTo(x, y);
+        firstPoint = false;
+      } else {
+        ctx.lineTo(x, y);
+      }
+    }
+    ctx.stroke();
+
+    // Draw track supports (beams)
+    ctx.strokeStyle = '#654321';
+    ctx.lineWidth = 3;
+    for (let i = 0; i <= trackSegments; i += 8) {
+      const t = i / trackSegments;
+      const x = 30 + t * (canvas.width - 60);
+      let y = canvas.height - 80;
+      y -= Math.sin(t * Math.PI * 3) * 120;
+      y -= Math.sin(t * Math.PI * 2) * 60;
+      
+      // Draw vertical support
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x, canvas.height - 20);
+      ctx.stroke();
+    }
+
+    // Calculate pig position on track
+    const pigSegment = progress * trackSegments;
+    const pigIndex = Math.floor(pigSegment);
+    const pigT = pigSegment - pigIndex;
+    
+    let pigX = 30 + (pigIndex / trackSegments) * (canvas.width - 60);
+    let pigY = canvas.height - 80;
+    pigY -= Math.sin((pigIndex / trackSegments) * Math.PI * 3) * 120;
+    pigY -= Math.sin((pigIndex / trackSegments) * Math.PI * 2) * 60;
+    
+    // Interpolate between track points for smooth motion
+    if (pigIndex < trackSegments) {
+      const nextX = 30 + ((pigIndex + 1) / trackSegments) * (canvas.width - 60);
+      let nextY = canvas.height - 80;
+      nextY -= Math.sin(((pigIndex + 1) / trackSegments) * Math.PI * 3) * 120;
+      nextY -= Math.sin(((pigIndex + 1) / trackSegments) * Math.PI * 2) * 60;
+      
+      pigX = pigX + (nextX - pigX) * pigT;
+      pigY = pigY + (nextY - pigY) * pigT;
+    }
+
+    // Draw pig with rotation based on track angle
+    const nextIndex = Math.min(pigIndex + 1, trackSegments);
+    const angle = Math.atan2(
+      pigY - (canvas.height - 80 - Math.sin(((nextIndex) / trackSegments) * Math.PI * 3) * 120 - Math.sin(((nextIndex) / trackSegments) * Math.PI * 2) * 60),
+      pigX - (30 + ((nextIndex) / trackSegments) * (canvas.width - 60))
+    );
+    
+    ctx.save();
+    ctx.translate(pigX, pigY);
+    ctx.rotate(angle);
+    ctx.font = 'bold 45px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('🐷', 0, 0);
+    ctx.restore();
+
+    // Pressure gauge (top left)
+    ctx.fillStyle = '#DDD';
+    ctx.fillRect(20, 20, 200, 30);
+    
+    const pressurePercent = rollerState.pressure / rollerState.maxPressure;
+    let barColor = '#4CAF50'; // green
+    if (pressurePercent > 0.75) barColor = '#FF5722'; // red
+    else if (pressurePercent > 0.5) barColor = '#FFC107'; // orange
+    
+    ctx.fillStyle = barColor;
+    ctx.fillRect(20, 20, 200 * pressurePercent, 30);
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(20, 20, 200, 30);
+
+    // Pressure text
+    ctx.fillStyle = '#000';
+    ctx.font = 'bold 12px Arial';
+    ctx.fillText('PRESSURE', 25, 38);
+    ctx.font = 'bold 10px Arial';
+    ctx.fillText(`${Math.round(rollerState.pressure)}/${rollerState.maxPressure}`, 130, 38);
+
+    // Title and time
+    ctx.font = 'bold 24px Arial';
+    ctx.fillStyle = '#2C1810';
+    ctx.textAlign = 'center';
+    ctx.fillText('🎢 COASTER RUSH', canvas.width / 2, 35);
+    
+    ctx.font = 'bold 16px Arial';
+    ctx.textAlign = 'right';
+    ctx.fillText(`⏱️ ${Math.ceil(rollerState.maxTime - rollerState.time)}s`, canvas.width - 20, 40);
+
+    // Instructions at bottom
+    ctx.font = 'bold 13px Arial';
+    ctx.fillStyle = '#000';
+    ctx.textAlign = 'left';
+    ctx.fillText('📌 Hold to build pressure (green)', 20, canvas.height - 30);
+    ctx.fillText('⚠️ Too much = 💥 CRASH!  |  🎯 Stay in yellow/green!', 20, canvas.height - 12);
+
+    // Check for crash
+    if (rollerState.pressure >= rollerState.maxPressure) {
+      rollerState.success = false;
+      rollerState.running = false;
+    } else if (rollerState.time >= rollerState.maxTime) {
+      // Success if pressure is in good range
+      rollerState.success = rollerState.pressure >= 30 && rollerState.pressure <= 70;
+    }
+  }
+
+  function endRollerCoaster(gameLoop) {
+    rollerState.running = false;
+    clearInterval(gameLoop);
+
+    if (rollerState.success) {
+      G.coins += ROLLER_REWARD;
+      toast(`🎢 PERFECT! +${ROLLER_REWARD} 🪙 and 🎈!`);
+      sfx('goal');
+      // Spawn balloons and hay nearby
+      if (selBld) {
+        for (let i = 0; i < 3; i++) {
+          G.items.push({ x: selBld.x + Math.random() * 2 - 1, y: selBld.y + Math.random() * 2 - 1, type: 'hay' });
+        }
+      }
+    } else if (rollerState.pressure >= rollerState.maxPressure) {
+      G.coins = Math.max(0, G.coins - ROLLER_PENALTY);
+      toast(`💥 CRASH! -${ROLLER_PENALTY} 🪙`);
+      sfx('crash');
+    } else {
+      toast('Too timid! Need more pressure to succeed.');
+      sfx('tap');
+    }
+
+    hudRes();
+    save();
+    setTimeout(() => { $('minigameOverlay').hidden = true; }, 500);
+  }
+
+  function initRollerGame() {
+    rollerState.gameCanvas = $('minigameCanvas');
+    rollerState.gameCtx = rollerState.gameCanvas.getContext('2d');
+  }
+
   const buy = (cost, k, n) => () => { if (G.coins < cost) return; G.coins -= cost; G[k] += n; hudRes(); syncTools(); };
   $('buyHay').addEventListener('click', buy(10, 'hay', 5));
   $('buyWater').addEventListener('click', buy(6, 'water', 5));
@@ -1544,6 +1809,15 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
       $('upBtn').hidden = false;
       $('upBtn').textContent = '▶ Play Game';
       $('upBtn').onclick = () => startHayHarvest();
+    } else if (b.type === 'roller') {
+      $('bLvl').textContent = 'Mini-Game';
+      resetRollerPlays();
+      const playsText = rollerPlaysLeft > 0 ? `${rollerPlaysLeft} plays left today` : 'No plays left - come back later!';
+      $('bNext').textContent = `Hold to build pressure and race your pig! ${playsText}`;
+      $('upBtn').hidden = false;
+      $('upBtn').textContent = rollerPlaysLeft > 0 ? '🎢 Play Game' : '🕐 Wait for Reset';
+      $('upBtn').disabled = rollerPlaysLeft <= 0;
+      $('upBtn').onclick = () => { if (rollerPlaysLeft > 0) startRollerCoaster(); };
     } else if (DECOR[b.type]) { $('bLvl').textContent = 'Decoration'; $('bNext').textContent = ''; $('upBtn').hidden = true; }
     else if (l < 3) {
       $('bNext').innerHTML = `<b>Next: ${lvName(b, l + 1)}</b> · ${perkText(b.type, l + 1)}`;
@@ -2150,7 +2424,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     { id: 'castle4', e: '🏰', name: 'Castle Kingdom', desc: 'Own 4 Pig Castles', r: 60, f: () => [count('hutch'), 4] },
     { id: 'modern', e: '✨', name: 'Modern Living', desc: 'Upgrade a building to level 3', r: 100, f: () => [Math.max(0, ...allB().map(L)), 3] },
     { id: 'masaki', e: '👔', name: "Masaki's Team", desc: 'Fill both jobs at Masaki Capital', r: 80, f: () => [maxWorkers('bank'), 2] },
-    { id: 'bronson', e: '💰', name: "Bronson's Empire", desc: 'Fill all 4 jobs at Big Bronson Bank', r: 150, f: () => [maxWorkers('bbb'), 4] },
+    { id: 'bronson', e: '💰', name: "Bronson's Empire", desc: 'Fill all 4 jobs at Bron Corp', r: 150, f: () => [maxWorkers('bbb'), 4] },
     { id: 'commute1', e: '🚗', name: 'Morning Commute', desc: 'A pig drives to work in Job City', r: 30, f: () => [st().commutes || 0, 1] },
     { id: 'cozy10', e: '🛋️', name: 'Home Sweet Home', desc: 'Make a castle room 10 coziness', r: 40, f: () => [Math.max(0, ...G.buildings.filter(b => b.type === 'hutch').map(cozyOf)), 10] },
     { id: 'hood1', e: '📐', name: 'City Planner', desc: 'Draw your first neighborhood', r: 40, f: () => [st().hoods || 0, 1] },
@@ -2273,7 +2547,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
       const [sym, dir, text] = pick(NEWS_POOL);
       M.st[sym].shock += dir * (1.2 + Math.random());
       const ceos = G.pigs.filter(p => ceoOf(p) && jobOf(p) && jobOf(p).type === ceoOf(p)), ceo = ceos.length ? pick(ceos) : null;
-      const quote = ceo && (ceo.bronson ? (dir > 0 ? `Big Bronson Bank is loading up on ${sym}.` : `We sold our ${sym} at Big Bronson Bank last week.`) : `${dir > 0 ? 'Buy' : 'Sell'} ${sym}.`);
+      const quote = ceo && (ceo.bronson ? (dir > 0 ? `Bron Corp is loading up on ${sym}.` : `We sold our ${sym} at Bron Corp last week.`) : `${dir > 0 ? 'Buy' : 'Sell'} ${sym}.`);
       setNews(text + (ceo ? ` <i>${ceo.name} says: "${quote}"</i>` : ''));
     }
   }
@@ -2739,7 +3013,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
       let moved = false;
       for (const ceo of G.pigs.filter(q => ceoOf(q) && q.job && !q.noJob && !q.state)) {
         const own = ceoOf(ceo), cb = jobOf(ceo), free = open.find(b => b.type === own);
-        if (cb && cb.type !== own && free) { ceo.job = null; hire(ceo, free, true); toast(own === 'bank' ? 'Masaki left his old job to run Masaki Capital as CEO! 💼' : 'Bronson left his old job to run Big Bronson Bank as CEO! 💰'); moved = true; break; }
+        if (cb && cb.type !== own && free) { ceo.job = null; hire(ceo, free, true); toast(own === 'bank' ? 'Masaki left his old job to run Masaki Capital as CEO! 💼' : 'Bronson left his old job to run Bron Corp as CEO! 💰'); moved = true; break; }
       }
       if (!moved && open.length && idle.length) {
         const boss = idle.find(q => ceoOf(q) && open.some(b => b.type === ceoOf(q)));
@@ -5942,7 +6216,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     requestAnimationFrame(loop);
   }
   document.addEventListener('visibilitychange', () => { if (document.hidden) save(); });
-  setView('home'); syncBaby(); hudRes(); renderPig(); hudGoals(); syncSound(); syncSpeed(); initMiniGame();
+  setView('home'); syncBaby(); hudRes(); renderPig(); hudGoals(); syncSound(); syncSpeed(); initMiniGame(); initRollerGame();
   let seen = false, seen2 = false, seen3 = false;
   try { seen = !!localStorage.getItem('pigcity-seen'); seen2 = !!localStorage.getItem('pigcity-seen2'); seen3 = !!localStorage.getItem('pigcity-seen3'); localStorage.setItem('pigcity-seen', '1'); localStorage.setItem('pigcity-seen2', '1'); localStorage.setItem('pigcity-seen3', '1'); } catch (e) {}
   if (!seen) openTut();
