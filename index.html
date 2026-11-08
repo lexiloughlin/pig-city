@@ -5552,40 +5552,48 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
         break;
       }
       case 'pkingda': {
-        const top = 140, p = rt.phase === 'run' ? rt.prog : 0;
-        const liftZ = p < .35 ? 12 + p / .35 * (top - 12) : top;
-        box(c, o, .8, 2.8, .7, .3, 0, 4, '#7cc35a', { top: '#9dd87a' });
-        const baseX = 1, baseY = 2.8, towerW = .12;
-        for (let i = 0; i < 20; i++) {
-          const h = i * (liftZ - 8) / 20;
-          const [x, y] = IP(o, baseX, baseY, h);
-          const [xr, yr] = IP(o, baseX + towerW, baseY, h);
-          c.strokeStyle = '#5f8f2e'; c.lineWidth = 1.6; c.beginPath(); c.moveTo(x, y); c.lineTo(xr, yr); c.stroke();
-          if (i % 2 === 0) {
-            const [xl, yl] = IP(o, baseX - towerW, baseY, h);
-            c.beginPath(); c.moveTo(xl, yl); c.lineTo(xr, yr); c.stroke();
-          }
+        // giga coaster: station -> vertical lift tower -> top hat -> vertical drop -> airtime hills -> back to station
+        if (!drawRideArt.kingdaTrack) {
+          const pts = [], push = (u, v, z, w = 1) => pts.push([u, v, z, w]);
+          const line = (a, b2, n, zf, w) => { for (let i = 0; i < n; i++) { const f = i / n; push(a[0] + (b2[0] - a[0]) * f, a[1] + (b2[1] - a[1]) * f, zf(f), w); } };
+          const arc = (cu, cv, r, t0, t1, n, z0, z1, w) => { for (let i = 0; i < n; i++) { const f = i / n, th = t0 + (t1 - t0) * f; push(cu + r * Math.cos(th), cv + r * Math.sin(th), z0 + (z1 - z0) * f, w); } };
+          const D = Math.PI / 180, top = 118;
+          line([.4, 2.6], [1.5, 2.6], 6, () => 6, 1.2);                          // station
+          line([1.5, 2.6], [1.9, 2.6], 4, f => 6 + f * 8, 1.4);                   // run-out
+          line([1.9, 2.6], [1.96, 2.55], 14, f => 14 + f * (top - 14), 3.4);      // vertical lift up the tower
+          arc(2.1, 2.3, .2, 180 * D, 0, 7, top, top, .6);                         // top hat
+          line([2.3, 2.3], [2.34, 2.2], 12, f => top - f * (top - 12), .4);       // vertical drop
+          line([2.34, 2.2], [2.6, 1.3], 6, f => 12 + Math.sin(f * Math.PI) * 24, .7); // airtime hill
+          arc(2.2, 1.3, .4, 0, -90 * D, 6, 16, 14, .8);                           // turn
+          line([2.2, .9], [1.2, .9], 8, f => 14 + Math.sin(f * Math.PI) * 30, .8); // camelback
+          arc(1.2, 1.3, .4, -90 * D, -180 * D, 6, 14, 12, .9);                    // turn
+          line([.8, 1.3], [.8, 2.2], 6, f => 12 - f * 4, 1);                      // brake run
+          arc(.4, 2.2, .4, 0, 90 * D, 5, 8, 6, 1.1);                              // into the station
+          drawRideArt.kingdaTrack = pts; drawRideArt.kingdaTop = top;
         }
-        const [topx, topy] = IP(o, baseX, baseY, top);
-        c.strokeStyle = '#5f8f2e'; c.lineWidth = 2.2;
-        c.beginPath(); c.moveTo(topx - 16, topy - 2); c.lineTo(topx + 16, topy - 2); c.stroke();
-        c.strokeStyle = '#7cc35a'; c.lineWidth = 1;
-        for (let i = 0; i < 4; i++) { c.beginPath(); c.moveTo(topx - 14 + i * 10, topy - 2); c.lineTo(topx - 14 + i * 10, topy + 4); c.stroke(); }
-        if (p < .35) {
-          const [tx, ty] = IP(o, baseX + Math.sin(p * Math.PI * 2) * .08, baseY, liftZ);
-          c.fillStyle = '#d9a066'; rr(c, tx - 6, ty - 5, 12, 6, 2.2); c.fill();
-          c.strokeStyle = EDGE; c.lineWidth = 1; c.stroke();
-          if (rt.riders.length) { c.fillStyle = '#e0a08a'; ell(c, tx, ty - 7, 2.8, 2.2); c.fill(); }
-        } else {
-          const dropProg = (p - .35) / .65;
-          const dropX = baseX - .8 * dropProg;
-          const dropZ = top - dropProg * (top - 12);
-          const [dx, dy] = IP(o, dropX, baseY - .4 * dropProg, dropZ);
-          c.fillStyle = '#d9a066'; rr(c, dx - 6, dy - 5, 12, 6, 2.2); c.fill();
-          c.strokeStyle = EDGE; c.lineWidth = 1; c.stroke();
-          if (rt.riders.length) { c.fillStyle = '#e0a08a'; ell(c, dx, dy - 7, 2.8, 2.2); c.fill(); }
+        const pts = drawRideArt.kingdaTrack, top = drawRideArt.kingdaTop, P2 = pts.map(([u, v, z]) => IP(o, u, v, z));
+        // the lift tower: a tall lattice from the ground to the top hat
+        { const tu = 2.1, tv = 2.4; c.strokeStyle = '#5f8f2e'; c.lineWidth = 1.5;
+          for (const [du, dv] of [[-.1, 0], [.1, 0]]) { const [x, y] = IP(o, tu + du, tv + dv, 0), [tx, ty] = IP(o, tu + du, tv + dv, top); c.beginPath(); c.moveTo(x, y); c.lineTo(tx, ty); c.stroke(); }
+          c.lineWidth = 1; for (let i = 1; i < 9; i++) { const z = top * i / 9, [xl, yl] = IP(o, tu - .1, tv, z), [xr, yr] = IP(o, tu + .1, tv, z), [xl2, yl2] = IP(o, tu - .1, tv, z - top / 9); c.beginPath(); c.moveTo(xl, yl); c.lineTo(xr, yr); c.lineTo(xl2, yl2); c.stroke(); } }
+        // supports under the hills
+        c.strokeStyle = '#8aa67a'; c.lineWidth = 1.6; pts.forEach(([u, v, z], i) => { if (z > 10 && z < top - 4 && i % 3 === 0) { const [x, y] = P2[i], [, gy] = IP(o, u, v, 0); c.beginPath(); c.moveTo(x, y); c.lineTo(x, gy); c.stroke(); } });
+        box(c, o, .4, 2.4, 1.2, .5, 0, 5, '#c3e8a8', { top: '#e3f5d6' }); for (const u of [.45, 1.5]) box(c, o, u, 2.45, .06, .06, 5, 14, '#7cc35a'); poly(c, [IP(o, .4, 2.4, 19), IP(o, 1.6, 2.4, 19), IP(o, 1.6, 2.9, 19), IP(o, .4, 2.9, 19)], '#9fd97a', EDGE, 1);
+        const rail = (w, col, dy) => { c.strokeStyle = col; c.lineWidth = w; c.beginPath(); P2.forEach(([x, y], i) => i ? c.lineTo(x, y + dy) : c.moveTo(x, y + dy)); c.closePath(); c.stroke(); };
+        rail(5, '#3e5a26', 0); rail(3, '#7cc35a', -1); rail(1.2, '#e8f7d8', -2.4);
+        // train: crawls up the lift, flies down the drop
+        const lens = []; let tot = 0; for (let i = 0; i < P2.length; i++) { const j = (i + 1) % P2.length, d = Math.hypot(P2[j][0] - P2[i][0], P2[j][1] - P2[i][1]); lens.push(d); tot += d; }
+        const prog = rt.phase === 'run' ? rt.prog : 0;
+        if (!drawRideArt.kingdaTw) { const w = pts.map((q, i) => lens[i] * q[3]), sum = w.reduce((x, y) => x + y, 0); let acc = 0; drawRideArt.kingdaTw = w.map(x => (acc += x) / sum); }
+        const tw = drawRideArt.kingdaTw; let seg = 0; while (seg < tw.length - 1 && tw[seg] < prog) seg++;
+        const t0 = seg ? tw[seg - 1] : 0, along = lens.slice(0, seg).reduce((x, y) => x + y, 0) + lens[seg] * Math.min(1, Math.max(0, (prog - t0) / ((tw[seg] - t0) || 1)));
+        for (let k = 0; k < 3; k++) {
+          let s = (along - k * 12 + tot * 2) % tot, i = 0; while (s > lens[i] && i < lens.length - 1) { s -= lens[i]; i++; }
+          const j = (i + 1) % P2.length, f = lens[i] ? s / lens[i] : 0, x = P2[i][0] + (P2[j][0] - P2[i][0]) * f, y = P2[i][1] + (P2[j][1] - P2[i][1]) * f;
+          c.fillStyle = ['#d9a066', '#e8b680', '#d9a066'][k]; rr(c, x - 6, y - 7, 12, 6, 2.2); c.fill(); c.strokeStyle = EDGE; c.lineWidth = 1; c.stroke();
+          if (rt.riders.length > k * 3) { c.fillStyle = '#e0a08a'; ell(c, x - 1, y - 9, 2.6, 2.2); c.fill(); if (rt.riders.length > k * 3 + 1) { c.fillStyle = '#d9a066'; ell(c, x + 3, y - 9, 2.6, 2.2); c.fill(); } }
         }
-        { const [sx, sy] = IP(o, baseX, baseY - .4, 8); c.fillStyle = '#fffaf2'; rr(c, sx - 32, sy - 32, 64, 11, 5); c.fill(); c.strokeStyle = EDGE; c.lineWidth = 1; c.stroke(); c.fillStyle = '#5f8f2e'; c.font = 'bold 8px Chewy, sans-serif'; c.textAlign = 'center'; c.fillText('KINGDA CAVY', sx, sy - 24); }
+        { const [sx, sy] = IP(o, 1, 2.6, 6); c.fillStyle = '#fffaf2'; rr(c, sx - 32, sy - 34, 64, 12, 6); c.fill(); c.strokeStyle = EDGE; c.lineWidth = 1.2; c.stroke(); c.fillStyle = '#5f8f2e'; c.font = 'bold 9px Chewy, sans-serif'; c.textAlign = 'center'; c.fillText('KINGDA CAVY', sx, sy - 27); }
         break;
       }
       case 'peltoki': {
