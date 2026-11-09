@@ -216,7 +216,6 @@ Documentation:
   ├── GAME_SYSTEMS_GUIDE.md        (Deep dive)
   ├── ACCOUNT_SYSTEM_GUIDE.md      (Account features)
   ├── ACCOUNT_SETUP.md             (Setup guide)
-  ├── ACCOUNT_SYSTEM_SUMMARY.md    (Overview)
   ├── IMPLEMENTATION_STATUS.md     (Technical roadmap)
   └── QUICK_START.md               (This file)
 ```

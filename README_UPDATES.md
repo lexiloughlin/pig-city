@@ -47,7 +47,6 @@ Features:
 - `supabase/migrations/20261105000000_account_system.sql` - Database schema
 - `ACCOUNT_SYSTEM_GUIDE.md` - Complete user guide
 - `ACCOUNT_SETUP.md` - Setup and deployment
-- `ACCOUNT_SYSTEM_SUMMARY.md` - Implementation overview
 
 **Impact:** Players can now seamlessly switch between web and desktop versions
 
@@ -100,7 +99,6 @@ Start here based on what you want to know:
 - **[IMPLEMENTATION_STATUS.md](./IMPLEMENTATION_STATUS.md)** - Technical roadmap and progress
 - **[GAME_ENHANCEMENTS.md](./GAME_ENHANCEMENTS.md)** - Game design and vision
 - **[ACCOUNT_SETUP.md](./ACCOUNT_SETUP.md)** - How to deploy and configure
-- **[ACCOUNT_SYSTEM_SUMMARY.md](./ACCOUNT_SYSTEM_SUMMARY.md)** - Implementation details
 
 ### For Code
 - **game-systems.js** (500+ lines) - Core game mechanics
