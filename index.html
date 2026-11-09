@@ -4912,7 +4912,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   function isoBuilding(c, b, o) {
     const lv = L(b), n = sz(b.type), t = G.time || 0;
     c.save(); c.lineJoin = 'round';
-    const art = b.type === 'hutch' ? null : spriteArt(b);
+    const art = spriteArt(b); // painted sprites from assets/sprites/manifest.js win over the vector art, homes included
     if (b.plain) {
       const wall = ['#e8c4a2', '#b7d5c6', '#d6c7e8', '#edc3c7'][b.v || 0];
       const end = n - .1, floors = (b.type === 'office' ? 4 : 2) + (b.v || 0) % 2 + lv - 1;
