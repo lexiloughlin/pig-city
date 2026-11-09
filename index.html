@@ -71,7 +71,13 @@ body.bigmap .main { grid-template-columns: minmax(0, 1fr); }
 body.bigmap .side { display: none; }
 body.bigmap .stage { height: calc(100vh - 190px); }
 body.bigmap #zBig { background: var(--wood-dark); color: #fff; }
-.roomback { position: absolute; left: 10px; top: 10px; z-index: 2; }
+.interior-nav { position: absolute; top: 10px; left: 10px; right: 58px; z-index: 2; pointer-events: none; }
+.interior-nav button { pointer-events: auto; }
+#roomChoices { margin-top: 6px; }
+.building-drawer { position: absolute; z-index: 3; top: 10px; right: 52px; width: min(300px, calc(100% - 64px)); max-height: calc(100% - 68px); overflow: auto; overscroll-behavior: contain; touch-action: pan-y; animation: building-drawer-in .18s ease-out; }
+.stage .building-drawer canvas { width: 220px; max-width: 100%; height: auto; cursor: default; }
+@keyframes building-drawer-in { from { opacity: 0; transform: translateX(16px); } }
+@media (prefers-reduced-motion: reduce) { .building-drawer { animation: none; } }
 .buildbar { position: absolute; left: 10px; bottom: 10px; z-index: 2; display: flex; gap: 8px; align-items: center; max-width: calc(100% - 70px); }
 .buildbar .btn[aria-pressed="true"] { background: #e9b93b; }
 .buildtip { background: rgba(255,250,242,.94); border: 2px solid var(--ink); border-radius: 12px; padding: 5px 10px; font-size: 13px; }
@@ -281,7 +287,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
         <button class="vtab" data-v="park" role="tab">🎢 Squealtopia</button>
         <button class="vtab" data-v="dash" role="tab">📊 Jobs Dashboard</button>
         <button class="vtab" data-v="pcse" role="tab">📈 PCSE</button>
-        <button class="vtab inside" data-v="inside" role="tab" id="insideTab" hidden>🏰 Inside</button>
+        <button class="vtab inside" data-v="inside" role="tab" id="insideTab" hidden>🏠 Inside</button>
       </div>
       <div class="panel dash" id="dash" hidden>
         <h2>Jobs Dashboard 📊</h2>
@@ -328,7 +334,20 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
         <div class="banner" id="banner" hidden></div>
         <div class="streettip" id="streetTip" hidden></div>
         <div class="paused" id="pausedOv" hidden>Paused</div>
-        <button class="btn roomback" id="roomBack" hidden>← Whole house</button>
+        <div class="interior-nav" id="interiorNav" hidden>
+          <button class="btn ghost" id="leaveBuilding">← Back to map</button>
+          <button class="btn ghost" id="roomBack" hidden>← Whole home</button>
+          <div id="roomChoices" class="btns" aria-label="Rooms" hidden></div>
+        </div>
+        <aside class="panel building-drawer" id="bldPanel" aria-labelledby="bName" hidden>
+          <h2 id="bName" style="margin-bottom:2px"></h2>
+          <div class="tag" id="bLvl"></div>
+          <canvas id="bcanvas" width="440" height="220" style="width:220px;height:110px;display:block;margin:4px auto"></canvas>
+          <p class="small" id="bDesc" style="margin:0 0 6px"></p>
+          <p class="small" id="bInfo" style="margin-top:0"></p>
+          <p class="small" id="bNext"></p>
+          <div class="btns"><button class="btn alt" id="goInBtn" hidden>Go inside 🚪</button><button class="btn" id="upBtn">Upgrade</button><button class="btn ghost" id="bClose">Close</button></div>
+        </aside>
         <div class="buildbar" id="buildBar"><button class="btn" id="builderBtn" aria-pressed="false" title="Builder mode: move buildings around (B)">🏗️ Builder mode</button><button class="btn" id="growBtn" title="Fill the empty land of Job City with streets and city blocks" hidden>🏙️ Grow city</button><button class="btn" id="detailBtn" aria-pressed="true" title="When on, new shops, offices and homes come with a few matching props nearby (paid, removable)">✨ Auto-details: on</button><span class="buildtip" id="buildTip" hidden>Click a building to pick it up, then click where it should go. <b>Esc</b> puts it back. Whole districts move from the Neighborhoods panel.</span></div>
         <div class="zoombar" id="zoombar"><button class="ibtn" id="zStreet" title="Street view: walk around on foot (V)" aria-label="Street view" aria-pressed="false">🚶</button><button class="ibtn" id="zIn" title="Zoom in" aria-label="Zoom in">+</button><button class="ibtn" id="zOut" title="Zoom out" aria-label="Zoom out">−</button><button class="ibtn" id="zHome" title="Back to the middle" aria-label="Recenter">⌖</button><button class="ibtn" id="zBig" title="Big map: hide the side panels" aria-label="Big map">⛶</button><button class="ibtn" id="zMap" title="Planning overlays: neighborhoods, services, happiness" aria-label="Planning overlays">🗺️</button><button class="ibtn" id="zWalls" title="Walls up / cutaway / down" aria-label="Change wall view" hidden>🧱</button></div>
       </div>
@@ -342,15 +361,6 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     </div>
 
     <div class="side">
-      <div class="panel" id="bldPanel" hidden>
-        <h2 id="bName" style="margin-bottom:2px"></h2>
-        <div class="tag" id="bLvl"></div>
-        <canvas id="bcanvas" width="440" height="220" style="width:220px;height:110px;display:block;margin:4px auto"></canvas>
-        <p class="small" id="bDesc" style="margin:0 0 6px"></p>
-        <p class="small" id="bInfo" style="margin-top:0"></p>
-        <p class="small" id="bNext"></p>
-        <div class="btns"><button class="btn alt" id="goInBtn" hidden>Go inside 🚪</button><button class="btn" id="upBtn">Upgrade</button><button class="btn ghost" id="bClose">Close</button></div>
-      </div>
       <div class="panel" id="pigPanel">
         <h2>Your pig</h2>
         <div id="pigEmpty" class="small">Click a pig in town (or in the list below) to check on it.</div>
@@ -564,7 +574,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   // ---------- buildings ----------
   const B = {
     townhouse: { name: 'Townhouse', ic: '🏡', city: true, cat: 'cbiz', cost: 65, desc: 'A pastel row home with a little front garden.' },
-    hutch:  { name: 'Pig Castle', ic: '🏰', cat: 'home', cost: 70, desc: 'A huge castle with room for 4 pigs (needs a 2×2 patch)' },
+    hutch:  { name: 'Cavy Cottage', ic: '🏡', cat: 'home', cost: 70, desc: 'A home for 4 pigs with rooms you can furnish (needs a 2×2 patch)' },
     hay:    { name: 'Hay Field', ic: '🌾', cat: 'home', cost: 30, desc: '+1 🌾 every 6s. Slower in winter.' },
     water:  { name: 'Water Tower', ic: '💧', cat: 'home', cost: 25, desc: '+1 💧 every 5s. Faster when it rains.' },
     garden: { name: 'Veggie Garden', ic: '🫑', cat: 'home', cost: 55, desc: '+1 🫑 every 10s. Faster when it rains.' },
@@ -942,7 +952,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   const upCost = b => B[b.type].cost * L(b);
   const lvlSum = t => G.buildings.filter(b => b.type === t).reduce((n, b) => n + L(b), 0);
   const LV_NAMES = {
-    hutch: ['Pig Castle', 'Royal Castle', 'Modern Pig Villa'], hay: ['Hay Field', 'Big Hay Field', 'Hydro Hay Dome'],
+    hutch: ['Cavy Cottage', 'Cavy Townhouse', 'Cavy Apartments'], hay: ['Hay Field', 'Big Hay Field', 'Hydro Hay Dome'],
     water: ['Water Tower', 'Big Water Tower', 'Smart Water Tank'], garden: ['Veggie Garden', 'Big Veggie Garden', 'Veggie Greenhouse'],
     park: ['Play Park', 'Deluxe Park', 'Splash Park'], hospital: ['Pig Hospital', 'Big Pig Hospital', 'Pig Medical Center'],
     vet: ['Vet', 'Deluxe Vet', 'Modern Vet Clinic'], bank: ['Masaki Capital', 'Masaki Capital HQ', 'Masaki Capital Tower'],
@@ -1977,7 +1987,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     const c = $('bcanvas').getContext('2d'); c.setTransform(2, 0, 0, 2, 0, 0); c.clearRect(0, 0, 220, 110);
     const l = L(b), n = sz(b.type), lift = Math.max(...[l, Math.min(3, l + 1)].map(lv => htOf({ type: b.type, lvl: lv })));
     const k = Math.min(n > 1 ? .62 : 1.05, 90 / (lift + 2 * n * HH));
-    const one = (lv, cx) => { c.save(); c.translate(cx, 104); c.scale(k, k); c.translate(0, -2 * n * HH); isoBuilding(c, { type: b.type, x: 0, y: 0, lvl: lv }, { x: 0, y: 0 }); c.restore(); };
+    const one = (lv, cx) => { c.save(); c.translate(cx, 104); c.scale(k, k); c.translate(0, -2 * n * HH); isoBuilding(c, { ...b, x: 0, y: 0, lvl: lv }, { x: 0, y: 0 }); c.restore(); };
     if (l < 3 && !DECOR[b.type]) { one(l, 55); one(l + 1, 165); c.font = '24px Chewy, sans-serif'; c.textAlign = 'center'; c.fillStyle = '#c9a23a'; c.fillText('➜', 110, 72); }
     else one(l, 110);
   }
@@ -2006,12 +2016,13 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     }
     renderBldCanvas(b);
     $('goInBtn').hidden = !canEnter(b);
-    if (b.type === 'hutch') $('bInfo').textContent += ` · Coziness ${cozyOf(b)}`;
+    if (isHome(b)) $('bInfo').textContent += ` · Coziness ${cozyOf(b)}`;
     if (b.type === 'haymill') {
       $('bLvl').textContent = 'Mini-Game';
       $('bNext').textContent = 'Click Play to start the Hay Harvest game and earn bonus coins!';
       $('upBtn').hidden = false;
       $('upBtn').textContent = '▶ Play Game';
+      $('upBtn').disabled = false;
       $('upBtn').onclick = () => startHayHarvest();
     } else if (b.type === 'roller') {
       $('bLvl').textContent = 'Mini-Game';
@@ -2029,7 +2040,6 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
       $('upBtn').onclick = () => { if (selBld) { upgrade(selBld); renderBld(); } };
     } else { $('bNext').textContent = 'Fully upgraded! It can\'t get any fancier. ✨'; $('upBtn').hidden = true; }
   }
-  $('upBtn').addEventListener('click', () => { if (selBld) { upgrade(selBld); renderBld(); } });
   $('bClose').addEventListener('click', () => { selBld = null; renderBld(); });
 
   // ---------- input ----------
@@ -2039,17 +2049,37 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     if (view === 'inside' && !isHouse()) return { x: (e.clientX - r.left) / r.width * OW, y: (e.clientY - r.top) / r.height * OH };
     const p = cssPt(e); return isoToWorld(scrToIso(p.x, p.y));
   }
+  let mapPointer = null;
+  function updateMapHover() {
+    if (!mapPointer || (!tool && !builder) || (view !== 'home' && view !== 'city')) return;
+    const w = toWorld(mapPointer);
+    hover = { x: Math.floor(w.x / T), y: Math.floor(w.y / T) };
+  }
+  function updateZoneEnd(e) {
+    const w = toWorld(e);
+    zoneDrag.x1 = Math.max(WORLD.x0, Math.min(WORLD.x1 - 1, Math.floor(w.x / T)));
+    zoneDrag.y1 = Math.max(WORLD.y0, Math.min(WORLD.y1 - 1, Math.floor(w.y / T)));
+  }
   const depthOf = b => (b.x + b.y + sz(b.type)) * HH;
   function pickBuilding(s) {
-    const list = bl().slice().sort((a, b2) => depthOf(b2) - depthOf(a));
-    for (const b of list) {
+    let best = null, bestDepth = -Infinity;
+    for (const b of bl()) {
+      const depth = depthOf(b);
+      if (depth <= bestDepth) continue;
       const n = sz(b.type), o = iso(b.x * T, b.y * T), h = htOf(b);
       if (s.x < o.x - n * HW || s.x > o.x + n * HW || s.y < o.y - h || s.y > o.y + 2 * n * HH) continue;
       // inside the footprint diamond, or within the building's upright body
       const dx = Math.abs(s.x - o.x) / (n * HW), dy = (s.y - o.y) / (n * HH) - 1;
-      if (Math.abs(dy) + dx <= 1 || (s.y < o.y + n * HH && Math.abs(s.x - o.x) < n * HW * .8)) return b;
+      if (Math.abs(dy) + dx <= 1 || (s.y < o.y + n * HH && Math.abs(s.x - o.x) < n * HW * .8)) { best = b; bestDepth = depth; }
     }
-    return null;
+    return best;
+  }
+  function hoveredBuilding() {
+    if (mapPointer) {
+      const p = cssPt(mapPointer), b = pickBuilding(scrToIso(p.x, p.y));
+      if (b) return b;
+    }
+    return hover && at(hover.x, hover.y);
   }
   function pickPig(s) {
     let best = null, bd = 15;
@@ -2087,6 +2117,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     else { const p = cssPt(e); drag = { x: p.x, y: p.y, cx: cam().x, cy: cam().y }; }
   });
   canvas.addEventListener('pointermove', e => {
+    mapPointer = { clientX: e.clientX, clientY: e.clientY };
     const w = toWorld(e), k = view === 'inside' && !isHouse() ? IS : 1; hover = { x: Math.floor(w.x / T / k), y: Math.floor(w.y / T / k) };
     if (!ptrs.has(e.pointerId)) return;
     ptrs.set(e.pointerId, cssPt(e));
@@ -2094,26 +2125,54 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     if (parkPaint) { parkPaintAt(e); return; }
     if (paintMode) { paintTile(e); return; }
     if (bridgeLine) { const x = Math.floor(w.x / T), y = Math.floor(w.y / T); if (x !== bridgeLine.e[0] || y !== bridgeLine.e[1]) { bridgeLine.e = [x, y]; bridgeLine.path = bridgePath(mapOfView(), bridgeLine.s, [x, y]); } return; }
-    if (zoneDrag) { zoneDrag.x1 = Math.max(WORLD.x0, Math.min(WORLD.x1 - 1, Math.floor(w.x / T))); zoneDrag.y1 = Math.max(WORLD.y0, Math.min(WORLD.y1 - 1, Math.floor(w.y / T))); return; }
-    if (pinch0 && ptrs.size === 2) { const [a, b2] = [...ptrs.values()]; cam().z = pinch0.z * Math.hypot(a.x - b2.x, a.y - b2.y) / pinch0.d; clampCam(cam()); dragMoved = true; return; }
+    if (zoneDrag) { updateZoneEnd(e); return; }
+    if (pinch0 && ptrs.size === 2) { const [a, b2] = [...ptrs.values()]; cam().z = pinch0.z * Math.hypot(a.x - b2.x, a.y - b2.y) / pinch0.d; zoomingUntil = performance.now() + 180; clampCam(cam()); dragMoved = true; return; }
     if (drag) {
       const p = cssPt(e), dx = p.x - drag.x, dy = p.y - drag.y;
       if (Math.abs(dx) + Math.abs(dy) > 5) dragMoved = true;
       if (dragMoved) { const cm = cam(); cm.x = drag.cx - dx / cm.z; cm.y = drag.cy - dy / cm.z; clampCam(cm); canvas.style.cursor = 'grabbing'; }
     }
   });
-  const endPtr = e => { if (parkPaint) { parkPaint = false; lastPP = null; ppCache = null; save(); } if (bridgeLine) { if (e.type === 'pointerup') buildBridgeLine(); bridgeLine = null; } if (zoneDrag && e.type === 'pointerup') finishZone(); zoneDrag = null; if (paintMode) { if (paintMode === 'bridge') bridgeReport(); paintMode = null; lastPaint = null; save(); } ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch0 = null; if (!ptrs.size) { drag = null; sweeping = false; canvas.style.cursor = ''; } };
+  const endPtr = e => { if (parkPaint) { parkPaint = false; lastPP = null; ppCache = null; save(); } if (bridgeLine) { if (e.type === 'pointerup') buildBridgeLine(); bridgeLine = null; } if (zoneDrag && e.type === 'pointerup') { updateZoneEnd(e); finishZone(); } zoneDrag = null; if (paintMode) { if (paintMode === 'bridge') bridgeReport(); paintMode = null; lastPaint = null; save(); } ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch0 = null; if (!ptrs.size) { drag = null; sweeping = false; canvas.style.cursor = ''; } };
   canvas.addEventListener('pointerup', endPtr); canvas.addEventListener('pointercancel', endPtr);
-  canvas.addEventListener('pointerleave', () => { hover = null; });
+  canvas.addEventListener('pointerleave', () => { mapPointer = null; hover = null; });
+  let wheelZoom = null, zoomingUntil = 0;
   function zoomAt(sx, sy, f) {
+    zoomingUntil = performance.now() + 180;
     const cm = cam(), before = scrToIso(sx, sy); cm.z *= f; clampCam(cm);
     const after = scrToIso(sx, sy); cm.x += before.x - after.x; cm.y += before.y - after.y; clampCam(cm);
   }
-  canvas.addEventListener('wheel', e => { if (view === 'inside' && !isHouse()) return; e.preventDefault(); const p = cssPt(e); zoomAt(p.x, p.y, Math.exp(-e.deltaY * .0015)); }, { passive: false });
+  canvas.addEventListener('wheel', e => {
+    if (view === 'inside' && !isHouse()) return;
+    e.preventDefault();
+    const scale = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? vh : 1;
+    const delta = Math.max(-100, Math.min(100, e.deltaY * scale));
+    mapPointer = { clientX: e.clientX, clientY: e.clientY };
+    const point = cssPt(e), cm = cam();
+    if (!wheelZoom || wheelZoom.cm !== cm) wheelZoom = { cm, delta: 0 };
+    wheelZoom.delta += delta;
+    wheelZoom.point = point;
+    wheelZoom.pinch = e.ctrlKey;
+  }, { passive: false });
+  function applyWheelZoom() {
+    const pending = wheelZoom; wheelZoom = null;
+    if (!pending || pending.cm !== cam() || !pending.delta) return;
+    const centered = pending.delta > 0 && !pending.pinch && (view === 'home' || view === 'city');
+    const point = centered ? { x: vw / 2, y: vh / 2 } : pending.point;
+    zoomAt(point.x, point.y, Math.exp(-Math.max(-180, Math.min(180, pending.delta)) * .0015));
+  }
   $('zIn').addEventListener('click', () => { zoomAt(vw / 2, vh / 2, 1.25); sfx('tap'); });
   $('zOut').addEventListener('click', () => { zoomAt(vw / 2, vh / 2, .8); sfx('tap'); });
-  $('zHome').addEventListener('click', () => { if (curRoom()) houseCamRoom(); else if (isHouse()) houseCamHome(); else camHome(view); sfx('tap'); });
+  $('zHome').addEventListener('click', () => { if (curRoom()) houseCamRoom(); else if (isHouse()) houseCamHome(); else if (view === 'home' || view === 'city') { isleFocus = null; renderIsleTabs(); fitMap(); } else camHome(view); sfx('tap'); });
   $('roomBack').addEventListener('click', exitRoom);
+  $('leaveBuilding').addEventListener('click', () => {
+    const b = insideB;
+    if (!b) return;
+    insideB = null;
+    setView(b.map || 'home');
+    selBld = b;
+    renderBld();
+  });
   function setBig(on) { document.body.classList.toggle('bigmap', on); try { localStorage.setItem('pigcity-big', on ? '1' : '0'); } catch (e) {} setTimeout(() => { resize(); if (curRoom()) houseCamRoom(); }, 30); }
   $('zBig').addEventListener('click', () => { setBig(!document.body.classList.contains('bigmap')); sfx('tap'); });
   try { if (localStorage.getItem('pigcity-big') === '1') document.body.classList.add('bigmap'); } catch (e) {}
@@ -2224,11 +2283,12 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     if (view === 'inside') { const wi = { x: w.x / IS, y: w.y / IS }; insideClick(wi, Math.floor(wi.x / T), Math.floor(wi.y / T)); return; }
     const sp = cssPt(e), s = scrToIso(sp.x, sp.y);
     if (view === 'park') { parkClick(tx, ty, w); return; }
+    if (view === 'home' || view === 'city') hover = { x: tx, y: ty };
     if (builder) { builderClick(s, tx, ty); return; }
     if (tool === 'broom' || tool === 'road' || tool === 'path' || tool === 'zone' || tool === 'bridge' || tool === 'island') return;
     if (tool === 'bulldoze') {
       const b = pickBuilding(s) || at(tx, ty); if (!b) { if (removeRoadAt(mapOfView(), tx, ty)) { popup(tx * T + T / 2, ty * T + 10, 'Cleared!', INK, view); sfx('tap'); hudRes(); save(); } return; }
-      if (b.type === 'hutch' && (capacity() - CAP[L(b) - 1]) < G.pigs.length) { toast("Can't remove that castle, your pigs need the room!"); return; }
+      if (b.type === 'hutch' && (capacity() - CAP[L(b) - 1]) < G.pigs.length) { toast("Can't remove that home, your pigs need the room!"); return; }
       for (const q of workersAt(b)) { q.job = null; q.working = false; }
       bl().splice(bl().indexOf(b), 1); if (selBld === b) selBld = null; const refund = Math.floor(B[b.type].cost * [1, 2, 4][L(b) - 1] / 2); G.coins += refund;
       popup(b.x * T + T / 2, b.y * T + 10, '+' + refund + ' 🪙', INK, view); sfx('tap'); hudRes(); syncTools(); save(); return;
@@ -2255,21 +2315,23 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
       if (G.coins < B[tool].cost) tool = null;
       hudRes(); syncTools(); save(); return;
     }
+    const b = pickBuilding(s);
+    if (b) { selBld = b; renderBld(); return; }
     const pg = pickPig(s);
     if (pg) { selected = pg.id; pg.hop = .4; renderPig(true); listSig = ''; sfx('tap'); return; }
     if (view === 'home' && scoopNear(w, 18)) return;
-    const b = pickBuilding(s);
-    selBld = b || null; renderBld();
+    selBld = null; renderBld();
   });
   window.addEventListener('keydown', e => {
     if (!$('askBox').hidden) return; // typing in a name box
     const typing = /INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName);
     if (!typing && (e.key === 'v' || e.key === 'V') && (view === 'home' || view === 'city')) { if (street) stopStreet(); else startStreet(); return; }
     if (street && view === street.m && !typing) {
-      if (e.key === 'Escape') { stopStreet(); return; }
+      if (e.key === 'Escape' && !selBld) { stopStreet(); return; }
       if (e.key === 'Enter') { e.preventDefault(); streetEnter(); return; }
       if (e.key === 'Shift') keysDown.add('shift');
     }
+    if (e.key === 'Escape' && selBld) { selBld = null; renderBld(); return; }
     if (e.key === 'Escape') { if (!$('tutorial').hidden) closeTut(); if (builder) { if (moving) { moving = null; sfx('tap'); } else setBuilder(false); return; } tool = null; syncTools(); }
     if ((e.key === 'b' || e.key === 'B') && (view === 'home' || view === 'city') && !/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)) setBuilder(!builder);
     if ((e.key === 'r' || e.key === 'R') && isHouse() && !/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)) turnPlacing();
@@ -2296,8 +2358,10 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   // ---------- inside Job City workplaces ----------
   const WORKPLACES = { office: { wall: 2, floor: 1 }, factory: { wall: 6, floor: 4 }, market: { wall: 1, floor: 1 }, sushi: { wall: 3, floor: 0 }, dealer: { wall: 7, floor: 5 }, pcse: { wall: 5, floor: 6 }, bbb: { wall: 8, floor: 6 },
     bronsonbank: { wall: 8, floor: 6 }, tokiramen: { wall: 3, floor: 0 }, mochibakery: { wall: 0, floor: 7 }, misomarket: { wall: 1, floor: 1 }, wheekcoffee: { wall: 9, floor: 0 } };
-  const canEnter = b => b && (b.type === 'hutch' || !!WORKPLACES[b.type]);
-  const isWork = b => b && !!WORKPLACES[b.type];
+  const isHome = b => !!b && (b.type === 'hutch' || b.type === 'townhouse');
+  const canEnter = b => !!b && (isHome(b) || !!WORKPLACES[b.type] || !!JOBS[b.type] ||
+    ['hospital', 'vet', 'haymill'].includes(b.type));
+  const isWork = b => !!b && !isHome(b) && canEnter(b);
   const DESKS = [[80, 150], [200, 150], [320, 150], [80, 232], [200, 232], [320, 232]];
   const BBB_DESKS = [[96, 150], [230, 140], [330, 140], [70, 236], [180, 236], [290, 236]];
   function stationOf(b, slot) {
@@ -2426,7 +2490,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     });
     return props;
   }
-  function workersHere(b) { return G.pigs.filter(p => { const jb = jobOf(p); return jb === b && pigMap(p) === 'city' && !p.trip; }); }
+  function workersHere(b) { return G.pigs.filter(p => { const jb = jobOf(p); return jb === b && pigMap(p) === (b.map || 'home') && !p.trip; }); }
   function drawHat(c, kind, p) {
     if (p && ceoOf(p) === kind) return;
     c.save(); c.lineWidth = 2; c.strokeStyle = INK;
@@ -2463,7 +2527,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   // draws the fixed fixtures of each workplace; returns depth-sorted props that pigs can stand behind
   function workScene(c, b) {
     if (INTERIORS[b.type]) return interiorScene(c, b);
-    const t = G.time || 0, props = [], lv = L(b), slots = slotsOf(b);
+    const t = G.time || 0, props = [], lv = L(b), slots = JOBS[b.type] ? slotsOf(b) : 0;
     switch (b.type) {
       case 'office': {
         skyline(c, 20, 10, 230, 56);
@@ -2603,6 +2667,13 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
         break;
       }
     }
+    if (!WORKPLACES[b.type]) {
+      sign(c, 200, 36, lvName(b), '#a97c87', '#fffaf2', 10);
+      iprop(c, 'window', 76, 40, {});
+      iprop(c, 'window', 324, 40, {});
+      props.push({ y: 126, f: () => iprop(c, 'counter', 200, 126, { w: 132 }) });
+      props.push({ y: 240, f: () => { iprop(c, 'plant', 38, 240, {}); iprop(c, 'plant', 362, 240, {}); } });
+    }
     return props;
   }
   function insidePigList() {
@@ -2636,7 +2707,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
         if (p.id === selected) { c.strokeStyle = '#fff'; c.lineWidth = 2.5; ell(c, 0, 12, 24, 7); c.stroke(); }
         const sc = p.age < 90 ? .34 : .46; c.scale(s.face * sc, sc); drawPig(c, p.skin, { sleep: s.sleep }); if (work) drawHat(c, insideB.type, p);
         c.restore();
-        if (work && p.working) { 
+        if (work && p.working && JOBS[jobOf(p)?.type]) {
           const jb = jobOf(p); 
           c.font = '12px sans-serif'; c.textAlign = 'center'; 
           c.fillText(JOBS[jb.type].emoji, s.x + s.face * 4, s.y - 24 + Math.sin(G.time * 3 + p.id) * 1.5);
@@ -2668,9 +2739,9 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     for (const q of popups) { if (q.map !== 'inside' && q.map !== 'any') continue; c.globalAlpha = Math.min(1, q.life / .4); c.lineWidth = 3.5; c.strokeStyle = '#fff'; c.strokeText(q.text, q.x, q.y); c.fillStyle = q.color; c.fillText(q.text, q.x, q.y); }
     c.globalAlpha = 1;
     c.restore(); c.globalAlpha = 1;
-    if (work) {
+    if (work && JOBS[insideB.type]) {
       const W0 = W * IS, H0 = H * IS, here = workersHere(insideB), all = workersAt(insideB), today = Math.round(G.jd.place['🏙️ ' + JOBS[insideB.type].place] || 0);
-      const h = hourNow(), closed = !here.length && (h < 7.3 || h >= 17.6);
+      const h = hourNow(), closed = insideB.map === 'city' && !here.length && (h < 7.3 || h >= 17.6);
       const txt = closed ? `Closed for the night 🌙 Workers drive back in around 8am` : `${here.length}/${slotsOf(insideB)} at work · ${all.length - here.length ? (all.length - here.length) + ' on the way 🚗 · ' : ''}${today} 🪙 earned here today`;
       c.font = 'bold 13px Nunito, sans-serif'; c.textAlign = 'left'; const w = c.measureText(txt).width; c.fillStyle = 'rgba(255,255,255,.9)'; rr(c, 8, H0 - 30, w + 18, 22, 8); c.fill(); c.fillStyle = INK; c.fillText(txt, 17, H0 - 14);
       if (closed) { c.fillStyle = 'rgba(22,26,64,.25)'; c.fillRect(0, 0, W0, H0); c.save(); c.translate(W0 / 2, H0 / 2); c.rotate(-.06); c.fillStyle = '#c8343c'; rr(c, -80, -26, 160, 52, 10); c.fill(); c.strokeStyle = '#fff'; c.lineWidth = 3; c.stroke(); c.fillStyle = '#fff'; c.font = '28px Chewy, sans-serif'; c.textAlign = 'center'; c.fillText('CLOSED', 0, 10); c.restore(); }
@@ -2709,7 +2780,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   }
 
   // ---------- views ----------
-  const curCats = () => view === 'park' ? PARK_CATS : view === 'city' ? CITY_CATS : view === 'inside' ? (insideB && insideB.type === 'hutch' ? HOUSE_CATS : IN_CATS) : CATS;
+  const curCats = () => view === 'park' ? PARK_CATS : view === 'city' ? CITY_CATS : view === 'inside' ? (isHome(insideB) ? HOUSE_CATS : IN_CATS) : CATS;
   const TD = k => view === 'inside' ? F[k] : B[k];
   function drawTabs() {
     tabsEl.innerHTML = '';
@@ -2759,27 +2830,27 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   function setView(v) {
     if (v === 'inside' && !insideB) v = 'home';
     if (builder && v !== 'home' && v !== 'city') setBuilder(false); moving = null;
-    view = v; tool = null; hoverTool = null; selBld = null; hover = null; isleFocus = null;
+    view = v; tool = null; hoverTool = null; selBld = null; hover = null; mapPointer = null; isleFocus = null;
     cat = curCats()[0][0];
     document.querySelectorAll('.vtab').forEach(b => b.setAttribute('aria-selected', b.dataset.v === v ? 'true' : 'false'));
     $('insideTab').hidden = !insideB;
     if (v !== 'inside') houseRoom = null;
-    if (insideB) $('insideTab').textContent = insideB.type === 'hutch' ? `🏰 Castle #${G.buildings.filter(q => q.type === 'hutch').indexOf(insideB) + 1}` : `${B[insideB.type].ic} ${lvName(insideB)}`;
+    if (insideB) $('insideTab').textContent = `${B[insideB.type].ic} ${insideName(insideB)}`;
     const map = v === 'home' || v === 'city' || v === 'inside' || v === 'park';
     $('stage').hidden = !map; $('buildPanel').hidden = !map; $('dash').hidden = v !== 'dash'; $('pcse').hidden = v !== 'pcse';
     $('buildTitle').textContent = v === 'park' ? `Build ${PARK_NAME} 🎢` : v === 'city' ? 'Build downtown 🏙️' : v === 'inside' ? `Decorate ${insideName(insideB)} ${isWork(insideB) ? '🪴' : '🛋️'}` : 'Build';
     drawTabs(); drawTools(); renderBld(); renderCozy();
     $('buildBar').hidden = !(v === 'home' || v === 'city'); $('growBtn').hidden = v !== 'city'; syncGrowBtn();
-    roomLabels(); $('zoombar').hidden = v === 'inside' && !isHouse(); $('zWalls').hidden = !isHouse(); $('zMap').hidden = v === 'inside' || v === 'park'; hoodSig = ''; parkPanelSig = ''; pSel = null; renderParkPanel();
+    roomLabels(); $('zoombar').hidden = v === 'inside' && !isHouse(); $('zWalls').hidden = !isHouse(); $('zStreet').hidden = v !== 'home' && v !== 'city'; $('zMap').hidden = v === 'inside' || v === 'park'; hoodSig = ''; parkPanelSig = ''; pSel = null; renderParkPanel();
     if (map) { resize(); if ((v === 'home' || v === 'city' || v === 'park') && !cams[v].init) { camHome(v); cams[v].init = true; } if (isHouse()) houseCamHome(); }
     if (v === 'park' && !G.parkSeen) { G.parkSeen = true; ensurePark(); setTimeout(() => toast(`🎢 Welcome to ${PARK_NAME}! Build rides next to the paths, hire Ride Operators, and set your ticket price. Tourists start coming once you have rides.`), 200); }
     if (v === 'city' && G.cityNew) { G.cityNew = false; setTimeout(() => toast('🏙️ Welcome to Job City! Pigs with jobs here drive in around 8am and home after 5pm.'), 200); }
     if (v === 'dash') renderDash(); if (v === 'pcse') { stockSig = ''; renderStocks(); }
     renderIsleTabs();
   }
-  const insideName = b => { if (b.type !== 'hutch') return lvName(b); const i = G.buildings.filter(q => q.type === 'hutch').indexOf(b); return `${lvName(b)} #${i + 1}`; };
-  function goInside(b) { houseRoom = null; if (b.type === 'hutch') ensureHouse(b); housePigs.clear(); if (!b.room) b.room = Object.assign({ items: [] }, WORKPLACES[b.type] || { wall: 0, floor: 0 }); insideB = b; insidePigs.clear(); setView('inside'); sfx('wheek'); }
-  document.querySelectorAll('.vtab').forEach(b => b.addEventListener('click', () => { setView(b.dataset.v); sfx('tap'); }));
+  const insideName = b => lvName(b);
+  function goInside(b) { houseRoom = null; if (isHome(b)) ensureHouse(b); housePigs.clear(); if (!b.room) b.room = Object.assign({ items: [] }, WORKPLACES[b.type] || { wall: 0, floor: 0 }); insideB = b; insidePigs.clear(); setView('inside'); sfx('wheek'); }
+  document.querySelectorAll('.vtab').forEach(b => b.addEventListener('click', () => { const returnToMap = isleFocus !== null && b.dataset.v === view; setView(b.dataset.v); if (returnToMap) fitMap(); sfx('tap'); }));
   $('goInBtn').addEventListener('click', () => { if (canEnter(selBld)) goInside(selBld); });
 
   // ---------- jobs dashboard ----------
@@ -2843,12 +2914,12 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     { id: 'pay100', e: '🪙', name: 'Payday', desc: 'Earn 100 🪙 from jobs', r: 50, f: () => [st().jobPay, 100] },
     { id: 'pop6', e: '🏘️', name: 'Pig Village', desc: 'Reach 6 pigs', r: 40, f: () => [G.pigs.length, 6] },
     { id: 'heal1', e: '🏥', name: 'Get Well Soon', desc: 'A pig leaves the hospital healthy', r: 40, f: () => [st().healed, 1] },
-    { id: 'castle4', e: '🏰', name: 'Castle Kingdom', desc: 'Own 4 Pig Castles', r: 60, f: () => [count('hutch'), 4] },
+    { id: 'castle4', e: '🏰', name: 'Cozy Neighborhood', desc: 'Own 4 homes', r: 60, f: () => [count('hutch'), 4] },
     { id: 'modern', e: '✨', name: 'Modern Living', desc: 'Upgrade a building to level 3', r: 100, f: () => [Math.max(0, ...allB().map(L)), 3] },
     { id: 'masaki', e: '👔', name: "Masaki's Team", desc: 'Fill both jobs at Masaki Capital', r: 80, f: () => [maxWorkers('bank'), 2] },
     { id: 'bronson', e: '💰', name: "Bronson's Empire", desc: 'Fill all 4 jobs at Bron Corp', r: 150, f: () => [maxWorkers('bbb'), 4] },
     { id: 'commute1', e: '🚗', name: 'Morning Commute', desc: 'A pig drives to work in Job City', r: 30, f: () => [st().commutes || 0, 1] },
-    { id: 'cozy10', e: '🛋️', name: 'Home Sweet Home', desc: 'Make a castle room 10 coziness', r: 40, f: () => [Math.max(0, ...G.buildings.filter(b => b.type === 'hutch').map(cozyOf)), 10] },
+    { id: 'cozy10', e: '🛋️', name: 'Home Sweet Home', desc: 'Make a home 10 coziness', r: 40, f: () => [Math.max(0, ...G.buildings.filter(b => b.type === 'hutch').map(cozyOf)), 10] },
     { id: 'hood1', e: '📐', name: 'City Planner', desc: 'Draw your first neighborhood', r: 40, f: () => [st().hoods || 0, 1] },
     { id: 'island1', e: '🏝️', name: 'Island Life', desc: 'Raise a new island and connect it with a bridge', r: 80, f: () => [Math.min(st().islands || 0, 1) + Math.min(st().bridges || 0, 1), 2] },
     { id: 'road20', e: '🛣️', name: 'Road Crew', desc: 'Pave 20 road tiles', r: 40, f: () => [st().roads || 0, 20] },
@@ -2921,7 +2992,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     ['ZOOM', -1, '🔋 Zoomies Motors recalls cars after the wheels keep popcorning off.'],
     ['POOP', +1, '🤖 Roomba Robotics goes viral: "It scoops while you sleep!"'],
     ['POOP', -1, '💩 Roomba Robotics robot gets stuck under a hay bale. Shares wobble.'],
-    ['HAY', +1, '🌾 Hay Holdings signs a big deal with every Pig Castle in town.'],
+    ['HAY', +1, '🌾 Hay Holdings signs a big deal with every home in town.'],
     ['HAY', -1, '🌾 Too much hay on the market: Hay Holdings prices soften.']
   ];
   const exOpen = () => count('bank') > 0 || count('pcse') > 0;
@@ -3180,7 +3251,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     for (const p of G.pigs) { while (castles[ci] && n >= CAP[L(castles[ci]) - 1]) { ci++; n = 0; } if (!castles[ci]) break; map.set(p.id, castles[ci]); n++; }
     return map;
   }
-  const cozyOf = b => { const its = b && (b.type === 'hutch' && b.house ? b.house.items : b.room ? b.room.items : null); return its ? its.reduce((s, it) => s + (F[it.k] ? F[it.k].cozy : 0), 0) : 0; };
+  const cozyOf = b => { const its = b && (isHome(b) && b.house ? b.house.items : b.room ? b.room.items : null); return its ? its.reduce((s, it) => s + (F[it.k] ? F[it.k].cozy : 0), 0) : 0; };
   function logPay(p, b, pay) {
     const J = G.jd; J.total += pay; J.pig[p.id] = (J.pig[p.id] || 0) + pay;
     const k = (b.map === 'city' ? '🏙️ ' : b.map === 'park' ? '🎢 ' : '🏡 ') + JOBS[b.type].place; J.place[k] = (J.place[k] || 0) + pay;
@@ -3460,7 +3531,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
       const adults = G.pigs.filter(p => p.age >= 90 && p.health > 60 && pigMap(p) === 'home');
       const avgJoy = G.pigs.reduce((s, p) => s + p.joy, 0) / Math.max(1, G.pigs.length);
       if (adults.length < 2) {}
-      else if (G.pigs.length >= capacity()) { if (avgJoy > 55) toast('Your pigs want babies, but the castles are full! Build another Pig Castle.'); }
+      else if (G.pigs.length >= capacity()) { if (avgJoy > 55) toast('Your pigs want babies, but the homes are full! Build another cottage.'); }
       else if (avgJoy > 55) {
         const a = pick(adults), b = pick(adults.filter(p => p !== a));
         const used = new Set(G.pigs.map(p => p.name));
@@ -4803,7 +4874,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   function isoBuilding(c, b, o) {
     const lv = L(b), n = sz(b.type), t = G.time || 0;
     c.save(); c.lineJoin = 'round';
-    const art = spriteArt(b);
+    const art = b.type === 'hutch' ? null : spriteArt(b);
     if (b.plain) {
       const wall = ['#e8c4a2', '#b7d5c6', '#d6c7e8', '#edc3c7'][b.v || 0];
       const end = n - .1, floors = (b.type === 'office' ? 4 : 2) + (b.v || 0) % 2 + lv - 1;
@@ -4829,35 +4900,32 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
         break;
       }
       case 'hutch': {
-        if (lv === 3) { // Modern Pig Villa
-          poly(c, [IP(o, .05, .05), IP(o, 1.95, .05), IP(o, 1.95, 1.95), IP(o, .05, 1.95)], '#9cc65a', null);
-          poly(c, [IP(o, 1.15, 1.2), IP(o, 1.85, 1.2), IP(o, 1.85, 1.85), IP(o, 1.15, 1.85)], '#5ab4e6', EDGE);
-          poly(c, [IP(o, 1.25, 1.3), IP(o, 1.5, 1.3), IP(o, 1.5, 1.45), IP(o, 1.25, 1.45)], 'rgba(255,255,255,.45)', null);
-          shadowQ(c, o, .2, .2, 1.6, .9, 50);
-          box(c, o, .2, .2, 1.6, .9, 0, 28, '#fff6ec');
-          qL(c, o, 1.1, .3, 1.7, 3, 24, lit() ? 'rgba(255,224,138,.92)' : 'rgba(150,205,240,.9)', true);
-          qR(c, o, 1.8, .3, 1.0, 3, 24, lit() ? 'rgba(255,214,120,.9)' : 'rgba(130,190,225,.9)', true);
-          box(c, o, .3, .25, 1.0, .8, 28, 22, '#ffd1dc');
-          qL(c, o, 1.05, .4, 1.2, 31, 46, lit() ? 'rgba(255,224,138,.92)' : 'rgba(150,205,240,.9)', true);
-          box(c, o, .15, .15, 1.75, 1.0, 50, 4, '#b9b4e6');
-          for (const [u, v] of [[.4, .4], [.8, .35], [1.6, .5]]) { const [x, y] = IP(o, u, v, 53); c.fillStyle = '#5fae48'; ell(c, x, y - 3, 5, 4); c.fill(); }
-          break;
+        const wall = ['#f5dcc3', '#e7b0b8', '#b7cfc5'][lv - 1];
+        const roof = ['#8d79af', '#906b81', '#618b87'][lv - 1];
+        const height = [34, 59, 87][lv - 1];
+        poly(c, [IP(o, 0, 0), IP(o, 2, 0), IP(o, 2, 2), IP(o, 0, 2)], '#a8cb82', EDGE);
+        shadowQ(c, o, .16, .12, 1.68, 1.44, height);
+        box(c, o, .16, .12, 1.68, 1.44, 0, height, wall);
+        const floors = lv;
+        windowsL(c, o, 1.565, .22, 1.78, 8, height - 3, 3, floors, .22);
+        windowsR(c, o, 1.845, .2, 1.48, 8, height - 3, 2, floors, .22);
+        kdoor(c, o, 'L', 1.575, .83, 1.17, 19, '#8e6155');
+        poly(c, [IP(o, .83, 1.56), IP(o, 1.17, 1.56), IP(o, 1.17, 2), IP(o, .83, 2)], '#e2c3a6', null);
+        if (lv < 3) gableV(c, o, .14, .1, 1.72, 1.48, height, 19, roof, wall);
+        else {
+          box(c, o, .1, .07, 1.8, 1.55, height, 5, roof);
+          for (const z of [31, 59]) {
+            box(c, o, .35, 1.54, 1.3, .24, z - 3, 3, '#f4ddc7');
+            drail(c, o, .35, 1.78, 1.65, 1.78, z, 8, '#644e58');
+          }
         }
-        const wall = '#fff1e6', roof = lv === 2 ? '#a9b4f2' : '#f6a5c0', fl = lv === 2 ? '#f7d36b' : '#ffd1e0';
-        poly(c, [IP(o, 0, 0), IP(o, 2, 0), IP(o, 2, 2), IP(o, 0, 2)], '#a6dcf2', EDGE);
-        poly(c, [IP(o, .22, .22), IP(o, 1.78, .22), IP(o, 1.78, 1.78), IP(o, .22, 1.78)], '#b6dd8f', null);
-        const tower = (u, v) => { cyl(c, o, u, v, .27, 0, 50, wall); const [x, y] = IP(o, u, v, 50); cone(c, o, u, v, .32, 50, 26, roof); flag(c, x, y - 26, fl); for (const k of [20, 36]) { const [wx, wy] = IP(o, u, v + .18, k); c.fillStyle = '#fffaf2'; c.beginPath(); c.roundRect(wx - 3.2, wy - 7, 6.4, 8.5, [3.2, 3.2, 1, 1]); c.fill(); c.strokeStyle = EDGE; c.lineWidth = 1; c.stroke(); c.fillStyle = winCol(k); c.beginPath(); c.roundRect(wx - 2, wy - 5.8, 4, 6.3, [2, 2, 0, 0]); c.fill(); } };
-        tower(.45, .45);
-        box(c, o, .45, .45, 1.1, 1.1, 0, 34, wall);
-        for (let i = 0; i < 5; i++) { box(c, o, .5 + i * .22, 1.45, .12, .1, 34, 5, wall); box(c, o, 1.45, .5 + i * .22, .1, .12, 34, 5, wall); }
-        kdoor(c, o, 'L', 1.55, .82, 1.18, 20, '#c98b6b');
-        kwin(c, o, 'L', 1.55, .56, .72, 19, 29, 1); kwin(c, o, 'L', 1.55, 1.28, 1.44, 19, 29, 2);
-        kwin(c, o, 'R', 1.55, .68, .84, 19, 29, 3); kwin(c, o, 'R', 1.55, 1.16, 1.32, 19, 29, 4);
-        { const [hx, hy] = IP(o, 1.0, 1.55, 25); c.fillStyle = '#f48fb1'; c.beginPath(); c.moveTo(hx, hy + 3); c.bezierCurveTo(hx - 6, hy - 1, hx - 3, hy - 6, hx, hy - 3); c.bezierCurveTo(hx + 3, hy - 6, hx + 6, hy - 1, hx, hy + 3); c.fill(); c.strokeStyle = EDGE; c.lineWidth = .9; c.stroke(); }
-        if (lv === 2) { qL(c, o, 1.55, .5, 1.5, 31, 33, '#f7d36b'); qR(c, o, 1.55, .5, 1.5, 31, 33, '#e8c25a'); }
-        tower(1.55, .45); tower(.45, 1.55); tower(1.55, 1.55);
-        // drawbridge
-        poly(c, [IP(o, .85, 1.55), IP(o, 1.15, 1.55), IP(o, 1.15, 2.05), IP(o, .85, 2.05)], '#a77c4c', EDGE);
+        box(c, o, 1.36, .36, .21, .25, height, 25, '#c78778');
+        for (const u of [.48, 1.52]) {
+          box(c, o, u - .15, 1.66, .3, .15, 0, 5, '#ba8a68');
+          const [x, y] = IP(o, u, 1.73, 6);
+          c.fillStyle = '#5e995f'; ell(c, x, y, 6, 4); c.fill();
+          c.fillStyle = '#f39db7'; ell(c, x - 2, y - 3, 2.4, 2.4); ell(c, x + 2, y - 2, 2.4, 2.4); c.fill();
+        }
         break;
       }
       case 'hospital': {
@@ -5224,13 +5292,16 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     const sc = dprNow * cam().z, zb = Math.pow(1.2, Math.round(Math.log(sc) / Math.log(1.2)));
     const key = kind + '|' + variant, frame = info.anim ? Math.floor((G.time || 0) * 8) : 0;
     let e = sprites.get(key);
-    if (!e || ((e.zb !== zb || e.frame !== frame) && spriteBudget-- > 0)) {
-      const w = P.l + P.r, h = P.t + P.b, W2 = Math.ceil(w * zb), H2 = Math.ceil(h * zb);
+    const movingZoom = performance.now() < zoomingUntil;
+    const resolution = movingZoom && e ? e.zb : zb;
+    if (!e || ((e.zb !== resolution || (!movingZoom && e.frame !== frame)) && spriteBudget-- > 0)) {
+      const w = P.l + P.r, h = P.t + P.b, W2 = Math.ceil(w * resolution), H2 = Math.ceil(h * resolution);
       const cv = e && e.cv.width === W2 && e.cv.height === H2 ? e.cv : document.createElement('canvas');
-      cv.width = W2; cv.height = H2;
-      const cx = cv.getContext('2d'); cx.setTransform(zb, 0, 0, zb, 0, 0);
+      if (cv.width !== W2 || cv.height !== H2) { cv.width = W2; cv.height = H2; }
+      const cx = cv.getContext('2d'); cx.setTransform(1, 0, 0, 1, 0, 0); cx.clearRect(0, 0, W2, H2);
+      cx.setTransform(resolution, 0, 0, resolution, 0, 0);
       render(cx, { x: P.l, y: P.t });
-      e = { cv, zb, frame, ox: P.l, oy: P.t, w, h, used: 0 }; sprites.set(key, e);
+      e = { cv, zb: resolution, frame, ox: P.l, oy: P.t, w, h, used: 0 }; sprites.set(key, e);
     }
     e.used = performance.now();
     c.drawImage(e.cv, o.x - e.ox, o.y - e.oy, e.w, e.h);
@@ -5254,9 +5325,20 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   function viewRect(m = 0) { const cm = cam(), hw = vw / 2 / cm.z + m, hh = vh / 2 / cm.z + m; return { x0: cm.x - hw, x1: cm.x + hw, y0: cm.y - hh, y1: cm.y + hh }; }
   function bOnScreen(b, R) { const n = sz(b.type), o = iso(b.x * T, b.y * T); return o.x + n * HW + 40 > R.x0 && o.x - n * HW - 40 < R.x1 && o.y + 2 * n * HH + 30 > R.y0 && o.y - htOf(b) - 120 < R.y1; }
   function camHome(v) { if (v === 'park') { const c0 = cams.park, p = iso((PCOLS / 2 + 4) * T, (PROWS / 2) * T); c0.x = p.x; c0.y = p.y - 40; c0.z = Math.max(.45, Math.min(.85, vw / 1300)); return; } const c0 = cams[v], p = iso(9 * T, 6.5 * T); c0.x = p.x; c0.y = p.y; c0.z = Math.max(.5, Math.min(1, vw / 980)); }
+  function mapFitZoom(bounds) {
+    return Math.min(vw / (bounds.x1 - bounds.x0), vh / (bounds.y1 - bounds.y0));
+  }
+  function fitMap() {
+    const bounds = groundBounds(), cm = cam();
+    cm.x = (bounds.x0 + bounds.x1) / 2;
+    cm.y = (bounds.y0 + bounds.y1) / 2;
+    cm.z = Math.min(1, mapFitZoom(bounds));
+    zoomingUntil = performance.now() + 180;
+  }
   function clampCam(cm) {
     const gbc = view === 'park' ? parkBounds() : groundBounds(), xs = [gbc.x0 + 2 * HW, gbc.x1 - 2 * HW], ys = [gbc.y0 + 120, gbc.y1 - 60];
-    cm.x = Math.max(xs[0], Math.min(xs[1], cm.x)); cm.y = Math.max(ys[0], Math.min(ys[1], cm.y)); cm.z = Math.max(.4, Math.min(isHouse() ? 3.6 : 2.4, cm.z));
+    cm.x = Math.max(xs[0], Math.min(xs[1], cm.x)); cm.y = Math.max(ys[0], Math.min(ys[1], cm.y)); const minZoom = view === 'home' || view === 'city' ? Math.min(.4, mapFitZoom(gbc)) : .4;
+    cm.z = Math.max(minZoom, Math.min(isHouse() ? 3.6 : 2.4, cm.z));
   }
   const scrToIso = (sx, sy) => { const cm = cam(); return { x: (sx - vw / 2) / cm.z + cm.x, y: (sy - vh / 2) / cm.z + cm.y }; };
   const isoToScr = p => { const cm = cam(); return { x: (p.x - cm.x) * cm.z + vw / 2, y: (p.y - cm.y) * cm.z + vh / 2 }; };
@@ -5311,7 +5393,6 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
       spots.forEach(([du, dv], i) => {
         const u = u0 + du, v = (dv < 0 ? r0 : r1) + dv; if (v < v0 || v + 1 > v1) return;
         if (otherCity) { const h = 60 + (i * 37) % 70; box(c, O, u + .15, v + .15, .7, .7, 0, h, ['#b7d3f2', '#c3b5ef', '#f9d4e2'][i % 3]); windowsL(c, O, v + .85, u + .2, u + .8, 6, h - 4, 2, Math.round(h / 16), .22); windowsR(c, O, u + .85, v + .2, v + .8, 6, h - 4, 2, Math.round(h / 16), .22); cornice(c, O, u + .15, v + .15, .7, .7, h, '#fffaf2', 3); }
-        else if (i % 3 === 0) { cyl(c, O, u + .5, v + .5, .25, 0, 40, '#fff1e6'); cone(c, O, u + .5, v + .5, .3, 40, 22, '#f6a5c0'); }
         else { box(c, O, u + .2, v + .25, .6, .55, 0, 16, '#fbf6ee'); gableV(c, O, u + .2, v + .25, .6, .55, 16, 12, ['#f6a5c0', '#a9b4f2', '#8fd3c4'][i % 3], '#fbf6ee'); }
       });
       // welcome sign at the end of the bridge
@@ -5392,7 +5473,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   const ROOM_STYLE = { 'Living Room': [0, 0], Kitchen: [3, 1], Bedroom: [4, 2], Bathroom: [2, 1], Playroom: [1, 3], 'Dining Room': [3, 0], 'Media Room': [5, 6] };
   const HOUSE_CATS = [['floor', '🛋️ Living'], ['bed', '🛏️ Bedroom'], ['kitchen', '🍳 Kitchen & bath'], ['sweet', '🧁 Sweets & café'], ['wall', '🖼️ Wall decor'], ['style', '🎨 Walls & floor'], ['tool', '🛠️ Tools']];
   const WALL_H = [6, 14, 60], WALL_MODES = ['Walls down', 'Cutaway', 'Walls up'];
-  const isHouse = () => view === 'inside' && insideB && insideB.type === 'hutch';
+  const isHouse = () => view === 'inside' && isHome(insideB);
   const planCache = {};
   function planOf(b) {
     const lv = L(b); if (planCache[lv]) return planCache[lv];
@@ -5576,11 +5657,22 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   // ---------- room view (click a room to step inside it) ----------
   let houseRoom = null;
   const ROOM_WH = 78;
-  const curRoom = () => houseRoom && insideB && insideB.type === 'hutch' ? planOf(insideB).rooms.find(r => r.name === houseRoom) || null : null;
+  const curRoom = () => houseRoom && isHome(insideB) ? planOf(insideB).rooms.find(r => r.name === houseRoom) || null : null;
   const inRoomR = (r, x, y) => x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h;
   function roomLabels() {
-    if (!insideB) return;
-    const base = insideB.type === 'hutch' ? `🏰 Castle #${G.buildings.filter(q => q.type === 'hutch').indexOf(insideB) + 1}` : `${B[insideB.type].ic} ${lvName(insideB)}`;
+    $('interiorNav').hidden = view !== 'inside';
+    if (view !== 'inside' || !insideB) return;
+    const base = `${B[insideB.type].ic} ${insideName(insideB)}`;
+    const choices = $('roomChoices');
+    choices.hidden = !isHome(insideB) || !!houseRoom;
+    choices.replaceChildren();
+    if (!choices.hidden) for (const room of planOf(insideB).rooms) {
+      const button = document.createElement('button');
+      button.className = 'mini';
+      button.textContent = room.name;
+      button.addEventListener('click', () => enterRoom(room.name));
+      choices.append(button);
+    }
     $('insideTab').textContent = houseRoom ? `${base} · ${houseRoom}` : base;
     if (view === 'inside') $('buildTitle').textContent = houseRoom ? `Decorate the ${houseRoom} 🛋️` : `Decorate ${insideName(insideB)} ${isWork(insideB) ? '🪴' : '🛋️'}`;
     $('roomBack').hidden = !houseRoom;
@@ -6283,7 +6375,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   }
   async function demolishDistrict(m, h) {
     const mem = districtMembers(m, h), homes = mem.filter(b => b.type === 'hutch').reduce((n, b) => n + CAP[L(b) - 1], 0);
-    if (homes && capacity() - homes < G.pigs.length) { toast(`Can't demolish ${h.name}: pigs live in its castles. Build more Pig Castles first.`); return; }
+    if (homes && capacity() - homes < G.pigs.length) { toast(`Can't demolish ${h.name}: pigs live in its homes. Build more cottages first.`); return; }
     const refund = Math.floor(mem.reduce((s, b) => s + B[b.type].cost * [1, 2, 4][L(b) - 1], 0) / 2);
     if (!await askYes(`Demolish ${h.name}? Its ${mem.length} pieces, streets and sidewalks go away and you get ${refund} 🪙 back.`, 'Demolish')) return;
     const list = listOf(m);
@@ -6461,7 +6553,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   // or has pigs working in it stays as a normal building, and so do the sidewalks of its block and the streets
   // next to it. Buildings the player placed themselves were never part of a block, so they always stay.
   const grownBlocks = () => hoodsOf('city').filter(q => q.preset && DISTRICTS[q.preset] && DISTRICTS[q.preset].generated);
-  const customized = b => L(b) > 1 || workersAt(b).length > 0 || !!(b.room && b.room.items && b.room.items.length);
+  const customized = b => L(b) > 1 || workersAt(b).length > 0 || !!b.house?.items?.length || !!b.room?.items?.length;
   function grownSummary() {
     const m = 'city', blocks = grownBlocks(), members = blocks.flatMap(h => districtMembers(m, h)), keep = members.filter(customized);
     const own = blocks.reduce((n, h) => n + listOf(m).filter(b => !b.did && b.x >= h.x && b.x < h.x + h.w && b.y >= h.y && b.y < h.y + h.h).length, 0);
@@ -7010,8 +7102,11 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   }
   function goIsland(m, isl) {
     if (view !== m) setView(m);
+    if (street) stopStreet();
     const c0 = cams[m], p = iso((isl.x + isl.w / 2) * T, (isl.y + isl.h / 2) * T);
-    c0.x = p.x; c0.y = p.y; c0.init = true; isleFocus = isl.id; renderIsleTabs();
+    c0.x = p.x; c0.y = p.y - 26;
+    c0.z = Math.min(1.65, vw / ((isl.w + isl.h) * HW + 100), vh / ((isl.w + isl.h) * HH + 120));
+    clampCam(c0); c0.init = true; isleFocus = isl.id; renderIsleTabs();
   }
 
   function drawSitter(c, st) {
@@ -8001,8 +8096,9 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     if (bridgeLine && (view === 'home' || view === 'city')) { const L = bridgeLine, okc = L.path && G.coins >= L.path.length * B.bridge.cost; for (const [x, y] of (L.path || [L.e])) footprint(c, x, y, 1, okc ? 'rgba(255,255,255,.6)' : 'rgba(217,69,90,.3)', okc ? '#fff' : '#d9455a'); if (L.path && L.path.length) { const [x, y] = L.path[L.path.length - 1], P = iso(x * T + 20, y * T + 20); c.font = 'bold 13px Nunito, sans-serif'; c.textAlign = 'center'; c.lineWidth = 4; c.strokeStyle = '#fff'; const txt = `${L.path.length} tiles · ${L.path.length * B.bridge.cost} 🪙`; c.strokeText(txt, P.x, P.y - 22); c.fillStyle = INK; c.fillText(txt, P.x, P.y - 22); } }
     else if (hover && ['road', 'path', 'zone', 'bridge', 'island'].includes(tool) && inWorld(hover.x, hover.y) && !zoneDrag) { const m = view; const ok = tool === 'zone' || tool === 'island' || (!isRoad(m, hover.x, hover.y) && !isPath(m, hover.x, hover.y) && !at(hover.x, hover.y) && (tool === 'bridge' ? !isLand(m, hover.x, hover.y) && !inCommute(m, hover.x, hover.y) : isLand(m, hover.x, hover.y))); footprint(c, hover.x, hover.y, 1, ok ? 'rgba(255,255,255,.5)' : 'rgba(217,69,90,.3)', ok ? '#fff' : '#d9455a'); }
     else if (hover && tool && B[tool] && B[tool].district) dGhost = districtPreview(c);
-    else if (hover && tool && tool !== 'broom' && isLand(view, hover.x, hover.y)) {
-      const occ = at(hover.x, hover.y), onB = tool === 'bulldoze' || tool === 'upgrade';
+    else if (hover && tool && tool !== 'broom' && (tool === 'bulldoze' || tool === 'upgrade' || isLand(view, hover.x, hover.y))) {
+      const onB = tool === 'bulldoze' || tool === 'upgrade';
+      const occ = onB ? hoveredBuilding() : at(hover.x, hover.y);
       const ok = tool === 'bulldoze' ? !!occ : tool === 'upgrade' ? !!occ && L(occ) < 3 && G.coins >= upCost(occ) : fits(tool, hover.x, hover.y) && G.coins >= B[tool].cost && (B[tool].any || B[tool].both || !!B[tool].city === (view === 'city'));
       const fill = ok ? (tool === 'bulldoze' ? 'rgba(217,69,90,.4)' : tool === 'upgrade' ? 'rgba(233,185,59,.5)' : 'rgba(255,255,255,.5)') : 'rgba(217,69,90,.32)';
       if (onB && occ) footprint(c, occ.x, occ.y, sz(occ.type), fill, '#fff');
@@ -8014,7 +8110,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     const mt = builder ? moveTarget() : null;
     if (builder && moving && moving.hood) dGhost = districtMovePreview(c);
     else if (builder && moving) { const b = moving.b, n = sz(b.type); footprint(c, b.x, b.y, n, 'rgba(255,255,255,.25)', '#e9b93b', true); if (mt) { const ok = fits(b.type, mt.x, mt.y, b); footprint(c, mt.x, mt.y, n, ok ? 'rgba(156,198,90,.45)' : 'rgba(217,69,90,.35)', ok ? '#fff' : '#d9455a'); } }
-    else if (builder && hover) { const hb = at(hover.x, hover.y); if (hb) { footprint(c, hb.x, hb.y, sz(hb.type), 'rgba(233,185,59,.35)', '#e9b93b'); const dh = hb.did && hoodsOf(view).find(h => h.id === hb.did); if (dh) outlineRect(c, dh.x, dh.y, dh.w, dh.h, 'rgba(233,185,59,.9)'); } }
+    else if (builder && hover) { const hb = hoveredBuilding(); if (hb) { footprint(c, hb.x, hb.y, sz(hb.type), 'rgba(233,185,59,.35)', '#e9b93b'); const dh = hb.did && hoodsOf(view).find(h => h.id === hb.did); if (dh) outlineRect(c, dh.x, dh.y, dh.w, dh.h, 'rgba(233,185,59,.9)'); } }
     for (const b of bl()) { if (builder && moving && moving.hood && b.did === moving.hood.id) { items.push({ d: b.x + b.y + sz(b.type) - .01, f: () => { c.globalAlpha = .35; drawSprite(c, b, iso(b.x * T, b.y * T)); c.globalAlpha = 1; } }); continue; }
       if (builder && moving && moving.b === b) { if (mt) { const g = Object.assign(Object.create(Object.getPrototypeOf(b)), b, { x: mt.x, y: mt.y }); items.push({ d: mt.x + mt.y + sz(b.type) - .01, f: () => { c.globalAlpha = .8; drawSprite(c, g, iso(mt.x * T, mt.y * T)); c.globalAlpha = 1; } }); } else items.push({ d: b.x + b.y + sz(b.type) - .01, f: () => { c.globalAlpha = .5; drawSprite(c, b, iso(b.x * T, b.y * T)); c.globalAlpha = 1; } }); continue; }
       if (!bOnScreen(b, VR)) continue; items.push({ d: b.x + b.y + sz(b.type) - .01, f: () => drawSprite(c, b, iso(b.x * T, b.y * T)) }); }
@@ -8097,7 +8193,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     const dt = Math.min(.1, (t - last) / 1000 || 0); last = t;
     if (!paused) for (let i = 0; i < G.speed; i++) tick(dt);
     // a drawing error must never stop the simulation or autosave: log it (once a second at most) and keep going
-    panKeys(dt); streetTick(dt); try { draw(); } catch (e) { try { if (ctx.reset) ctx.reset(); } catch (e2) {} if (t - drawErrT > 1000) { drawErrT = t; console.error('Pig City: draw failed', e); } } sweepSprites(dt);
+    applyWheelZoom(); panKeys(dt); streetTick(dt); updateMapHover(); try { draw(); } catch (e) { try { if (ctx.reset) ctx.reset(); } catch (e2) {} if (t - drawErrT > 1000) { drawErrT = t; console.error('Pig City: draw failed', e); } } sweepSprites(dt);
     uiT -= dt; if (uiT <= 0) { uiT = .25; hudRes(); hudList(); renderPig(); syncTools(); hudGoals(); renderBld(); renderStocks(); renderBanner(); renderDash(); renderHoods(); renderIsleTabs(); renderParkPanel(); }
     saveT -= dt; if (saveT <= 0) { saveT = 5; save(); }
     requestAnimationFrame(loop);
