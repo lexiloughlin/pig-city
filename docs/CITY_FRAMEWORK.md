@@ -1,4 +1,4 @@
-# Pig City: city framework (local `local-city` branch)
+# Pig City: city framework
 
 This branch has three building blocks for growing Pig City into a full city: the **city generator**, **street view** and **shop interiors**. Each one is driven by a data table in `index.html`, so most new content is a new table entry rather than new code.
 
