@@ -563,6 +563,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
 
   // ---------- buildings ----------
   const B = {
+    townhouse: { name: 'Townhouse', ic: '🏡', city: true, cat: 'cbiz', cost: 65, desc: 'A pastel row home with a little front garden.' },
     hutch:  { name: 'Pig Castle', ic: '🏰', cat: 'home', cost: 70, desc: 'A huge castle with room for 4 pigs (needs a 2×2 patch)' },
     hay:    { name: 'Hay Field', ic: '🌾', cat: 'home', cost: 30, desc: '+1 🌾 every 6s. Slower in winter.' },
     water:  { name: 'Water Tower', ic: '💧', cat: 'home', cost: 25, desc: '+1 💧 every 5s. Faster when it rains.' },
@@ -1131,7 +1132,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   // ride or furniture types, new required fields). A town saved by a NEWER version than this one opens read-only:
   // it is shown, but this copy of the game never writes over it (web storage, Mac save file or cloud).
   //   1 = everything before the downtown update (saves had no schema field)   2 = downtown landmarks + districts
-  const SAVE_SCHEMA = 2;
+  const SAVE_SCHEMA = 3;
   const schemaOf = s => (s && Number.isFinite(s.schema) ? s.schema : 1);
   let readOnly = false;
   function readSaveText() {
@@ -2141,7 +2142,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   const streetSkin = () => { const p = G.pigs.find(q => q.id === selected) || G.pigs.find(q => q.age >= 999) || G.pigs[0]; return p ? { skin: p.skin, name: p.name } : { skin: COATS[0] ? { base: COATS[0].c, ear: '#e0a08a' } : { base: '#c98a5a', ear: '#e0a08a' }, name: 'You' }; };
   function blocksWalk(m, wx, wy) {
     const tx = Math.floor(wx / T), ty = Math.floor(wy / T);
-    if (!isLand(m, tx, ty) && !bridgeSets[m].has(tx + ',' + ty)) return true;
+    if (!isLand(m, tx, ty) && !isRoad(m, tx, ty) && !nbLand(m, tx, ty)) return true;
     const b = listOf(m).find(q => covers(q, tx, ty));
     return !!b && b.type !== 'flowers';
   }
@@ -2184,6 +2185,22 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
       const sp = STREET.speed * (k.has('shift') ? STREET.run : 1) * dt / len, nx = street.x + vx * sp, ny = street.y + vy * sp;
       if (walkOk(street.m, nx, street.y)) street.x = nx; if (walkOk(street.m, street.x, ny)) street.y = ny; // slide along walls
       street.step += dt * 12; if (Math.abs(vx - vy) > .01) street.face = vx - vy > 0 ? 1 : -1;
+      const home = street.m === 'home';
+      const onHighway = home ? Math.floor(street.y / T) === HOME_ROAD : ROAD.includes(Math.floor(street.y / T));
+      if (onHighway && (home ? street.x >= (COLS + GPAD) * T : street.x < -GPAD * T)) {
+        const from = cam();
+        from.z = street.zoom0;
+        clampCam(from);
+        street.m = home ? 'city' : 'home';
+        street.x = (home ? .5 : COLS - .5) * T;
+        street.y = ((home ? ROAD[0] : HOME_ROAD) + .5) * T;
+        street.door = null;
+        setView(street.m);
+        const next = cam(), arrival = iso(street.x, street.y);
+        street.zoom0 = next.z;
+        next.x = arrival.x; next.y = arrival.y - 20; next.z = STREET.zoom;
+        clampCam(next);
+      }
     }
     const cm = cam(), p = iso(street.x, street.y), f = Math.min(1, dt * 6);
     cm.z += (STREET.zoom - cm.z) * f; cm.x += (p.x - cm.x) * f; cm.y += (p.y - 20 - cm.y) * f; clampCam(cm);
@@ -4787,8 +4804,30 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     const lv = L(b), n = sz(b.type), t = G.time || 0;
     c.save(); c.lineJoin = 'round';
     const art = spriteArt(b);
-    if (art) drawArtImg(c, b, o, art);
+    if (b.plain) {
+      const wall = ['#e8c4a2', '#b7d5c6', '#d6c7e8', '#edc3c7'][b.v || 0];
+      const end = n - .1, floors = (b.type === 'office' ? 4 : 2) + (b.v || 0) % 2 + lv - 1;
+      const height = 14 + floors * 13;
+      box(c, o, .1, .1, n - .2, n - .2, 0, height, wall);
+      cornice(c, o, .07, .07, n - .14, n - .14, height, '#fff2dc', 3);
+      windowsL(c, o, end, .14, end - .04, 15, height - 4, n * 2, floors, .16);
+      windowsR(c, o, end, .14, end - .04, 8, height - 4, n * 2, floors, .16);
+      kdoor(c, o, 'L', end + .005, n * .4, n * .6, 13, '#785b55');
+      box(c, o, .22, .24, .28, .25, height + 3, 5, shade(wall, -.2));
+    } else if (art) drawArtImg(c, b, o, art);
     else switch (b.type) {
+      case 'townhouse': {
+        const colors = ['#e7aaa7', '#a4cfc4', '#d4bee3', '#f2d298'];
+        const wall = colors[b.v || 0];
+        const height = 28 + lv * 5;
+        poly(c, [IP(o, 0, 0), IP(o, 1, 0), IP(o, 1, 1), IP(o, 0, 1)], '#b4d588', null);
+        box(c, o, .12, .08, .76, .7, 0, height, wall);
+        gableV(c, o, .08, .04, .84, .78, height, 12, shade(wall, -.32), wall);
+        windowsL(c, o, .785, .2, .8, 15, height - 4, 2, 1, .18);
+        windowsR(c, o, .885, .16, .7, 8, height - 4, 2, 2, .14);
+        kdoor(c, o, 'L', .786, .39, .59, 14, '#795b55');
+        break;
+      }
       case 'hutch': {
         if (lv === 3) { // Modern Pig Villa
           poly(c, [IP(o, .05, .05), IP(o, 1.95, .05), IP(o, 1.95, 1.95), IP(o, .05, 1.95)], '#9cc65a', null);
@@ -5198,7 +5237,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   }
   const bLoose = b => { const n = sz(b.type); return { l: n * HW + 34, r: n * HW + 34, t: htOf(b) + 120, b: 2 * n * HH + 30 }; };
   function drawSprite(c, b, o) {
-    const kind = b.type + '|' + L(b) + (b.v ? '|' + b.v : ''), info = kinds.get(kind), phase = !info || info.anim ? ((b.x % 4) + 4) % 4 : 0;
+    const kind = b.type + '|' + L(b) + (b.v ? '|' + b.v : '') + (b.plain ? '|plain' : ''), info = kinds.get(kind), phase = !info || info.anim ? ((b.x % 4) + 4) % 4 : 0;
     stampSprite(c, kind, seasonIdx() + '|' + (lit() ? 1 : 0) + '|' + phase, bLoose(b), (cx, o2) => isoBuilding(cx, Object.assign({}, b, { x: phase, y: 0 }), o2), o);
   }
   // furniture: o is the house origin, the piece is stamped at its own tile
@@ -5281,11 +5320,13 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
       c.font = 'bold 9px Nunito, sans-serif'; const label = city ? '🏡 Home Town' : '🏙️ Job City', lw = c.measureText(label).width + 12;
       c.fillStyle = '#2f7a3a'; rr(c, sx - lw / 2, sy - 38, lw, 16, 4); c.fill(); c.strokeStyle = '#fff'; c.lineWidth = 1.2; c.stroke(); c.fillStyle = '#fff'; c.textAlign = 'center'; c.fillText(label, sx, sy - 27);
     }
+    const greenBlocks = city ? hoodsOf('city').filter(h => ['gen_park', 'gen_homes', 'gen_waterfront'].includes(h.preset)) : [];
     // tiles
     for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
       const road = isRoad(mapName, x, y), n = ((x * 73856093) ^ (y * 19349663)) & 7;
       let col;
       if (road) col = city ? '#9a9db4' : '#bdb8d2';
+      else if (city && !isPath(mapName, x, y) && greenBlocks.some(h => inRect(h, x, y))) col = shade(S.grass, .04 + n * .009);
       else if (city) col = si === 3 ? ((x + y) % 2 ? '#eef3f5' : '#e7edf0') : ((x + y) % 2 ? '#f3e8d8' : '#eee1cf');
       else col = shade(S.grass, (x + y) % 2 ? .05 : -.02 + n * .006);
       poly(c, [IP(O, x, y), IP(O, x + 1, y), IP(O, x + 1, y + 1), IP(O, x, y + 1)], col, road ? 'rgba(0,0,0,.08)' : city ? 'rgba(120,105,90,.18)' : 'rgba(255,255,255,.07)');
@@ -5315,6 +5356,12 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     for (const r of extra) if (r.x + r.w + r.y + r.h >= MAINF) drawIsland(c, O, r, city, S, si);
     drawBridges(c, mapName, O);
     drawUserRoads(c, mapName, O);
+    for (const h of greenBlocks) {
+      if (h.preset !== 'gen_waterfront' || h.y + h.h !== ROWS) continue;
+      for (let x = h.x; x < h.x + h.w; x++) {
+        if (isPath(mapName, x, ROWS - 1)) drail(c, O, x, ROWS - .04, x + 1, ROWS - .04, 0, 9, '#8c7667');
+      }
+    }
     // grassy lip on the island edges
     c.strokeStyle = city ? '#bdb6aa' : shade(S.grass, -.2); c.lineWidth = 2.5; { const a = IP(O, 0, ROWS), b2 = IP(O, COLS, ROWS), d2 = IP(O, COLS, 0); c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(b2[0], b2[1]); c.lineTo(d2[0], d2[1]); c.stroke(); }
     return { cv, gb };
@@ -6259,33 +6306,38 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   // To add a new kind of block, add a recipe here and give it a place in cityPlan().
   const BLOCK_KINDS = {
     downtown: { name: 'Downtown Block', ic: '🏙️', zone: 'down', kind: 'downtown', crowd: 7,
-      corner2: ['wheekcoffee', 'bronsonbank', 'misomarket'], front: ['tokiramen', 'mochibakery', 'finoffice', 'sushi', 'cafe'],
-      back2: ['office', 'pcse', 'bbb'], back: ['finoffice', 'finoffice', 'citytree'], props: ['blossom', 'streetlamp', 'bikerack', 'planter', 'hydrant', 'trash', 'citytree', 'busstop'] },
+      corner2: ['office', 'market'], front: ['finoffice', 'salon', 'toys', 'cafe'],
+      back2: ['office', 'market'], back: ['finoffice', 'finoffice', 'citytree'], props: ['blossom', 'streetlamp', 'bikerack', 'planter', 'hydrant', 'trash', 'citytree', 'busstop'] },
     shops: { name: 'Market Street', ic: '🛍️', zone: 'com', kind: 'downtown', crowd: 6,
-      corner2: ['misomarket', 'wheekcoffee'], front: ['tokiramen', 'mochibakery', 'salon', 'toys', 'cafe', 'sushi'],
+      corner2: ['market', 'office'], front: ['salon', 'toys', 'cafe', 'finoffice'],
       back2: ['market'], back: ['finoffice', 'citytree', 'hedge'], props: ['blossom', 'table', 'planter', 'coffeecart', 'streetlamp', 'bench', 'bikerack'] },
     offices: { name: 'Office Row', ic: '🏢', zone: 'down', kind: 'finance', crowd: 5,
-      corner2: ['bronsonbank', 'pcse', 'office'], front: ['finoffice', 'finoffice', 'cafe', 'dealer'],
-      back2: ['office', 'bbb', 'pcse'], back: ['finoffice', 'citytree'], props: ['citytree', 'streetlamp', 'planter', 'trash', 'ticker', 'hydrant'] },
+      corner2: ['office'], front: ['finoffice', 'finoffice', 'cafe', 'dealer'],
+      back2: ['office', 'market'], back: ['finoffice', 'citytree'], props: ['citytree', 'streetlamp', 'planter', 'trash', 'ticker', 'hydrant'] },
+    homes: { name: 'Garden Row', ic: '🏡', zone: 'res', kind: 'cozy', crowd: 4 },
+    waterfront: { name: 'Waterfront Walk', ic: '🌊', zone: 'park', kind: 'cozy', crowd: 4 },
     park: { name: 'Pocket Park', ic: '🌳', zone: 'park', kind: 'cozy', crowd: 5, park: true,
       props: ['blossom', 'citytree', 'flowers', 'hedge', 'planter'] }
   };
   for (const [k, K] of Object.entries(BLOCK_KINDS)) // register each recipe as a (tool-less) preset, so crowds know their schedule
     DISTRICTS['gen_' + k] = { name: K.name, ic: K.ic, map: 'city', zone: K.zone, kind: K.kind, crowd: K.crowd, w: 0, h: 0, roads: [], paths: [], xwalks: [], items: [], spots: [], conns: [], inspo: 'the city generator', blurb: 'a grown city block', generated: true };
-  // where the grid goes on Job City: 1-wide streets every 7 tiles, lined up with the built-in main road and avenue
+  // Irregular streets frame narrow home rows, wide shopping blocks and the south shore.
+  const WATERFRONT_Y = ROWS - 3;
+  const CITY_LANDMARKS = ['bronsonbank', 'wheekcoffee', 'misomarket', 'tokiramen', 'mochibakery'];
   function cityPlan() {
-    const PITCH = 7, r1 = ROAD[ROAD.length - 1], a0 = AVENUE[0], a1 = AVENUE[AVENUE.length - 1];
-    const vx = [], hy = [];
-    for (let x = a1 + PITCH; x < COLS; x += PITCH) vx.push(x); for (let x = a0 - PITCH; x >= 0; x -= PITCH) vx.push(x);
-    for (let y = r1 + PITCH; y < ROWS; y += PITCH) hy.push(y);
+    const vx = [5, 12, 25, 34], hy = [12, 21, WATERFRONT_Y - 1];
     const cuts = (lines, lo, hi, solid) => { const ws = [...new Set(lines.concat(solid))].sort((a, b) => a - b), out = []; let s0 = lo; for (const w of ws) { if (w > s0) out.push([s0, w - 1]); s0 = w + 1; } if (s0 <= hi) out.push([s0, hi]); return out; };
-    const cols = cuts(vx, 0, COLS - 1, AVENUE), rows = cuts(hy, 0, ROWS - 1, ROAD), blocks = [];
+    const cols = cuts(vx, 0, COLS - 1, AVENUE), rows = cuts(hy, 0, WATERFRONT_Y - 2, ROAD), blocks = [];
     rows.forEach(([y0, y1], ri) => cols.forEach(([x0, x1], ci) => {
-      // downtown hugs the main road and avenue; further out it alternates market streets and office rows, with parks
-      const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, nearMain = Math.abs(cy - (ROAD[0] + .5)) < 5 && Math.abs(cx - (a0 + .5)) < 14;
-      const kind = (ri * 3 + ci) % 6 === 4 ? 'park' : nearMain ? 'downtown' : (ri + ci) % 3 === 0 ? 'offices' : 'shops';
+      const kind = ri === 3 || (ri === 0 && ci < 2) ? 'homes'
+        : (ri === 2 && ci % 3 === 1) || (ri === 0 && ci === 5) ? 'park'
+        : ri === 1 && ci >= 2 && ci <= 3 ? 'downtown'
+        : ri === 2 && ci >= 3 ? 'offices' : 'shops';
       blocks.push({ x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1, kind });
     }));
+    for (const [x0, x1] of cuts([], 0, COLS - 1, AVENUE)) {
+      blocks.push({ x: x0, y: WATERFRONT_Y, w: x1 - x0 + 1, h: ROWS - WATERFRONT_Y, kind: 'waterfront' });
+    }
     return { vx, hy, blocks };
   }
   function seeded(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
@@ -6295,7 +6347,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     // 1. streets
     const laid = [];
     const lay = (x, y) => { const k = x + ',' + y; if (isRoad(m, x, y) || !free(x, y)) return; roadSets[m].add(k); G.roads[m].push(k); gen.roads.push(k); laid.push(k); };
-    for (const x of plan.vx) for (let y = 0; y < ROWS; y++) lay(x, y);
+    for (const x of plan.vx) for (let y = 0; y < WATERFRONT_Y; y++) lay(x, y);
     for (const y of plan.hy) for (let x = 0; x < COLS; x++) lay(x, y);
     // 2. zebra crossings around every new crossroads of 1-wide streets (never beside the wide built-in roads)
     const wide = (x, y) => (ROAD.includes(y) && x >= 0 && x < COLS) || (AVENUE.includes(x) && y >= 0 && y < ROWS);
@@ -6304,12 +6356,22 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
       if (DIRS4.some(([dx, dy]) => wide(x + dx, y + dy))) continue;
       for (const [dx, dy] of DIRS4) { const kk = (x + dx) + ',' + (y + dy); if (isRoad(m, x + dx, y + dy) && !wide(x + dx, y + dy) && !xwSets[m].has(kk)) { xwSets[m].add(kk); G.xwalks[m].push(kk); gen.xw.push(kk); } } }
     // 3. blocks
-    let nb = 0, nBld = 0; const before = G.city.length;
-    for (const bk of plan.blocks) { const h = growBlock(m, bk, occ); if (h) { nb++; nBld += districtMembers(m, h).length; } }
+    let nb = 0; const before = G.city.length;
+    const landmarks = new Set(CITY_LANDMARKS.filter(type => !G.city.some(b => b.type === type)));
+    const blocks = plan.blocks.filter(bk => bk.kind === 'downtown').concat(plan.blocks.filter(bk => bk.kind !== 'downtown'));
+    for (const bk of blocks) if (growBlock(m, bk, occ, landmarks)) nb++;
+    const shore = ROWS - 1;
+    if (isPath(m, AVENUE[0] - 1, shore) && isPath(m, AVENUE[AVENUE.length - 1] + 1, shore)) {
+      for (const x of AVENUE) {
+        const k = x + ',' + shore;
+        if (xwSets[m].has(k)) continue;
+        xwSets[m].add(k); G.xwalks[m].push(k); gen.xw.push(k);
+      }
+    }
     markGround(); hoodSig = ''; zoneT = 0; dPrev = null; walkCache.clear(); save();
     return { blocks: nb, buildings: G.city.length - before, roads: laid.length };
   }
-  function growBlock(m, bk, occ) {
+  function growBlock(m, bk, occ, landmarks) {
     const K = BLOCK_KINDS[bk.kind], R = seeded(bk.x * 7919 + bk.y * 104729 + 17), pickR = a => a[Math.floor(R() * a.length)];
     // skip blocks that overlap an existing district, or whose land is mostly taken
     for (let i = 0; i < bk.w; i++) for (let j = 0; j < bk.h; j++) if (zoneAt(m, bk.x + i, bk.y + j)) return null;
@@ -6326,14 +6388,35 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     const okTile = (x, y) => inInner(x, y) && !taken.has(x + ',' + y) && !occ.has(x + ',' + y) && isLand(m, x, y) && !isRoad(m, x, y) && !isPath(m, x, y);
     const put = (type, x, y) => { if (!B[type]) return false; const n = sz(type); for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) if (!okTile(x + i, y + j)) return false; for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) taken.add((x + i) + ',' + (y + j)); items.push({ type, x, y }); return true; };
     if (iw >= 1 && ih >= 1) {
-      if (K.park) {
+      if (bk.kind === 'waterfront') {
+        for (let x = ix; x < ix + iw; x++) {
+          if ((x - ix) % 4 === 0) put('blossom', x, iy);
+          if ((x - ix) % 4 === 2) put('bench', x, iy);
+          if ((x - ix) % 4 === 3) put('flowers', x, iy);
+        }
+      } else if (bk.kind === 'homes') {
+        for (let y = iy; y < iy + ih; y++) for (let x = ix; x < ix + iw; x++) {
+          if (y === iy + ih - 1 || y === iy && ih >= 4) {
+            put((x - ix) % 4 === 3 ? 'blossom' : 'townhouse', x, y);
+          } else if ((x + y) % 4 === 0) put(pickR(['hedge', 'flowers', 'citytree']), x, y);
+        }
+      } else if (K.park) {
         const cx = ix + (iw >> 1), cy = iy + (ih >> 1);
         if (iw >= 3 && ih >= 3) { put('fountain', cx, cy); for (const [dx, dy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) put('bench', cx + dx, cy + dy); }
         for (let y = iy; y < iy + ih; y++) for (let x = ix; x < ix + iw; x++) if (okTile(x, y) && x !== cx && y !== cy && (x === ix || y === iy || x === ix + iw - 1 || y === iy + ih - 1)) put(pickR(K.props), x, y); // paths run out from the fountain on its row and column
       } else if (iw < 2 || ih < 2) {
         for (let y = iy; y < iy + ih; y++) for (let x = ix; x < ix + iw; x++) if ((x + y) % 2 === 0) put(pickR(['citytree', 'blossom', 'streetlamp', 'planter']), x, y);
       } else {
-        if (iw >= 3 && ih >= 3 && sides.s && sides.e) put(pickR(K.corner2), ix + iw - 2, iy + ih - 2);
+        const placeLandmark = type => {
+          const n = sz(type);
+          for (let y = iy + ih - n; y >= iy; y--) {
+            for (let x = ix + iw - n; x >= ix; x--) if (put(type, x, y)) return true;
+          }
+          return false;
+        };
+        const landmark = [...landmarks].find(placeLandmark);
+        if (landmark) landmarks.delete(landmark);
+        else if (iw >= 3 && ih >= 3 && sides.s && sides.e) put(pickR(K.corner2), ix + iw - 2, iy + ih - 2);
         if (sides.s) for (let x = ix; x < ix + iw; x++) { const y = iy + ih - 1; if (!okTile(x, y)) continue; put((x - ix) % 3 === 2 ? pickR(K.props) : pickR(K.front), x, y); }
         if (sides.e) for (let y = iy; y < iy + ih; y++) { const x = ix + iw - 1; if (!okTile(x, y)) continue; put((y - iy) % 3 === 2 ? pickR(K.props) : pickR(K.front), x, y); }
         for (let y = iy; y < iy + ih - 1; y++) for (let x = ix; x < ix + iw - 1; x++) if (R() < .75) put(pickR(K.back2), x, y);
@@ -6346,10 +6429,19 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     for (let x = bk.x; x < bk.x + bk.w; x++) for (let y = bk.y; y < bk.y + bk.h; y++) {
       const edge = (sides.n && y === bk.y) || (sides.s && y === bk.y + bk.h - 1) || (sides.w && x === bk.x) || (sides.e && x === bk.x + bk.w - 1);
       const ring = K.park && inInner(x, y) && (x === ix + (iw >> 1) || y === iy + (ih >> 1));
-      if ((edge || ring) && !taken.has(x + ',' + y)) paths.push(x + ',' + y);
+      const promenade = bk.kind === 'waterfront' && y === ROWS - 1;
+      const homeWalk = bk.kind === 'homes' && y === iy + (ih >> 1) && ih > 1;
+      if ((edge || ring || promenade || homeWalk) && !taken.has(x + ',' + y)) paths.push(x + ',' + y);
     }
     layStreets(m, h, [], paths, [], [...taken]);
-    for (const it of items) { const b = { type: it.type, x: it.x, y: it.y, t: R() * 3, did: id, map: 'city' }; if (it.type === 'finoffice') b.v = Math.floor(R() * FIRMS.length); if (it.type === 'parkedcar') b.v = Math.floor(R() * PARKED.length); listOf(m).push(b); for (let i = 0; i < sz(it.type); i++) for (let j = 0; j < sz(it.type); j++) occ.add((it.x + i) + ',' + (it.y + j)); }
+    for (const it of items) {
+      const b = { type: it.type, x: it.x, y: it.y, t: R() * 3, did: id, map: 'city' };
+      if (['office', 'market', 'salon', 'toys', 'cafe'].includes(b.type)) b.plain = true;
+      if (b.plain || b.type === 'townhouse') b.v = (b.x + b.y * 3) % 4;
+      if (b.type === 'finoffice') b.v = Math.floor(R() * FIRMS.length);
+      listOf(m).push(b);
+      for (let i = 0; i < sz(b.type); i++) for (let j = 0; j < sz(b.type); j++) occ.add((b.x + i) + ',' + (b.y + j));
+    }
     // spots: shop doors on the sidewalk in front, benches to sit on, bus stops to wait at, the fountain, corners to stroll
     for (const it of items) {
       const n = sz(it.type), P = PROFILE[it.type], front = it.y + n === iy + ih && sides.s ? [it.x + n / 2, it.y + n + .2] : it.x + n === ix + iw && sides.e ? [it.x + n + .2, it.y + n / 2] : null;
