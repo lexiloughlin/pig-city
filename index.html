@@ -1991,10 +1991,48 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     if (l < 3 && !DECOR[b.type]) { one(l, 55); one(l + 1, 165); c.font = '24px Chewy, sans-serif'; c.textAlign = 'center'; c.fillStyle = '#c9a23a'; c.fillText('➜', 110, 72); }
     else one(l, 110);
   }
+  // Squealtopia pieces (rides, food stands, park decor) use the same slide-out panel as town buildings
+  function renderParkBld(b) {
+    const P = ensurePark(), R = RIDES[b.type], S = STANDS[b.type], D = PDECOR[b.type], def = B[b.type], ic = def.ic;
+    $('bName').textContent = `${ic} ${def.name}`;
+    const land = LANDS[landOf(b.x, b.y)];
+    $('bLvl').textContent = R ? `Ride · Thrill ${R.thrill}/10 · fits ${R.cap} riders` : S ? 'Food & shops' : 'Park decoration';
+    { // what it is and does
+      const lines = [];
+      if (R) lines.push(`<b>${R.desc}</b>. ${R.n}×${R.n} · in ${land.e} ${land.name}${landOf(b.x, b.y) === R.land ? ' (on-theme: +25% fun ✨)' : ` (best in ${LANDS[R.land].e} ${LANDS[R.land].name})`}.`);
+      else if (S) lines.push(`<b>${S.desc}</b>. Sells ${S.ic} for ${S.sell} 🪙 each${S.food ? ` · +${S.food} food` : ''}${S.water ? ` · +${S.water} water` : ''}${S.joy ? ` · +${S.joy} joy` : ''}.`);
+      else lines.push(`<b>${D ? D.desc : def.desc}</b>. Raises the park's appeal${D ? ` (+${D.appeal})` : ''} and the rating that sets a fair ticket price.`);
+      if (R || S) { // open and staffed?
+        const e = entryOf(b), w = workersAt(b), st = staffed(b), open = parkOpenNow(), h = hourNow();
+        const onShift = w.some(p => h >= Math.max(P_OPEN, p.leaveH || 0) && h < Math.min(P_CLOSE - .5, p.backH || 24));
+        if (!e) lines.push(`🧱 <b>Closed</b> · needs a Park Path touching one side so guests can reach it.`);
+        else if (!open) lines.push(`🌙 <b>Closed</b> · the park opens at ${P_OPEN}am and closes at ${P_CLOSE - 12}pm.`);
+        else lines.push(R ? `🟢 <b>Open</b> · ${rtOf(b).phase === 'run' ? 'running' : 'loading'} · ${rtOf(b).riders.length} riding · ${rtOf(b).queue.length} in line` : `🟢 <b>Open</b> · ${w.length ? 'serving guests' : 'self-serve'}`);
+        lines.push(st ? `👷 <b>Staffed</b> · ${w.map(p => p.name).join(', ')} ${w.length === 1 ? 'is' : 'are'} on duty${R ? ' · runs at full speed' : ''}.`
+          : w.length && onShift ? `🚗 <b>Staff on the way</b> · ${w.map(p => p.name).join(', ')} ${w.length === 1 ? 'is' : 'are'} heading in.`
+          : w.length ? `🌙 <b>Not staffed right now</b> · ${w.map(p => p.name).join(', ')} ${w.length === 1 ? 'is' : 'are'} off duty · self-serve${R ? ' at half speed' : ''}.`
+          : `🟡 <b>Not staffed</b> · no ${R ? 'Ride Operator' : JOBS[b.type] ? JOBS[b.type].title : 'staff'} yet · self-serve${R ? ' at half speed' : ''}. Any grown-up pig can take the job from their pig card.`);
+      }
+      $('bDesc').innerHTML = lines.join('<br>');
+    }
+    $('bInfo').textContent = R ? `${R.dur}s a ride · appeal +${R.appeal}` : S ? `${workersAt(b).length} working now · appeal +${S.joy || 0}` : '';
+    $('bNext').textContent = R || S ? `Park: ${(P.rating || 0).toFixed(1)}★ · ${P.today.guests} tickets today · ${P.today.coins} 🪙 earned today` : '';
+    { // preview: the park piece's own art
+      const c = $('bcanvas').getContext('2d'); c.setTransform(2, 0, 0, 2, 0, 0); c.clearRect(0, 0, 220, 110);
+      const n = sz(b.type), k = Math.min(1.1, 150 / (2 * n * HW), 96 / (2 * n * HH + 70));
+      c.save(); c.translate(110, 104); c.scale(k, k); c.translate(0, -2 * n * HH);
+      const o = { x: 0, y: 0 }, g = { type: b.type, x: 0, y: 0, v: b.v, map: 'park' };
+      try { if (R) drawRideArt(c, g, o, rtOf(b)); else if (S) drawStandArt(c, g, o); else drawDecorArt(c, g, o); } catch (e) {}
+      c.restore();
+    }
+    $('goInBtn').hidden = true; $('upBtn').hidden = true; // rides don't upgrade, and there is nothing inside them to visit
+  }
   function renderBld() {
     const b = selBld && bl().includes(selBld) ? selBld : null;
     if (!b) selBld = null;
+    if (view === 'park' && pSel !== b) { pSel = b; parkPanelSig = ''; renderParkPanel(); } // the Squealtopia sidebar list follows the map selection
     $('bldPanel').hidden = !b; if (!b) return;
+    if (b.map === 'park') { renderParkBld(b); return; }
     const l = L(b);
     $('bName').textContent = lvName(b);
     $('bLvl').textContent = `Level ${l} ` + '★'.repeat(l) + '☆'.repeat(3 - l);
@@ -6133,11 +6171,13 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     }
   }
   function drawHoods(c, mapName) {
-    const O = { x: 0, y: 0 }, list = hoodsOf(mapName), strong = overlay === 1, t = G.time || 0;
-    for (const h of list) {
+    const O = { x: 0, y: 0 }, t = G.time || 0;
+    // district boundaries (zone-colored fill + dashed border) are a planning aid: only with the Neighborhoods overlay on.
+    // In normal play the map stays clean, and tapping a building inside a district just opens that building's panel.
+    if (overlay === 1) for (const h of hoodsOf(mapName)) {
       const Z = ZONES[h.zone], pts = [IP(O, h.x, h.y), IP(O, h.x + h.w, h.y), IP(O, h.x + h.w, h.y + h.h), IP(O, h.x, h.y + h.h)];
-      c.save(); c.globalAlpha = strong ? .32 : .12; poly(c, pts, Z.col, null); c.globalAlpha = 1;
-      c.setLineDash([7, 5]); c.lineDashOffset = -t * 6; poly(c, pts, null, Z.col, strong ? 3 : 2); c.restore();
+      c.save(); c.globalAlpha = .32; poly(c, pts, Z.col, null); c.globalAlpha = 1;
+      c.setLineDash([7, 5]); c.lineDashOffset = -t * 6; poly(c, pts, null, Z.col, 3); c.restore();
     }
     if (zoneDrag) {
       const x = Math.min(zoneDrag.x0, zoneDrag.x1), y = Math.min(zoneDrag.y0, zoneDrag.y1), w = Math.abs(zoneDrag.x1 - zoneDrag.x0) + 1, h = Math.abs(zoneDrag.y1 - zoneDrag.y0) + 1;
@@ -7541,7 +7581,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
       const b = pAt(tx, ty);
       if (b) {
         for (const q of workersAt(b)) { q.job = null; q.working = false; }
-        P.rides.splice(P.rides.indexOf(b), 1); P.pv++; rideRT.delete(b); if (pSel === b) pSel = null;
+        P.rides.splice(P.rides.indexOf(b), 1); P.pv++; rideRT.delete(b); if (pSel === b) pSel = null; if (selBld === b) { selBld = null; renderBld(); }
         const back = Math.floor(B[b.type].cost / 2); G.coins += back; popup((tx + .5) * T, (ty + .5) * T, `+${back} 🪙`, INK, 'park'); sfx('tap'); hudRes(); save(); return;
       }
       if (isPPath(tx, ty) && !isGateTile(tx, ty)) { P.paths = P.paths.filter(k => k !== tx + ',' + ty); P.pv++; G.coins += 1; sfx('tap'); hudRes(); save(); }
@@ -7563,7 +7603,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     const w = { x: (tx + .5) * T, y: (ty + .5) * T };
     let best = null, bd = 22; for (const a of parkAgents) { if (!a.p || a.state === 'ride' || a.state === 'drive' || a.state === 'driveOut') continue; const d = Math.hypot(a.x - clickW.x, a.y - clickW.y); if (d < bd) { bd = d; best = a; } }
     if (best) { selected = best.p.id; best.hop = .5; renderPig(true); listSig = ''; sfx('wheek'); return; }
-    const b = pAt(tx, ty); pSel = b || null; parkPanelSig = ''; renderParkPanel(); if (b) sfx('tap');
+    const b = pAt(tx, ty); selBld = b || null; renderBld(); if (b) sfx('tap'); // renderBld keeps pSel (the sidebar list) in step
   }
 
   // ---------- drawing ----------
@@ -8071,7 +8111,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     const P0 = P;
     $('pPriceDn').onclick = () => { P0.price = Math.max(0, P0.price - 1); parkPanelSig = ''; renderParkPanel(); sfx('tap'); save(); };
     $('pPriceUp').onclick = () => { P0.price = Math.min(30, P0.price + 1); parkPanelSig = ''; renderParkPanel(); sfx('tap'); save(); };
-    el.querySelectorAll('.prow').forEach(r => r.onclick = () => { const b = P0.rides.find(q => q.x === +r.dataset.x && q.y === +r.dataset.y); if (!b) return; pSel = b; const n = sz(b.type), p2 = iso((b.x + n / 2) * T, (b.y + n / 2) * T), cm = cam(); cm.x = p2.x; cm.y = p2.y - 30; clampCam(cm); parkPanelSig = ''; renderParkPanel(); sfx('tap'); });
+    el.querySelectorAll('.prow').forEach(r => r.onclick = () => { const b = P0.rides.find(q => q.x === +r.dataset.x && q.y === +r.dataset.y); if (!b) return; const n = sz(b.type), p2 = iso((b.x + n / 2) * T, (b.y + n / 2) * T), cm = cam(); cm.x = p2.x; cm.y = p2.y - 30; clampCam(cm); selBld = b; renderBld(); sfx('tap'); });
   }
 
   function draw() {
