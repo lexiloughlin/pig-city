@@ -5288,6 +5288,44 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
         c.fillText(txt, -off, 11); if (tw - off < span) c.fillText(txt, tw - off, 11); c.restore();
         break;
       }
+      case 'haymill': { // mini-game: a little windmill on a stone base, sails turning, hay bales stacked by the door
+        shadowQ(c, o, .18, .18, .64, .64, 46);
+        box(c, o, .18, .18, .64, .64, 0, 12, '#c9b8a3');
+        cyl(c, o, .5, .5, .3, 12, 30, '#ecd3a8');
+        kdoor(c, o, 'L', .82, .4, .6, 12, '#8a5a34');
+        { const [wx, wy] = IP(o, .5, .82, 30); c.fillStyle = '#9fd3f2'; ell(c, wx, wy, 3, 4); c.fill(); c.strokeStyle = EDGE; c.lineWidth = 1; c.stroke(); }
+        cone(c, o, .5, .5, .34, 42, 14, '#c96d2c');
+        { // sails
+          const [hx, hy] = IP(o, .5, .5, 44), ang = t * 1.1; c.save(); c.translate(hx + 10, hy + 2);
+          c.strokeStyle = '#5b3b2a'; c.lineWidth = 1.2; c.beginPath(); c.moveTo(-10, -2); c.lineTo(0, 0); c.stroke();
+          for (let i = 0; i < 4; i++) { const a = ang + i * Math.PI / 2; const dx = Math.cos(a), dy = Math.sin(a) * .8; c.strokeStyle = '#8a5a34'; c.lineWidth = 1.6; c.beginPath(); c.moveTo(0, 0); c.lineTo(dx * 24, dy * 24); c.stroke(); c.fillStyle = 'rgba(255,250,242,.92)'; c.beginPath(); c.moveTo(dx * 6, dy * 6); c.lineTo(dx * 22 - dy * 5, dy * 22 + dx * 5); c.lineTo(dx * 24, dy * 24); c.closePath(); c.fill(); c.strokeStyle = EDGE; c.lineWidth = .8; c.stroke(); }
+          c.fillStyle = '#5b3b2a'; ell(c, 0, 0, 2.2, 2.2); c.fill(); c.restore();
+        }
+        cyl(c, o, .22, .88, .09, 0, 7, '#ecc55a'); cyl(c, o, .38, .92, .09, 0, 7, '#ecc55a'); cyl(c, o, .3, .9, .09, 7, 7, '#f2d98a');
+        if (lv >= 2) { cyl(c, o, .9, .22, .09, 0, 7, '#ecc55a'); }
+        break;
+      }
+      case 'roller': { // mini-game: a compact coaster, an oval track with one big hill on lattice supports, a little pig car racing round
+        shadowQ(c, o, .06, .08, .88, .84, 50);
+        poly(c, [IP(o, .05, .05), IP(o, .95, .05), IP(o, .95, .95), IP(o, .05, .95)], '#f2d98a', EDGE);
+        // station at the front corner, with the sign
+        box(c, o, .3, .72, .4, .22, 0, 10, '#fff6ec'); box(c, o, .28, .7, .44, .26, 10, 3, '#e0483f'); kdoor(c, o, 'L', .94, .42, .58, 9, '#5aa9e0');
+        // the track: an oval that climbs to a hill at the back-left and dives down toward the station
+        const N = 28, P = [], S = [];
+        for (let i = 0; i <= N; i++) { const a = i / N * Math.PI * 2, u = .5 + Math.cos(a) * .36, v = .5 + Math.sin(a) * .36; const hill = Math.max(0, Math.cos(a - Math.PI * 1.25)); const z = 11 + Math.pow(hill, 1.4) * (15 + lv * 4); P.push(IP(o, u, v, z)); S.push([u, v, z]); }
+        c.strokeStyle = '#b5bcc3'; c.lineWidth = 1.1; for (let i = 0; i < N; i += 2) { const [u, v, z] = S[i], g = IP(o, u, v, 0), top = IP(o, u, v, z); c.beginPath(); c.moveTo(g[0], g[1]); c.lineTo(top[0], top[1]); c.stroke(); if (z > 24) { const m = IP(o, u, v, z * .5); c.beginPath(); c.moveTo(g[0] - 2.5, g[1]); c.lineTo(m[0] + 2.5, m[1]); c.moveTo(g[0] + 2.5, g[1]); c.lineTo(m[0] - 2.5, m[1]); c.stroke(); } }
+        c.lineJoin = 'round'; c.lineCap = 'round';
+        c.strokeStyle = '#5b3b2a'; c.lineWidth = 4; c.beginPath(); P.forEach((q, i) => i ? c.lineTo(q[0], q[1]) : c.moveTo(q[0], q[1])); c.stroke();
+        c.strokeStyle = lv === 3 ? '#a98bd9' : lv === 2 ? '#5aa9e0' : '#f48fb1'; c.lineWidth = 2; c.stroke();
+        c.strokeStyle = 'rgba(255,255,255,.7)'; c.lineWidth = .8; for (let i = 0; i < N; i++) { const q = P[i]; c.beginPath(); c.moveTo(q[0] - 2, q[1] - 1); c.lineTo(q[0] + 2, q[1] + 1); c.stroke(); }
+        { // the car, slow up the hill and quick down it
+          const k = ((t * .55) % 1) * N, i = Math.floor(k), f = k - i, a = P[i], b2 = P[Math.min(N, i + 1)], x = a[0] + (b2[0] - a[0]) * f, y = a[1] + (b2[1] - a[1]) * f - 3;
+          c.fillStyle = '#f7d36b'; rr(c, x - 5.5, y - 3, 11, 5.5, 2.5); c.fill(); c.strokeStyle = EDGE; c.lineWidth = .9; c.stroke(); c.fillStyle = '#d9b38c'; ell(c, x - 1.5, y - 4.5, 2.4, 2.2); c.fill(); c.fillStyle = '#2f3440'; ell(c, x - .8, y - 5, .6, .6); c.fill(); c.fillStyle = '#e0483f'; ell(c, x + 3, y - 4, 1.4, 1.4); c.fill();
+        }
+        { const [sx, sy] = IP(o, .5, .97, 19); sign(c, sx, sy, 'RUSH', '#e0483f', '#fff', 5); }
+        for (let i = 0; i < 5; i++) { const [fx, fy] = IP(o, .1 + i * .2, .08, 2 + Math.sin(t * 3 + i) * 1); c.fillStyle = ['#f48fb1', '#f7d36b', '#9fe0ff', '#c4f0a0'][i % 4]; c.beginPath(); c.moveTo(fx, fy); c.lineTo(fx + 5, fy - 2); c.lineTo(fx, fy - 4); c.closePath(); c.fill(); }
+        break;
+      }
       default: if (DT_ART[b.type]) DT_ART[b.type](c, b, o); else if (B[b.type] && B[b.type].unknown) drawMystery(c, o); else sprite(c, o, b, n);
     }
     if (lv === 2 && !DECOR[b.type] && b.type !== 'hutch') { const [x, y] = IP(o, n / 2, n / 2, htOf(b) + 8); c.fillStyle = '#e9b93b'; c.save(); c.translate(x, y); star(c, 0, 0, 4); c.restore(); }
