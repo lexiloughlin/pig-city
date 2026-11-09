@@ -78,6 +78,9 @@ body.bigmap #zBig { background: var(--wood-dark); color: #fff; }
 body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* outside the map: an outline on top of the canvas makes every frame slower */
 .tool canvas.thumb { width: 84px; height: 60px; display: block; margin: 0 auto; }
 .zoombar { position: absolute; right: 10px; bottom: 10px; display: flex; flex-direction: column; gap: 6px; }
+.streettip { position: absolute; left: 50%; top: 62px; transform: translateX(-50%); z-index: 3; background: #fffaf2; color: var(--ink); border: 2px solid var(--ink); border-radius: 14px; padding: 6px 14px; font-weight: 800; font-size: 14px; box-shadow: 0 3px 0 rgba(59,42,26,.25); white-space: nowrap; max-width: calc(100% - 40px); overflow: hidden; text-overflow: ellipsis; }
+.streettip kbd { font: inherit; background: #f2e6d6; border: 1.5px solid var(--ink); border-radius: 6px; padding: 0 5px; }
+#zStreet[aria-pressed="true"] { background: #e9b93b; }
 .zoombar .ibtn { width: 36px; height: 36px; font-size: 18px; padding: 0; }
 .hood { background: #fff; border: 2px solid var(--fleece-deep); border-left-width: 6px; border-radius: 12px; padding: 7px 9px; margin-bottom: 8px; }
 .hoodtop { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; }
@@ -323,10 +326,11 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
         <canvas id="c" aria-label="Your guinea pig town. Click pigs to see them, click poop to scoop it, or pick a building and click grass to build."></canvas>
         <div class="toast" id="toast" style="opacity:0"></div>
         <div class="banner" id="banner" hidden></div>
+        <div class="streettip" id="streetTip" hidden></div>
         <div class="paused" id="pausedOv" hidden>Paused</div>
         <button class="btn roomback" id="roomBack" hidden>← Whole house</button>
-        <div class="buildbar" id="buildBar"><button class="btn" id="builderBtn" aria-pressed="false" title="Builder mode: move buildings around (B)">🏗️ Builder mode</button><button class="btn" id="detailBtn" aria-pressed="true" title="When on, new shops, offices and homes come with a few matching props nearby (paid, removable)">✨ Auto-details: on</button><span class="buildtip" id="buildTip" hidden>Click a building to pick it up, then click where it should go. <b>Esc</b> puts it back. Whole districts move from the Neighborhoods panel.</span></div>
-        <div class="zoombar" id="zoombar"><button class="ibtn" id="zIn" title="Zoom in" aria-label="Zoom in">+</button><button class="ibtn" id="zOut" title="Zoom out" aria-label="Zoom out">−</button><button class="ibtn" id="zHome" title="Back to the middle" aria-label="Recenter">⌖</button><button class="ibtn" id="zBig" title="Big map: hide the side panels" aria-label="Big map">⛶</button><button class="ibtn" id="zMap" title="Planning overlays: neighborhoods, services, happiness" aria-label="Planning overlays">🗺️</button><button class="ibtn" id="zWalls" title="Walls up / cutaway / down" aria-label="Change wall view" hidden>🧱</button></div>
+        <div class="buildbar" id="buildBar"><button class="btn" id="builderBtn" aria-pressed="false" title="Builder mode: move buildings around (B)">🏗️ Builder mode</button><button class="btn" id="growBtn" title="Fill the empty land of Job City with streets and city blocks (local build)" hidden>🏙️ Grow city</button><button class="btn" id="detailBtn" aria-pressed="true" title="When on, new shops, offices and homes come with a few matching props nearby (paid, removable)">✨ Auto-details: on</button><span class="buildtip" id="buildTip" hidden>Click a building to pick it up, then click where it should go. <b>Esc</b> puts it back. Whole districts move from the Neighborhoods panel.</span></div>
+        <div class="zoombar" id="zoombar"><button class="ibtn" id="zStreet" title="Street view: walk around on foot (V)" aria-label="Street view" aria-pressed="false">🚶</button><button class="ibtn" id="zIn" title="Zoom in" aria-label="Zoom in">+</button><button class="ibtn" id="zOut" title="Zoom out" aria-label="Zoom out">−</button><button class="ibtn" id="zHome" title="Back to the middle" aria-label="Recenter">⌖</button><button class="ibtn" id="zBig" title="Big map: hide the side panels" aria-label="Big map">⛶</button><button class="ibtn" id="zMap" title="Planning overlays: neighborhoods, services, happiness" aria-label="Planning overlays">🗺️</button><button class="ibtn" id="zWalls" title="Walls up / cutaway / down" aria-label="Change wall view" hidden>🧱</button></div>
       </div>
       <div class="panel" id="buildPanel">
         <h2 id="buildTitle">Build</h2>
@@ -2115,7 +2119,9 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   $('zWalls').addEventListener('click', () => { wallMode = (wallMode + 1) % 3; toast(`🧱 ${WALL_MODES[wallMode]}`); sfx('tap'); });
   const keysDown = new Set();
   window.addEventListener('keyup', e => keysDown.delete(e.key.toLowerCase()));
+  window.addEventListener('blur', () => keysDown.clear()); // don't keep walking after switching windows
   function panKeys(dt) {
+    if (street && view === street.m) return; // in street view the keys walk the pig instead
     if (view !== 'home' && view !== 'city' && view !== 'park' && !isHouse()) return;
     const cm = cam(), sp = 420 * dt / cm.z;
     if (keysDown.has('arrowleft') || keysDown.has('a')) cm.x -= sp;
@@ -2124,6 +2130,76 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     if (keysDown.has('arrowdown') || keysDown.has('s')) cm.y += sp;
     clampCam(cm);
   }
+  // ================= STREET VIEW: explore on foot =================
+  // Press 🚶 (or V) on the town or Job City map: the camera drops down to street level and follows a guinea pig you
+  // walk with WASD / arrow keys (screen directions). Buildings, water and the map edge block the way; sidewalks,
+  // roads, plazas and grass are open. Walk up to a door and press Enter to go inside: castles open their house,
+  // workplaces open their interior. Leaving the interior puts you back on the street where you were. Esc or V exits.
+  // Walking speed, reach and zoom live in STREET; the walker is never saved.
+  const STREET = { speed: 70, run: 1.8, reach: .7, zoom: 2.2, r: 6 };
+  let street = null;
+  const streetSkin = () => { const p = G.pigs.find(q => q.id === selected) || G.pigs.find(q => q.age >= 999) || G.pigs[0]; return p ? { skin: p.skin, name: p.name } : { skin: COATS[0] ? { base: COATS[0].c, ear: '#e0a08a' } : { base: '#c98a5a', ear: '#e0a08a' }, name: 'You' }; };
+  function blocksWalk(m, wx, wy) {
+    const tx = Math.floor(wx / T), ty = Math.floor(wy / T);
+    if (!isLand(m, tx, ty) && !bridgeSets[m].has(tx + ',' + ty)) return true;
+    const b = listOf(m).find(q => covers(q, tx, ty));
+    return !!b && b.type !== 'flowers';
+  }
+  const walkOk = (m, x, y) => { const r = STREET.r; return !blocksWalk(m, x - r, y - r / 2) && !blocksWalk(m, x + r, y - r / 2) && !blocksWalk(m, x - r, y + r / 2) && !blocksWalk(m, x + r, y + r / 2); };
+  function startStreet() {
+    if (view !== 'home' && view !== 'city') return;
+    const m = view, cm = cam(), c0 = isoToWorld({ x: cm.x, y: cm.y }), here = { x: c0.x, y: c0.y };
+    // nearest open spot to the middle of the screen, preferring sidewalks
+    let best = null, bd = 1e9;
+    for (let dy = -12; dy <= 12; dy++) for (let dx = -12; dx <= 12; dx++) {
+      const tx = Math.floor(here.x / T) + dx, ty = Math.floor(here.y / T) + dy, x = (tx + .5) * T, y = (ty + .5) * T;
+      if (!walkOk(m, x, y)) continue; const d = dx * dx + dy * dy - (isPath(m, tx, ty) ? 3 : 0); if (d < bd) { bd = d; best = { x, y }; }
+    }
+    if (!best) { toast('No open ground here to walk on. Scroll to a street and try again.'); return; }
+    const look = streetSkin();
+    street = { m, x: best.x, y: best.y, face: 1, step: 0, moving: false, skin: look.skin, name: look.name, zoom0: cm.z, door: null };
+    if (builder) setBuilder(false); tool = null; selBld = null; renderBld(); syncTools();
+    $('zStreet').setAttribute('aria-pressed', 'true'); sfx('tap');
+    toast('🚶 Street view: walk with WASD or the arrow keys, hold Shift to run, press Enter at a door to go inside, Esc to stop.');
+  }
+  function stopStreet() {
+    if (!street) return; const m = street.m;
+    if (cams[m]) { cams[m].z = street.zoom0; clampCam(cams[m]); }
+    street = null; $('zStreet').setAttribute('aria-pressed', 'false'); $('streetTip').hidden = true; sfx('tap');
+  }
+  // the building whose door you're standing at (closest one within reach)
+  function streetDoor() {
+    const m = street.m, ux = street.x / T, uy = street.y / T; let best = null, bd = STREET.reach;
+    for (const b of listOf(m)) { if (DECOR[b.type]) continue; const n = sz(b.type), dx = Math.max(b.x - ux, 0, ux - (b.x + n)), dy = Math.max(b.y - uy, 0, uy - (b.y + n)), d = Math.hypot(dx, dy); if (d < bd) { bd = d; best = b; } }
+    return best;
+  }
+  function streetTick(dt) {
+    const tip = $('streetTip');
+    if (!street || view !== street.m) { tip.hidden = true; return; }
+    const k = keysDown, up = k.has('arrowup') || k.has('w'), dn = k.has('arrowdown') || k.has('s'), lf = k.has('arrowleft') || k.has('a'), rt = k.has('arrowright') || k.has('d');
+    // screen directions -> world: up = (-1,-1), right = (+1,-1), down = (+1,+1), left = (-1,+1)
+    let vx = (rt ? 1 : 0) - (lf ? 1 : 0) + (dn ? 1 : 0) - (up ? 1 : 0), vy = (dn ? 1 : 0) - (up ? 1 : 0) + (lf ? 1 : 0) - (rt ? 1 : 0);
+    const len = Math.hypot(vx, vy); street.moving = len > 0;
+    if (len) {
+      const sp = STREET.speed * (k.has('shift') ? STREET.run : 1) * dt / len, nx = street.x + vx * sp, ny = street.y + vy * sp;
+      if (walkOk(street.m, nx, street.y)) street.x = nx; if (walkOk(street.m, street.x, ny)) street.y = ny; // slide along walls
+      street.step += dt * 12; if (Math.abs(vx - vy) > .01) street.face = vx - vy > 0 ? 1 : -1;
+    }
+    const cm = cam(), p = iso(street.x, street.y), f = Math.min(1, dt * 6);
+    cm.z += (STREET.zoom - cm.z) * f; cm.x += (p.x - cm.x) * f; cm.y += (p.y - 20 - cm.y) * f; clampCam(cm);
+    const b = streetDoor(); street.door = b;
+    const txt = !b ? '' : canEnter(b) ? `${B[b.type].ic} ${lvName(b)} · <kbd>Enter</kbd> go inside` : `${B[b.type].ic} ${lvName(b)} · no inside to visit yet`;
+    if (tip.dataset.t !== txt) { tip.dataset.t = txt; tip.innerHTML = txt; } tip.hidden = !txt;
+  }
+  function streetEnter() { const b = street && street.door; if (!b || !canEnter(b)) return; $('streetTip').hidden = true; goInside(b); }
+  function drawStreetPig(c) {
+    const P = iso(street.x, street.y), bob = street.moving ? Math.abs(Math.sin(street.step)) * 2 : 0;
+    c.save(); c.translate(P.x, P.y); c.fillStyle = 'rgba(0,0,0,.18)'; ell(c, 1, 7, 11, 3); c.fill();
+    c.strokeStyle = '#e9b93b'; c.lineWidth = 1.6; ell(c, 1, 7, 13, 4.2); c.stroke();
+    c.translate(0, -bob); c.scale(street.face * .3, .3); drawPig(c, street.skin, {}); c.restore();
+    c.font = 'bold 8px Nunito, sans-serif'; c.textAlign = 'center'; c.lineWidth = 3; c.strokeStyle = '#fff'; c.strokeText(street.name, P.x, P.y - 15 - bob); c.fillStyle = INK; c.fillText(street.name, P.x, P.y - 15 - bob);
+  }
+  $('zStreet').addEventListener('click', () => { if (street) stopStreet(); else startStreet(); });
   canvas.addEventListener('click', e => {
     if (dragMoved) { dragMoved = false; return; }
     const w = toWorld(e), tx = Math.floor(w.x / T), ty = Math.floor(w.y / T);
@@ -2170,6 +2246,13 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   });
   window.addEventListener('keydown', e => {
     if (!$('askBox').hidden) return; // typing in a name box
+    const typing = /INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName);
+    if (!typing && (e.key === 'v' || e.key === 'V') && (view === 'home' || view === 'city')) { if (street) stopStreet(); else startStreet(); return; }
+    if (street && view === street.m && !typing) {
+      if (e.key === 'Escape') { stopStreet(); return; }
+      if (e.key === 'Enter') { e.preventDefault(); streetEnter(); return; }
+      if (e.key === 'Shift') keysDown.add('shift');
+    }
     if (e.key === 'Escape') { if (!$('tutorial').hidden) closeTut(); if (builder) { if (moving) { moving = null; sfx('tap'); } else setBuilder(false); return; } tool = null; syncTools(); }
     if ((e.key === 'b' || e.key === 'B') && (view === 'home' || view === 'city') && !/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)) setBuilder(!builder);
     if ((e.key === 'r' || e.key === 'R') && isHouse() && !/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)) turnPlacing();
@@ -2194,12 +2277,14 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     return true;
   }
   // ---------- inside Job City workplaces ----------
-  const WORKPLACES = { office: { wall: 2, floor: 1 }, factory: { wall: 6, floor: 4 }, market: { wall: 1, floor: 1 }, sushi: { wall: 3, floor: 0 }, dealer: { wall: 7, floor: 5 }, pcse: { wall: 5, floor: 6 }, bbb: { wall: 8, floor: 6 } };
+  const WORKPLACES = { office: { wall: 2, floor: 1 }, factory: { wall: 6, floor: 4 }, market: { wall: 1, floor: 1 }, sushi: { wall: 3, floor: 0 }, dealer: { wall: 7, floor: 5 }, pcse: { wall: 5, floor: 6 }, bbb: { wall: 8, floor: 6 },
+    bronsonbank: { wall: 8, floor: 6 }, tokiramen: { wall: 3, floor: 0 }, mochibakery: { wall: 0, floor: 7 }, misomarket: { wall: 1, floor: 1 }, wheekcoffee: { wall: 9, floor: 0 } };
   const canEnter = b => b && (b.type === 'hutch' || !!WORKPLACES[b.type]);
   const isWork = b => b && !!WORKPLACES[b.type];
   const DESKS = [[80, 150], [200, 150], [320, 150], [80, 232], [200, 232], [320, 232]];
   const BBB_DESKS = [[96, 150], [230, 140], [330, 140], [70, 236], [180, 236], [290, 236]];
   function stationOf(b, slot) {
+    const IN = INTERIORS[b.type]; if (IN) { const st = IN.stations[slot % IN.stations.length]; return { x: st[0], y: st[1], face: st[2] }; }
     switch (b.type) {
       case 'office': case 'pcse': { const d = DESKS[slot % 6]; return { x: d[0] - 14, y: d[1] - 22, face: 1 }; }
       case 'bbb': { const d = BBB_DESKS[slot % 6]; return { x: d[0] - 16, y: d[1] - 22, face: 1 }; }
@@ -2209,6 +2294,120 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
       case 'dealer': return [{ x: 205, y: 218, face: -1 }, { x: 318, y: 112, face: -1 }, { x: 250, y: 112, face: 1 }, { x: 60, y: 240, face: 1 }][slot % 4];
     }
     return { x: 200, y: 180, face: 1 };
+  }
+  // ================= INTERIORS FRAMEWORK =================
+  // A shop interior is data: wall decorations and floor props from the IPROP library below, the spots where staff
+  // stand (stations, one per job slot), and seats/spots for customers. The room is RW x RH (400 x 275) units, the
+  // back wall runs from y 0 to 80. Props with y below 80 hang on the wall; floor props are depth-sorted with pigs.
+  //   props:  [kind, x, y, options]      stations: [x, y, face]      seats: [x, y, face, icon]
+  //   options.d puts a prop later in the draw order than its y says (e.g. bowls standing on a counter)
+  //   closedAt: [x, y] where the CLOSED chalkboard stands when nobody works there (default 200, 262)
+  // Customers fill seats by time of day and how busy the shop has been today, and only while a worker is in.
+  // To give another building an interior: add a WORKPLACES entry (wall/floor style) and an INTERIORS entry.
+  const INTERIORS = {
+    tokiramen: {
+      sign: ['TOKI RAMEN 🍜', '#d9483b', '#fff'],
+      props: [['lanterns', 200, 12, { n: 6 }], ['window', 52, 22, { w: 56 }], ['menu', 330, 22, { title: 'MENU', lines: ['Shoyu 6', 'Miso 7', 'Tonkotsu 8', 'Gyoza 4'] }],
+        ['stove', 80, 104], ['pot', 80, 96], ['stove', 150, 104], ['pot', 150, 96], ['shelf', 270, 60, { w: 70, items: 'bowls' }],
+        ['counter', 200, 150, { w: 300, top: '#c79a6a', front: '#9a6a44' }], ['bowls', 200, 136, { n: 6, w: 280, d: 151 }],
+        ['stool', 80, 190], ['stool', 128, 190], ['stool', 176, 190], ['stool', 224, 190], ['stool', 272, 190], ['stool', 320, 190],
+        ['table', 90, 248], ['table', 310, 248], ['plant', 22, 250], ['plant', 378, 250]],
+      stations: [[90, 128, 1], [170, 128, 1], [250, 128, -1], [330, 128, -1]],
+      seats: [[80, 178, -1, '🍜'], [128, 178, 1, '🍜'], [176, 178, -1, '🥢'], [224, 178, 1, '🍜'], [272, 178, -1, '🍜'], [320, 178, 1, '🥟'], [66, 240, 1, '🍜'], [114, 240, -1, '🍵'], [286, 240, 1, '🍜'], [334, 240, -1, '🥟']]
+    },
+    mochibakery: {
+      sign: ['MOCHI BAKERY 🍡', '#f48fb1', '#fff'], closedAt: [158, 266],
+      props: [['shelf', 80, 52, { w: 110, items: 'bread' }], ['shelf', 330, 52, { w: 90, items: 'jars' }], ['window', 200, 22, { w: 70 }],
+        ['oven', 360, 108], ['display', 160, 150, { w: 200 }], ['register', 300, 142], ['table', 90, 238], ['table', 220, 245], ['table', 336, 238], ['plant', 22, 250], ['plant', 378, 200]],
+      stations: [[120, 128, 1], [220, 128, -1], [300, 122, 1]],
+      seats: [[66, 230, 1, '🍡'], [114, 230, -1, '🧁'], [196, 238, 1, '🍰'], [244, 238, -1, '☕'], [312, 230, 1, '🍡'], [360, 230, -1, '🍮']]
+    },
+    misomarket: {
+      sign: ['MISO MARKET 🥬', '#3f9a6a', '#fff'], closedAt: [200, 268],
+      props: [['cooler', 60, 50, { w: 90 }], ['cooler', 340, 50, { w: 90 }], ['banner', 200, 56, { text: 'FRESH TODAY' }],
+        ['bins', 120, 140, { w: 140 }], ['bins', 290, 140, { w: 140 }], ['bins', 120, 200, { w: 140 }], ['bins', 290, 200, { w: 140 }],
+        ['counter', 330, 252, { w: 100, top: '#e9e1d6', front: '#3f9a6a' }], ['register', 345, 243], ['cart', 40, 255], ['plant', 22, 120]],
+      stations: [[300, 238, 1], [100, 116, 1], [205, 176, -1], [310, 116, -1], [150, 236, 1]],
+      seats: [[70, 172, 1, '🥕'], [200, 172, -1, '🥬'], [300, 172, 1, '🍎'], [60, 232, -1, '🫑'], [230, 232, 1, '🍋']]
+    },
+    bronsonbank: {
+      sign: ['BRONSON BANK 🏦', '#1f2a4d', '#e6c46a'], closedAt: [200, 262],
+      props: [['columns', 200, 0, { xs: [24, 376] }], ['vault', 330, 40], ['medal', 70, 40], ['tellers', 160, 150, { w: 240, n: 3 }],
+        ['rope', 160, 208, { w: 180 }], ['sofa', 330, 240], ['plant', 22, 250], ['plant', 260, 252]],
+      stations: [[80, 122, 1], [160, 122, 1], [240, 122, -1], [330, 196, -1], [60, 200, 1]],
+      seats: [[90, 200, 1, '💰'], [135, 200, 1, '🧾'], [180, 200, 1, '💳'], [312, 236, 1, '📰'], [350, 236, -1, '☕']]
+    },
+    wheekcoffee: {
+      sign: ['WHEEK COFFEE ☕', '#7a4b2e', '#fbeec8'], closedAt: [210, 266],
+      props: [['shelf', 90, 52, { w: 110, items: 'cups' }], ['menu', 300, 22, { title: 'COFFEE', lines: ['Latte 3', 'Mocha 3', 'Hay Tea 2', 'Cake 2'], chalk: true }], ['lights', 200, 8],
+        ['counter', 290, 150, { w: 170, top: '#c79a6a', front: '#7a4b2e' }], ['espresso', 320, 128], ['display', 240, 146, { w: 50, small: true }],
+        ['sofa', 80, 180, { d: 160 }], ['table', 150, 245], ['table', 270, 248], ['table', 60, 248], ['plant', 378, 250], ['plant', 22, 140]],
+      stations: [[250, 122, 1], [330, 122, -1], [210, 126, 1]],
+      seats: [[60, 166, 1, '☕'], [102, 166, -1, '🧁'], [126, 238, 1, '☕'], [174, 238, -1, '🥐'], [246, 240, 1, '☕'], [294, 240, -1, '🍰'], [40, 240, 1, '☕'], [84, 240, -1, '🧋']]
+    }
+  };
+  // the prop library: each draws itself around (x, y), front view, in the house style
+  function iprop(c, k, x, y, o = {}) {
+    const t = G.time || 0, line = (w = 1.5) => { c.strokeStyle = INK; c.lineWidth = w; c.stroke(); };
+    switch (k) {
+      case 'counter': { const w = o.w || 200; c.fillStyle = o.front || '#9a6a44'; rr(c, x - w / 2, y - 10, w, 26, 3); c.fill(); line(); c.fillStyle = o.top || '#c79a6a'; rr(c, x - w / 2 - 4, y - 16, w + 8, 8, 3); c.fill(); line(); c.strokeStyle = 'rgba(0,0,0,.15)'; c.lineWidth = 1; for (let i = 1; i < w / 40; i++) { c.beginPath(); c.moveTo(x - w / 2 + i * 40, y - 6); c.lineTo(x - w / 2 + i * 40, y + 14); c.stroke(); } break; }
+      case 'stool': c.strokeStyle = '#5a3a2a'; c.lineWidth = 2; c.beginPath(); c.moveTo(x - 6, y + 10); c.lineTo(x - 3, y); c.moveTo(x + 6, y + 10); c.lineTo(x + 3, y); c.stroke(); c.fillStyle = '#d9483b'; ell(c, x, y, 9, 3.5); c.fill(); line(1.2); break;
+      case 'table': c.fillStyle = 'rgba(0,0,0,.1)'; ell(c, x, y + 14, 26, 5); c.fill(); c.strokeStyle = '#6b4a3a'; c.lineWidth = 3; c.beginPath(); c.moveTo(x, y); c.lineTo(x, y + 13); c.stroke(); c.fillStyle = '#fffaf2'; ell(c, x, y - 2, 22, 7); c.fill(); line(1.3); c.fillStyle = '#c98a5a'; ell(c, x - 6, y - 4, 3, 1.6); c.fill(); c.fillStyle = '#fff'; ell(c, x + 7, y - 4, 3.5, 1.6); c.fill(); break;
+      case 'bowls': { const n = o.n || 5, w = o.w || 200; for (let i = 0; i < n; i++) { const bx = x - w / 2 + (i + .5) * w / n; c.fillStyle = '#fffaf2'; c.beginPath(); c.ellipse(bx, y, 7, 4, 0, 0, Math.PI); c.fill(); line(1); c.fillStyle = '#e8b04a'; ell(c, bx, y, 6, 1.6); c.fill(); c.strokeStyle = 'rgba(255,255,255,.7)'; c.lineWidth = 1; const k2 = (t * .6 + i * .3) % 1; c.globalAlpha = 1 - k2; c.beginPath(); c.moveTo(bx, y - 3 - k2 * 8); c.quadraticCurveTo(bx - 3, y - 6 - k2 * 8, bx, y - 9 - k2 * 8); c.stroke(); c.globalAlpha = 1; } break; }
+      case 'stove': c.fillStyle = '#9aa1ad'; rr(c, x - 28, y - 10, 56, 30, 3); c.fill(); line(); c.fillStyle = '#5a6070'; rr(c, x - 20, y, 40, 14, 2); c.fill(); c.fillStyle = '#ff8a3d'; ell(c, x, y - 11, 14, 3); c.fill(); break;
+      case 'pot': c.fillStyle = '#c9cdd6'; rr(c, x - 18, y - 22, 36, 24, 4); c.fill(); line(); c.fillStyle = '#fbe7b4'; ell(c, x, y - 22, 16, 4); c.fill(); for (let i = 0; i < 3; i++) { const k2 = (t * .5 + i * .33) % 1; c.globalAlpha = (1 - k2) * .9; c.strokeStyle = '#fff'; c.lineWidth = 2; c.beginPath(); c.moveTo(x - 8 + i * 8, y - 26 - k2 * 18); c.quadraticCurveTo(x - 12 + i * 8, y - 32 - k2 * 18, x - 8 + i * 8, y - 38 - k2 * 18); c.stroke(); } c.globalAlpha = 1; break;
+      case 'shelf': { const w = o.w || 100; c.fillStyle = '#b07a52'; for (const dy of [0, 22]) { rr(c, x - w / 2, y + dy, w, 5, 2); c.fill(); line(1.2); }
+        for (const dy of [0, 22]) for (let i = 0; i < w / 14 - 1; i++) { const ix = x - w / 2 + 8 + i * 14;
+          if (o.items === 'bread') { c.fillStyle = ['#e0a85a', '#c98a4a', '#f2c27a'][i % 3]; ell(c, ix, y + dy - 5, 6, 5); c.fill(); line(1); }
+          else if (o.items === 'jars') { c.fillStyle = ['#f48fb1', '#f7d36b', '#a8dcc4'][i % 3]; rr(c, ix - 4, y + dy - 12, 8, 12, 2); c.fill(); line(1); }
+          else if (o.items === 'cups') { c.fillStyle = ['#fffaf2', '#f6c3cf', '#a8dcc4'][i % 3]; rr(c, ix - 4, y + dy - 9, 8, 9, 2); c.fill(); line(1); }
+          else { c.fillStyle = ['#fffaf2', '#d9483b'][i % 2]; c.beginPath(); c.ellipse(ix, y + dy - 4, 6, 4, 0, Math.PI, 0); c.fill(); line(1); } } break; }
+      case 'display': { const w = o.w || 160, h = o.small ? 22 : 32; c.fillStyle = '#fffaf2'; rr(c, x - w / 2, y - h, w, h + 16, 4); c.fill(); line(); c.fillStyle = 'rgba(190,230,240,.55)'; rr(c, x - w / 2 + 4, y - h + 4, w - 8, h - 6, 3); c.fill();
+        const TR = ['#f6a5c0', '#fffaf2', '#a8dcc4', '#f7d36b', '#c9a6f2', '#ffb08a']; for (let r = 0; r < (o.small ? 1 : 2); r++) for (let i = 0; i < Math.floor((w - 12) / 18); i++) { c.fillStyle = TR[(i + r * 2) % 6]; ell(c, x - w / 2 + 12 + i * 18, y - h + 12 + r * 13, 6, 4.5); c.fill(); c.strokeStyle = 'rgba(120,60,70,.4)'; c.lineWidth = .8; c.stroke(); }
+        c.strokeStyle = 'rgba(255,255,255,.8)'; c.lineWidth = 2; c.beginPath(); c.moveTo(x - w / 2 + 10, y - h + 8); c.lineTo(x - w / 2 + 22, y - 4); c.stroke(); break; }
+      case 'register': c.fillStyle = '#5a6070'; rr(c, x - 12, y - 12, 24, 14, 3); c.fill(); line(1.2); c.fillStyle = '#7fe0b0'; rr(c, x - 8, y - 20, 16, 8, 2); c.fill(); line(1); break;
+      case 'oven': c.fillStyle = '#d98a6a'; rr(c, x - 26, y - 46, 52, 64, 8); c.fill(); line(); c.fillStyle = '#3a2a26'; c.beginPath(); c.arc(x, y - 6, 14, Math.PI, 0); c.lineTo(x + 14, y + 6); c.lineTo(x - 14, y + 6); c.closePath(); c.fill(); c.fillStyle = `rgba(255,${150 + Math.sin(t * 4) * 30 | 0},60,.9)`; ell(c, x, y + 2, 9, 3); c.fill(); break;
+      case 'cooler': { const w = o.w || 90; c.fillStyle = '#e8eef4'; rr(c, x - w / 2, y - 40, w, 66, 4); c.fill(); line(); for (let r = 0; r < 3; r++) for (let i = 0; i < w / 12 - 1; i++) { c.fillStyle = ['#e0483f', '#5aa9e0', '#f2b134', '#6fae3e', '#fffaf2'][(i + r) % 5]; rr(c, x - w / 2 + 6 + i * 12, y - 34 + r * 20, 8, 14, 2); c.fill(); } c.strokeStyle = 'rgba(255,255,255,.7)'; c.lineWidth = 2; c.beginPath(); c.moveTo(x, y - 40); c.lineTo(x, y + 26); c.stroke(); break; }
+      case 'bins': { const w = o.w || 140, P2 = [['#ff9a4d', '#ffb066'], ['#e0483f', '#f2b134'], ['#7cc35a', '#a6d96a'], ['#c9a6f2', '#9b7ad1'], ['#f7d36b', '#6fae3e']]; for (let i = 0; i < 3; i++) { const bx = x - w / 2 + i * w / 3; c.fillStyle = '#b98a5a'; rr(c, bx + 2, y - 8, w / 3 - 4, 22, 2); c.fill(); line(1.2); for (let j = 0; j < 9; j++) { c.fillStyle = P2[(i + (x | 0) / 7 | 0) % 5][j % 2]; ell(c, bx + 8 + (j % 5) * ((w / 3 - 12) / 5), y - 10 - (j > 4 ? 6 : 0), 4.5, 4); c.fill(); } } c.fillStyle = '#fffaf2'; c.fillRect(x - 12, y + 4, 24, 8); c.fillStyle = '#2f7a55'; c.font = 'bold 7px Nunito, sans-serif'; c.textAlign = 'center'; c.fillText('2 🪙', x, y + 11); break; }
+      case 'cart': c.strokeStyle = '#8e95a3'; c.lineWidth = 2; c.strokeRect(x - 14, y - 18, 26, 14); c.beginPath(); c.moveTo(x + 12, y - 18); c.lineTo(x + 18, y - 24); c.stroke(); c.fillStyle = '#2a2a2a'; ell(c, x - 10, y, 3, 3); c.fill(); ell(c, x + 8, y, 3, 3); c.fill(); c.fillStyle = '#7cc35a'; ell(c, x - 4, y - 20, 6, 4); c.fill(); break;
+      case 'tellers': { const w = o.w || 240, n = o.n || 3; c.fillStyle = '#1f2a4d'; rr(c, x - w / 2, y - 12, w, 28, 3); c.fill(); line(); c.fillStyle = '#e6c46a'; rr(c, x - w / 2 - 4, y - 18, w + 8, 7, 3); c.fill(); line(1.2); for (let i = 0; i <= n; i++) { const gx = x - w / 2 + i * w / n; c.fillStyle = '#c9a23a'; c.fillRect(gx - 1.5, y - 52, 3, 36); } c.fillStyle = 'rgba(190,230,240,.35)'; c.fillRect(x - w / 2, y - 52, w, 34); c.strokeStyle = '#c9a23a'; c.lineWidth = 2; c.strokeRect(x - w / 2, y - 52, w, 34); break; }
+      case 'rope': { const w = o.w || 160; for (let i = 0; i <= 3; i++) { const px = x - w / 2 + i * w / 3; c.fillStyle = '#c9a23a'; c.fillRect(px - 2, y - 18, 4, 20); ell(c, px, y - 19, 3.5, 3.5); c.fill(); } c.strokeStyle = '#b8323f'; c.lineWidth = 3; c.beginPath(); for (let i = 0; i < 3; i++) { const a = x - w / 2 + i * w / 3; c.moveTo(a, y - 14); c.quadraticCurveTo(a + w / 6, y - 4, a + w / 3, y - 14); } c.stroke(); break; }
+      case 'sofa': c.fillStyle = '#a98bd9'; rr(c, x - 40, y - 26, 80, 22, 8); c.fill(); line(); rr(c, x - 44, y - 10, 88, 20, 6); c.fill(); line(); c.fillStyle = '#c4adeb'; rr(c, x - 34, y - 12, 32, 10, 4); c.fill(); rr(c, x + 2, y - 12, 32, 10, 4); c.fill(); break;
+      case 'plant': c.fillStyle = '#c98a62'; rr(c, x - 10, y - 12, 20, 16, 3); c.fill(); line(1.2); c.fillStyle = '#6fae4e'; for (const [dx, dy, r] of [[-6, -20, 8], [6, -22, 8], [0, -30, 9]]) { ell(c, x + dx, y + dy, r, r * .8); c.fill(); line(1); } break;
+      case 'espresso': c.fillStyle = '#c9cdd6'; rr(c, x - 22, y - 28, 44, 30, 4); c.fill(); line(); c.fillStyle = '#5a6070'; c.fillRect(x - 16, y - 8, 32, 4); c.fillStyle = '#7a4b2e'; rr(c, x - 6, y - 4, 12, 6, 2); c.fill(); { const k2 = (t * .7) % 1; c.globalAlpha = 1 - k2; c.strokeStyle = '#fff'; c.lineWidth = 2; c.beginPath(); c.moveTo(x, y - 30 - k2 * 12); c.quadraticCurveTo(x - 4, y - 36 - k2 * 12, x, y - 42 - k2 * 12); c.stroke(); c.globalAlpha = 1; } break;
+      // wall pieces
+      case 'window': { const w = o.w || 60; c.fillStyle = '#fffaf2'; rr(c, x - w / 2 - 3, y - 3, w + 6, 46, 4); c.fill(); line(); c.fillStyle = lit() ? '#2a3558' : '#bfe6f0'; rr(c, x - w / 2, y, w, 40, 3); c.fill(); if (!lit()) { c.fillStyle = '#f6b3c9'; ell(c, x - w / 4, y + 34, 10, 8); c.fill(); c.fillStyle = '#c9cdd6'; c.fillRect(x + 4, y + 14, 12, 26); } c.strokeStyle = '#fffaf2'; c.lineWidth = 2; c.beginPath(); c.moveTo(x, y); c.lineTo(x, y + 40); c.moveTo(x - w / 2, y + 20); c.lineTo(x + w / 2, y + 20); c.stroke(); break; }
+      case 'menu': { c.fillStyle = o.chalk ? '#3a4a44' : '#2b2422'; rr(c, x - 40, y, 80, 54, 4); c.fill(); c.strokeStyle = '#c79a6a'; c.lineWidth = 3; c.stroke(); c.fillStyle = '#fff3dc'; c.font = 'bold 9px Nunito, sans-serif'; c.textAlign = 'center'; c.fillText(o.title || 'MENU', x, y + 12); c.font = '7.5px Nunito, sans-serif'; (o.lines || []).forEach((l2, i) => c.fillText(l2, x, y + 24 + i * 9)); break; }
+      case 'lanterns': { const n = o.n || 5; c.strokeStyle = '#5a3a2a'; c.lineWidth = 1; c.beginPath(); c.moveTo(20, y); c.quadraticCurveTo(200, y + 14, 380, y); c.stroke(); for (let i = 0; i < n; i++) { const lx = 40 + i * 320 / (n - 1), ly = y + 6 + Math.sin(i / (n - 1) * Math.PI) * 6; c.fillStyle = i % 2 ? '#f2b134' : '#e0483f'; ell(c, lx, ly + 8, 7, 9); c.fill(); line(1); } break; }
+      case 'lights': for (let i = 0; i < 14; i++) { const lx = 20 + i * 27, ly = y + Math.sin(i / 13 * Math.PI) * 10; c.fillStyle = lit() ? '#fff3b0' : ['#f48fb1', '#fff1a8', '#8fd3c4'][i % 3]; ell(c, lx, ly, 3, 3.6); c.fill(); } break;
+      case 'banner': c.fillStyle = '#fffaf2'; rr(c, x - 60, y - 10, 120, 16, 4); c.fill(); line(1.2); c.fillStyle = '#2f7a55'; c.font = 'bold 9px Nunito, sans-serif'; c.textAlign = 'center'; c.fillText(o.text || '', x, y + 2); break;
+      case 'vault': c.fillStyle = '#9aa1ad'; c.beginPath(); c.arc(x, y, 28, 0, Math.PI * 2); c.fill(); line(2); c.fillStyle = '#c9cdd6'; c.beginPath(); c.arc(x, y, 20, 0, Math.PI * 2); c.fill(); line(1.2); c.strokeStyle = '#5a6070'; c.lineWidth = 3; for (let i = 0; i < 3; i++) { const a = i * Math.PI * 2 / 3 + t * .2; c.beginPath(); c.moveTo(x, y); c.lineTo(x + Math.cos(a) * 14, y + Math.sin(a) * 14); c.stroke(); } break;
+      case 'medal': c.save(); c.translate(x, y); pigMedal(c, 22); c.restore(); break;
+      case 'closed': c.fillStyle = 'rgba(0,0,0,.12)'; ell(c, x, y + 2, 26, 4); c.fill(); c.strokeStyle = '#8a6a4a'; c.lineWidth = 3; c.beginPath(); c.moveTo(x - 20, y); c.lineTo(x - 14, y - 40); c.moveTo(x + 20, y); c.lineTo(x + 14, y - 40); c.stroke();
+        c.fillStyle = '#3a4a44'; rr(c, x - 24, y - 44, 48, 34, 4); c.fill(); c.strokeStyle = '#c79a6a'; c.lineWidth = 3; c.stroke();
+        c.textAlign = 'center'; c.fillStyle = '#ffd3df'; c.font = 'bold 10px Nunito, sans-serif'; c.fillText('CLOSED', x, y - 28); c.fillStyle = '#fff3dc'; c.font = '7px Nunito, sans-serif'; c.fillText('hire a pig', x, y - 19); c.fillText('to open 🐹', x, y - 12); break;
+      case 'columns': for (const cx of o.xs || []) { c.fillStyle = '#fbf6ec'; c.fillRect(cx - 9, 0, 18, 80); c.strokeStyle = 'rgba(0,0,0,.12)'; c.lineWidth = 1; for (const dx of [-4, 0, 4]) { c.beginPath(); c.moveTo(cx + dx, 4); c.lineTo(cx + dx, 76); c.stroke(); } c.fillStyle = '#e6c46a'; c.fillRect(cx - 12, 0, 24, 6); } break;
+    }
+  }
+  // how full a shop is right now: more at meal/coffee times, more if it has had lots of customers today
+  function shopFullness(b) {
+    const h = hourNow(); if (h < 6.5 || h >= 22) return 0;
+    const peak = (h >= 7 && h < 9.5) || (h >= 11.5 && h < 13.5) || (h >= 17.5 && h < 20) ? .35 : 0, today = b.cd && b.cd[0] === dayNum() ? b.cd[1] : 0;
+    return Math.min(.95, .2 + peak + Math.min(.4, today / 40));
+  }
+  function interiorScene(c, b) {
+    const IN = INTERIORS[b.type], props = [], open = workersHere(b).length > 0, full = open ? shopFullness(b) : 0, slot = Math.floor((G.time || 0) / 25);
+    for (const p of IN.props) if (p[2] < 80) iprop(c, p[0], p[1], p[2], p[3]);
+    sign(c, 200, 26, IN.sign[0], IN.sign[1], IN.sign[2], 11);
+    if (!open) { const [cx2, cy2] = IN.closedAt || [200, 262]; props.push({ y: cy2, f: () => iprop(c, 'closed', cx2, cy2) }); } // a chalkboard A-frame on the floor, clear of the wall decor
+    for (const p of IN.props) if (p[2] >= 80) props.push({ y: (p[3] && p[3].d) || p[2], f: () => iprop(c, p[0], p[1], p[2], p[3]) }); // o.d: draw order override (things sitting on a counter)
+    IN.seats.forEach(([x, y, face, icon], i) => {
+      if (hsh(i, dayNum(), slot + i) >= full) return;
+      const skin = GUEST_SKINS[(i * 7 + dayNum() + slot) % GUEST_SKINS.length];
+      props.push({ y: y + .5, f: () => { c.save(); c.translate(x, y + Math.sin((G.time || 0) * 2 + i) * .6); c.fillStyle = 'rgba(0,0,0,.1)'; ell(c, 0, 12, 16, 3.5); c.fill(); c.scale(face * .42, .42); drawPig(c, skin, { chew: Math.sin((G.time || 0) * 6 + i) > .3 ? 1.5 : 0 }); c.restore();
+        if (icon && hsh(i, slot, 3) < .6) { c.font = '11px sans-serif'; c.textAlign = 'center'; c.fillText(icon, x + face * 14, y - 16 + Math.sin((G.time || 0) * 3 + i) * 1.2); } } });
+    });
+    return props;
   }
   function workersHere(b) { return G.pigs.filter(p => { const jb = jobOf(p); return jb === b && pigMap(p) === 'city' && !p.trip; }); }
   function drawHat(c, kind, p) {
@@ -2246,6 +2445,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   function sign(c, x, y, txt, bg, fg = '#fff', size = 10) { c.font = `bold ${size}px Nunito, sans-serif`; const w = c.measureText(txt).width + 14; c.fillStyle = bg; rr(c, x - w / 2, y - size, w, size + 8, 5); c.fill(); c.strokeStyle = INK; c.lineWidth = 1.5; c.stroke(); c.fillStyle = fg; c.textAlign = 'center'; c.fillText(txt, x, y + 1); }
   // draws the fixed fixtures of each workplace; returns depth-sorted props that pigs can stand behind
   function workScene(c, b) {
+    if (INTERIORS[b.type]) return interiorScene(c, b);
     const t = G.time || 0, props = [], lv = L(b), slots = slotsOf(b);
     switch (b.type) {
       case 'office': {
@@ -2507,6 +2707,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   let builder = false, moving = null, pausedBefore = false;
   function setBuilder(on) {
     if (on === builder) return;
+    if (on && street) stopStreet();
     builder = on; moving = null; tool = null; selBld = null;
     if (on) { pausedBefore = paused; paused = true; } else paused = pausedBefore;
     syncSpeed(); $('pausedOv').hidden = true; syncTools(); renderBld();
@@ -2551,7 +2752,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     $('stage').hidden = !map; $('buildPanel').hidden = !map; $('dash').hidden = v !== 'dash'; $('pcse').hidden = v !== 'pcse';
     $('buildTitle').textContent = v === 'park' ? `Build ${PARK_NAME} 🎢` : v === 'city' ? 'Build downtown 🏙️' : v === 'inside' ? `Decorate ${insideName(insideB)} ${isWork(insideB) ? '🪴' : '🛋️'}` : 'Build';
     drawTabs(); drawTools(); renderBld(); renderCozy();
-    $('buildBar').hidden = !(v === 'home' || v === 'city');
+    $('buildBar').hidden = !(v === 'home' || v === 'city'); $('growBtn').hidden = v !== 'city'; syncGrowBtn();
     roomLabels(); $('zoombar').hidden = v === 'inside' && !isHouse(); $('zWalls').hidden = !isHouse(); $('zMap').hidden = v === 'inside' || v === 'park'; hoodSig = ''; parkPanelSig = ''; pSel = null; renderParkPanel();
     if (map) { resize(); if ((v === 'home' || v === 'city' || v === 'park') && !cams[v].init) { camHome(v); cams[v].init = true; } if (isHouse()) houseCamHome(); }
     if (v === 'park' && !G.parkSeen) { G.parkSeen = true; ensurePark(); setTimeout(() => toast(`🎢 Welcome to ${PARK_NAME}! Build rides next to the paths, hire Ride Operators, and set your ticket price. Tourists start coming once you have rides.`), 200); }
@@ -5808,6 +6009,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   function drawHoodLabels(c, mapName) {
     const O = { x: 0, y: 0 };
     for (const h of hoodsOf(mapName)) {
+      if (!overlay && h.preset && DISTRICTS[h.preset] && DISTRICTS[h.preset].generated) continue; // grown blocks: names only with the planning overlay on
       const Z = ZONES[h.zone], [ix, iy] = IP(O, h.x + h.w / 2, h.y + .2, 0), P = isoToScr({ x: ix, y: iy }), x = P.x, y = P.y + 8, txt = `${Z.e} ${h.name}`;
       if (x < -60 || x > vw + 60 || y < -20 || y > vh + 40) continue;
       c.font = 'bold 13px Nunito, sans-serif'; const w = c.measureText(txt).width + 18;
@@ -6042,6 +6244,153 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     liftStreets(m, h); G.hoods[m] = G.hoods[m].filter(q => q !== h); crowds.delete(h.id);
     G.coins += refund; markGround(); hoodSig = ''; zoneT = 0; sfx('tap'); hudRes(); save();
     toast(`🚜 ${h.name} was cleared. +${refund} 🪙`);
+  }
+  // ================= CITY GENERATOR: grow a whole city out of blocks =================
+  // "Grow city" lays a street grid over the empty land of Job City and fills every block from a BLOCK_KINDS recipe.
+  // Each block becomes an ordinary district (hood) with sidewalks, spots and a crowd, so citizens, customers,
+  // builder mode, moving and demolishing all work on it. Roads it lays are remembered in G.gen so the whole
+  // grown city can be cleared again; nothing already built is ever touched (occupied tiles are skipped).
+  //
+  // A block is a rectangle with a sidewalk on every side that faces a road. Inside it:
+  //   corner2 a 2x2 landmark on the front corner (the south-east corner, the one you see)
+  //   front   1x1 shops along the two visible street fronts (south row, east column), with a prop every few lots
+  //   back2   2x2 buildings filling the back, then back/props in the gaps
+  //   park    a plaza instead: fountain, ring path, benches, blossoms
+  // To add a new kind of block, add a recipe here and give it a place in cityPlan().
+  const BLOCK_KINDS = {
+    downtown: { name: 'Downtown Block', ic: '🏙️', zone: 'down', kind: 'downtown', crowd: 7,
+      corner2: ['wheekcoffee', 'bronsonbank', 'misomarket'], front: ['tokiramen', 'mochibakery', 'finoffice', 'sushi', 'cafe'],
+      back2: ['office', 'pcse', 'bbb'], back: ['finoffice', 'finoffice', 'citytree'], props: ['blossom', 'streetlamp', 'bikerack', 'planter', 'hydrant', 'trash', 'citytree', 'busstop'] },
+    shops: { name: 'Market Street', ic: '🛍️', zone: 'com', kind: 'downtown', crowd: 6,
+      corner2: ['misomarket', 'wheekcoffee'], front: ['tokiramen', 'mochibakery', 'salon', 'toys', 'cafe', 'sushi'],
+      back2: ['market'], back: ['finoffice', 'citytree', 'hedge'], props: ['blossom', 'table', 'planter', 'coffeecart', 'streetlamp', 'bench', 'bikerack'] },
+    offices: { name: 'Office Row', ic: '🏢', zone: 'down', kind: 'finance', crowd: 5,
+      corner2: ['bronsonbank', 'pcse', 'office'], front: ['finoffice', 'finoffice', 'cafe', 'dealer'],
+      back2: ['office', 'bbb', 'pcse'], back: ['finoffice', 'citytree'], props: ['citytree', 'streetlamp', 'planter', 'trash', 'ticker', 'hydrant'] },
+    park: { name: 'Pocket Park', ic: '🌳', zone: 'park', kind: 'cozy', crowd: 5, park: true,
+      props: ['blossom', 'citytree', 'flowers', 'hedge', 'planter'] }
+  };
+  for (const [k, K] of Object.entries(BLOCK_KINDS)) // register each recipe as a (tool-less) preset, so crowds know their schedule
+    DISTRICTS['gen_' + k] = { name: K.name, ic: K.ic, map: 'city', zone: K.zone, kind: K.kind, crowd: K.crowd, w: 0, h: 0, roads: [], paths: [], xwalks: [], items: [], spots: [], conns: [], inspo: 'the city generator', blurb: 'a grown city block', generated: true };
+  // where the grid goes on Job City: 1-wide streets every 7 tiles, lined up with the built-in main road and avenue
+  function cityPlan() {
+    const PITCH = 7, r1 = ROAD[ROAD.length - 1], a0 = AVENUE[0], a1 = AVENUE[AVENUE.length - 1];
+    const vx = [], hy = [];
+    for (let x = a1 + PITCH; x < COLS; x += PITCH) vx.push(x); for (let x = a0 - PITCH; x >= 0; x -= PITCH) vx.push(x);
+    for (let y = r1 + PITCH; y < ROWS; y += PITCH) hy.push(y);
+    const cuts = (lines, lo, hi, solid) => { const ws = [...new Set(lines.concat(solid))].sort((a, b) => a - b), out = []; let s0 = lo; for (const w of ws) { if (w > s0) out.push([s0, w - 1]); s0 = w + 1; } if (s0 <= hi) out.push([s0, hi]); return out; };
+    const cols = cuts(vx, 0, COLS - 1, AVENUE), rows = cuts(hy, 0, ROWS - 1, ROAD), blocks = [];
+    rows.forEach(([y0, y1], ri) => cols.forEach(([x0, x1], ci) => {
+      // downtown hugs the main road and avenue; further out it alternates market streets and office rows, with parks
+      const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, nearMain = Math.abs(cy - (ROAD[0] + .5)) < 5 && Math.abs(cx - (a0 + .5)) < 14;
+      const kind = (ri * 3 + ci) % 6 === 4 ? 'park' : nearMain ? 'downtown' : (ri + ci) % 3 === 0 ? 'offices' : 'shops';
+      blocks.push({ x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1, kind });
+    }));
+    return { vx, hy, blocks };
+  }
+  function seeded(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  function growCity() {
+    const m = 'city', plan = cityPlan(), occ = occMap(m), gen = G.gen = G.gen || { roads: [], xw: [] };
+    const free = (x, y) => isLand(m, x, y) && !occ.has(x + ',' + y) && !isPath(m, x, y) && !zoneAt(m, x, y);
+    // 1. streets
+    const laid = [];
+    const lay = (x, y) => { const k = x + ',' + y; if (isRoad(m, x, y) || !free(x, y)) return; roadSets[m].add(k); G.roads[m].push(k); gen.roads.push(k); laid.push(k); };
+    for (const x of plan.vx) for (let y = 0; y < ROWS; y++) lay(x, y);
+    for (const y of plan.hy) for (let x = 0; x < COLS; x++) lay(x, y);
+    // 2. zebra crossings around every new crossroads of 1-wide streets (never beside the wide built-in roads)
+    const wide = (x, y) => (ROAD.includes(y) && x >= 0 && x < COLS) || (AVENUE.includes(x) && y >= 0 && y < ROWS);
+    for (const k of laid) { const [x, y] = k.split(',').map(Number);
+      if (!((isRoad(m, x - 1, y) || isRoad(m, x + 1, y)) && (isRoad(m, x, y - 1) || isRoad(m, x, y + 1)))) continue;
+      if (DIRS4.some(([dx, dy]) => wide(x + dx, y + dy))) continue;
+      for (const [dx, dy] of DIRS4) { const kk = (x + dx) + ',' + (y + dy); if (isRoad(m, x + dx, y + dy) && !wide(x + dx, y + dy) && !xwSets[m].has(kk)) { xwSets[m].add(kk); G.xwalks[m].push(kk); gen.xw.push(kk); } } }
+    // 3. blocks
+    let nb = 0, nBld = 0; const before = G.city.length;
+    for (const bk of plan.blocks) { const h = growBlock(m, bk, occ); if (h) { nb++; nBld += districtMembers(m, h).length; } }
+    markGround(); hoodSig = ''; zoneT = 0; dPrev = null; walkCache.clear(); save();
+    return { blocks: nb, buildings: G.city.length - before, roads: laid.length };
+  }
+  function growBlock(m, bk, occ) {
+    const K = BLOCK_KINDS[bk.kind], R = seeded(bk.x * 7919 + bk.y * 104729 + 17), pickR = a => a[Math.floor(R() * a.length)];
+    // skip blocks that overlap an existing district, or whose land is mostly taken
+    for (let i = 0; i < bk.w; i++) for (let j = 0; j < bk.h; j++) if (zoneAt(m, bk.x + i, bk.y + j)) return null;
+    let open = 0; for (let i = 0; i < bk.w; i++) for (let j = 0; j < bk.h; j++) if (isLand(m, bk.x + i, bk.y + j) && !occ.has((bk.x + i) + ',' + (bk.y + j)) && !isRoad(m, bk.x + i, bk.y + j)) open++;
+    if (open < bk.w * bk.h * .6) return null;
+    const road = (x, y) => isRoad(m, x, y), sides = { n: false, s: false, w: false, e: false };
+    for (let i = 0; i < bk.w; i++) { if (road(bk.x + i, bk.y - 1)) sides.n = true; if (road(bk.x + i, bk.y + bk.h)) sides.s = true; }
+    for (let j = 0; j < bk.h; j++) { if (road(bk.x - 1, bk.y + j)) sides.w = true; if (road(bk.x + bk.w, bk.y + j)) sides.e = true; }
+    const ix = bk.x + (sides.w ? 1 : 0), iy = bk.y + (sides.n ? 1 : 0), iw = bk.w - (sides.w ? 1 : 0) - (sides.e ? 1 : 0), ih = bk.h - (sides.n ? 1 : 0) - (sides.s ? 1 : 0);
+    const inInner = (x, y) => x >= ix && y >= iy && x < ix + iw && y < iy + ih;
+    let id = Date.now() % 1e9; while (hoodsOf('home').some(q => q.id === id) || hoodsOf('city').some(q => q.id === id)) id++;
+    const h = { id, name: districtName(m, { name: K.name }), x: bk.x, y: bk.y, w: bk.w, h: bk.h, zone: K.zone, preset: 'gen_' + bk.kind, rot: 0, roads: [], paths: [], xw: [], spots: [], conns: [] };
+    const taken = new Set(), items = [];
+    const okTile = (x, y) => inInner(x, y) && !taken.has(x + ',' + y) && !occ.has(x + ',' + y) && isLand(m, x, y) && !isRoad(m, x, y) && !isPath(m, x, y);
+    const put = (type, x, y) => { if (!B[type]) return false; const n = sz(type); for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) if (!okTile(x + i, y + j)) return false; for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) taken.add((x + i) + ',' + (y + j)); items.push({ type, x, y }); return true; };
+    if (iw >= 1 && ih >= 1) {
+      if (K.park) {
+        const cx = ix + (iw >> 1), cy = iy + (ih >> 1);
+        if (iw >= 3 && ih >= 3) { put('fountain', cx, cy); for (const [dx, dy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) put('bench', cx + dx, cy + dy); }
+        for (let y = iy; y < iy + ih; y++) for (let x = ix; x < ix + iw; x++) if (okTile(x, y) && x !== cx && y !== cy && (x === ix || y === iy || x === ix + iw - 1 || y === iy + ih - 1)) put(pickR(K.props), x, y); // paths run out from the fountain on its row and column
+      } else if (iw < 2 || ih < 2) {
+        for (let y = iy; y < iy + ih; y++) for (let x = ix; x < ix + iw; x++) if ((x + y) % 2 === 0) put(pickR(['citytree', 'blossom', 'streetlamp', 'planter']), x, y);
+      } else {
+        if (iw >= 3 && ih >= 3 && sides.s && sides.e) put(pickR(K.corner2), ix + iw - 2, iy + ih - 2);
+        if (sides.s) for (let x = ix; x < ix + iw; x++) { const y = iy + ih - 1; if (!okTile(x, y)) continue; put((x - ix) % 3 === 2 ? pickR(K.props) : pickR(K.front), x, y); }
+        if (sides.e) for (let y = iy; y < iy + ih; y++) { const x = ix + iw - 1; if (!okTile(x, y)) continue; put((y - iy) % 3 === 2 ? pickR(K.props) : pickR(K.front), x, y); }
+        for (let y = iy; y < iy + ih - 1; y++) for (let x = ix; x < ix + iw - 1; x++) if (R() < .75) put(pickR(K.back2), x, y);
+        for (let y = iy; y < iy + ih; y++) for (let x = ix; x < ix + iw; x++) if (okTile(x, y) && R() < .85) put(R() < .5 ? pickR(K.back) : pickR(K.props), x, y);
+      }
+    }
+    if (!items.length) return null;
+    // sidewalks on the road sides (corners too when both sides have one); park blocks get a ring path inside
+    const paths = [];
+    for (let x = bk.x; x < bk.x + bk.w; x++) for (let y = bk.y; y < bk.y + bk.h; y++) {
+      const edge = (sides.n && y === bk.y) || (sides.s && y === bk.y + bk.h - 1) || (sides.w && x === bk.x) || (sides.e && x === bk.x + bk.w - 1);
+      const ring = K.park && inInner(x, y) && (x === ix + (iw >> 1) || y === iy + (ih >> 1));
+      if ((edge || ring) && !taken.has(x + ',' + y)) paths.push(x + ',' + y);
+    }
+    layStreets(m, h, [], paths, [], [...taken]);
+    for (const it of items) { const b = { type: it.type, x: it.x, y: it.y, t: R() * 3, did: id, map: 'city' }; if (it.type === 'finoffice') b.v = Math.floor(R() * FIRMS.length); if (it.type === 'parkedcar') b.v = Math.floor(R() * PARKED.length); listOf(m).push(b); for (let i = 0; i < sz(it.type); i++) for (let j = 0; j < sz(it.type); j++) occ.add((it.x + i) + ',' + (it.y + j)); }
+    // spots: shop doors on the sidewalk in front, benches to sit on, bus stops to wait at, the fountain, corners to stroll
+    for (const it of items) {
+      const n = sz(it.type), P = PROFILE[it.type], front = it.y + n === iy + ih && sides.s ? [it.x + n / 2, it.y + n + .2] : it.x + n === ix + iw && sides.e ? [it.x + n + .2, it.y + n / 2] : null;
+      if (P && P.acts && front) h.spots.push({ k: P.acts[0], x: front[0], y: front[1] });
+      if (it.type === 'bench') h.spots.push({ k: 'sit', x: it.x + .5, y: it.y + .55 });
+      if (it.type === 'busstop') h.spots.push({ k: 'wait', x: it.x + .5, y: it.y + 1.1 });
+      if (it.type === 'fountain') h.spots.push({ k: 'photo', x: it.x + .5, y: it.y + 1.2 });
+      if (it.type === 'coffeecart' || it.type === 'table') h.spots.push({ k: 'coffee', x: it.x + .5, y: it.y + .9 });
+    }
+    for (const [x, y] of [[bk.x + .5, bk.y + bk.h - .5], [bk.x + bk.w - .5, bk.y + .5], [bk.x + bk.w - .5, bk.y + bk.h - .5]]) if (isPath(m, Math.floor(x), Math.floor(y))) h.spots.push({ k: 'stroll', x, y });
+    for (const k of h.paths) { const [x, y] = k.split(',').map(Number); for (const [dx, dy] of DIRS4) if (isRoad(m, x + dx, y + dy) && (xwSets[m].has((x + dx) + ',' + (y + dy)) || R() < .25)) { h.conns.push({ x, y, dx, dy, kind: 'path' }); break; } }
+    G.hoods[m].push(h);
+    return h;
+  }
+  // take the grown city away again: every generated block, plus the streets and crossings the generator laid.
+  // Anything the player made their own is protected: a generated building that was upgraded, decorated inside,
+  // or has pigs working in it stays as a normal building, and so do the sidewalks of its block and the streets
+  // next to it. Buildings the player placed themselves were never part of a block, so they always stay.
+  const grownBlocks = () => hoodsOf('city').filter(q => q.preset && DISTRICTS[q.preset] && DISTRICTS[q.preset].generated);
+  const customized = b => L(b) > 1 || workersAt(b).length > 0 || !!(b.room && b.room.items && b.room.items.length);
+  function grownSummary() {
+    const m = 'city', blocks = grownBlocks(), members = blocks.flatMap(h => districtMembers(m, h)), keep = members.filter(customized);
+    const own = blocks.reduce((n, h) => n + listOf(m).filter(b => !b.did && b.x >= h.x && b.x < h.x + h.w && b.y >= h.y && b.y < h.y + h.h).length, 0);
+    return { blocks: blocks.length, members: members.length, keep, up: keep.filter(b => L(b) > 1).length, deco: keep.filter(b => b.room && b.room.items && b.room.items.length).length,
+      pigs: keep.reduce((n, b) => n + workersAt(b).length, 0), own, roads: ((G.gen && G.gen.roads) || []).length };
+  }
+  function clearGrownCity() {
+    const m = 'city', gen = G.gen || { roads: [], xw: [] }, keptRects = [];
+    for (const h of grownBlocks()) {
+      const mem = districtMembers(m, h), keep = mem.filter(customized);
+      for (const b of mem) { if (keep.includes(b)) { delete b.did; continue; } for (const q of workersAt(b)) { q.job = null; q.working = false; } G.city.splice(G.city.indexOf(b), 1); if (selBld === b) selBld = null; }
+      if (keep.length) keptRects.push(h); else liftStreets(m, h); // blocks with kept buildings keep their sidewalks
+      G.hoods[m] = G.hoods[m].filter(q => q !== h); crowds.delete(h.id); walkCache.delete(h.id);
+    }
+    // streets next to a kept block stay, so its buildings still have a road out front
+    const near = k => { const [x, y] = k.split(',').map(Number); return keptRects.some(r => x >= r.x - 1 && x <= r.x + r.w && y >= r.y - 1 && y <= r.y + r.h); };
+    const goneR = new Set(gen.roads.filter(k => !near(k))), goneX = new Set(gen.xw.filter(k => !near(k)));
+    for (const k of goneR) roadSets[m].delete(k); for (const k of goneX) xwSets[m].delete(k);
+    G.roads[m] = G.roads[m].filter(k => !goneR.has(k)); G.xwalks[m] = G.xwalks[m].filter(k => !goneX.has(k));
+    G.gen = { roads: gen.roads.filter(k => !goneR.has(k)), xw: gen.xw.filter(k => !goneX.has(k)) };
+    markGround(); hoodSig = ''; zoneT = 0; walkCache.clear(); save();
   }
   // ---------- district preview (placing, or moving one in builder mode) ----------
   function drawDistrictPlan(c, m, L, ox, oy, chk, label) {
@@ -6356,34 +6705,50 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   const traffic = new Map();
   const TLOOKS = [{ k: 'car', c: '#e0483f' }, { k: 'car', c: '#5aa9e0' }, { k: 'car', c: '#fbf6ee' }, { k: 'taxi', c: '#f7c948' }, { k: 'car', c: '#a98bd9' }, { k: 'van', c: '#8fd3c4' }, { k: 'bus', c: '#ff9a4d' }, { k: 'car', c: '#f4a3b8' }, { k: 'taxi', c: '#f7c948' }, { k: 'car', c: '#2b3552' }];
   const TLEN = { car: .34, taxi: .34, van: .4, bus: .66 }, LANE = .2;
+  // Cars use the whole road network of the map you're looking at: they appear on a straight bit of road, drive on,
+  // pick a way at each crossroads (mostly straight on), stop at red lights and behind other cars, and leave at a
+  // dead end or after a while. Turns only go into real roads (two tiles deep), never into the other lane of a
+  // wide road. Cars are just for show and never saved.
+  const roadCache = { home: { v: -1, list: [] }, city: { v: -1, list: [] } };
+  function roadTiles(m) {
+    const rc = roadCache[m]; if (rc.v === roadVer) return rc.list;
+    const seen = new Set(), list = [], add = (x, y) => { const k = x + ',' + y; if (!seen.has(k) && isRoad(m, x, y)) { seen.add(k); list.push([x, y]); } };
+    for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) add(x, y);
+    for (const k of roadSets[m]) { const [x, y] = k.split(',').map(Number); add(x, y); }
+    rc.v = roadVer; rc.list = list; return list;
+  }
+  const DIRS4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
   function trafficTick(dt) {
     if (view !== 'home' && view !== 'city') return;
-    const m = view, hr = hourNow(), we = isWeekend(), night = hr < 6 || hr >= 22.5;
-    for (const h of hoodsOf(m)) {
-      const conns = (h.conns || []).filter(q => q.kind === 'road'); if (!conns.length) continue;
-      let list = traffic.get(h.id); if (!list) traffic.set(h.id, list = []);
-      const want = Math.round(conns.length * (night ? .4 : 1.2 + busyness('finance', hr, we) * .8));
-      if (list.length < want && Math.random() < dt * .8) {
-        const q = pick(conns), dx = -q.dx, dy = -q.dy, cx = (q.x + .5 - dx * .45) * T, cy = (q.y + .5 - dy * .45) * T, look = pick(TLOOKS);
-        if (!list.some(o => o.dx === dx && o.dy === dy && Math.hypot(o.cx - cx, o.cy - cy) < T * 1.1)) list.push({ cx, cy, dx, dy, look, sp: 0, max: (look.k === 'bus' ? 26 : 36) + Math.random() * 8, al: 0, hid: h.id });
+    const m = view, hr = hourNow(), we = isWeekend(), night = hr < 6 || hr >= 22.5, tiles = roadTiles(m);
+    let list = traffic.get(m); if (!list) traffic.set(m, list = []);
+    const want = Math.min(40, Math.round(tiles.length / 9 * (night ? .25 : .55 + busyness('downtown', hr, we) * .45)));
+    if (list.length < want && tiles.length && Math.random() < dt * 2.5) {
+      const [x, y] = pick(tiles), ew = isRoad(m, x - 1, y) && isRoad(m, x + 1, y), ns = isRoad(m, x, y - 1) && isRoad(m, x, y + 1);
+      if ((ew || ns) && !(ew && ns) && !xwSets[m].has(x + ',' + y)) {
+        const sgn = Math.random() < .5 ? 1 : -1, dx = ew ? sgn : 0, dy = ew ? 0 : sgn, cx = (x + .5) * T, cy = (y + .5) * T, look = pick(TLOOKS);
+        if (!list.some(o => Math.hypot(o.cx - cx, o.cy - cy) < T * 1.2)) list.push({ cx, cy, dx, dy, look, sp: 0, max: (look.k === 'bus' ? 26 : 34) + Math.random() * 8, al: 0, tile: x + ',' + y, life: 30 + Math.random() * 40 });
       }
-      for (let i = list.length - 1; i >= 0; i--) {
-        const car = list[i], len = TLEN[car.look.k] * T, ax = car.dx ? 'x' : 'y';
-        car.al = car.gone ? car.al - dt * 2 : Math.min(1, car.al + dt * 2.5); if (car.gone && car.al <= 0) { list.splice(i, 1); continue; }
-        // what's ahead: a red light at the next crossing, or another car in the lane
-        let stop = false;
-        const fx = car.cx + car.dx * (len / 2 + 3), fy = car.cy + car.dy * (len / 2 + 3), tx = Math.floor(fx / T), ty = Math.floor(fy / T), hx = Math.floor(car.cx / T), hy = Math.floor(car.cy / T);
-        const enteringXw = xwSets[m].has(tx + ',' + ty) && !(tx === hx && ty === hy) && !xwSets[m].has(hx + ',' + hy) && !isCrossroads(m, hx, hy);
-        if (enteringXw && crossingAxis(m, tx, ty)) { const s = sigState(ax); if (s === 'r' || (s === 'y' && car.sp < 20)) stop = true; }
-        for (const o of list) if (o !== car && o.dx === car.dx && o.dy === car.dy) { const ahead = (o.cx - car.cx) * car.dx + (o.cy - car.cy) * car.dy, side = Math.abs((o.cx - car.cx) * car.dy - (o.cy - car.cy) * car.dx); if (side < 6 && ahead > 0 && ahead < (len + TLEN[o.look.k] * T) / 2 + 8) stop = true; }
-        car.sp = stop ? Math.max(0, car.sp - 90 * dt) : Math.min(car.max, car.sp + 30 * dt);
-        car.cx += car.dx * car.sp * dt; car.cy += car.dy * car.sp * dt;
-        const nx = Math.floor(car.cx / T), ny = Math.floor(car.cy / T);
-        const inside = nx >= h.x && ny >= h.y && nx < h.x + h.w && ny < h.y + h.h;
-        if (inside && isRoad(m, nx, ny)) car.in = true;
-        if (!car.gone && car.in && (!isRoad(m, nx, ny) || !inside)) car.gone = true; // drove off the end of the district's streets
-        if (!car.gone && !car.in && car.al >= 1) car.gone = true;
+    }
+    for (let i = list.length - 1; i >= 0; i--) {
+      const car = list[i], len = TLEN[car.look.k] * T, ax = car.dx ? 'x' : 'y';
+      car.al = car.gone ? car.al - dt * 2 : Math.min(1, car.al + dt * 2.5); if (car.gone && car.al <= 0) { list.splice(i, 1); continue; }
+      let stop = false;
+      const fx = car.cx + car.dx * (len / 2 + 3), fy = car.cy + car.dy * (len / 2 + 3), tx = Math.floor(fx / T), ty = Math.floor(fy / T), hx = Math.floor(car.cx / T), hy = Math.floor(car.cy / T);
+      const enteringXw = xwSets[m].has(tx + ',' + ty) && !(tx === hx && ty === hy) && !xwSets[m].has(hx + ',' + hy) && !isCrossroads(m, hx, hy);
+      if (enteringXw && crossingAxis(m, tx, ty)) { const st = sigState(ax); if (st === 'r' || (st === 'y' && car.sp < 20)) stop = true; }
+      if (!car.gone) for (const o of list) if (o !== car && !o.gone && o.dx === car.dx && o.dy === car.dy) { const ahead = (o.cx - car.cx) * car.dx + (o.cy - car.cy) * car.dy, side = Math.abs((o.cx - car.cx) * car.dy - (o.cy - car.cy) * car.dx); if (side < 6 && ahead > 0 && ahead < (len + TLEN[o.look.k] * T) / 2 + 8) stop = true; }
+      car.sp = stop ? Math.max(0, car.sp - 90 * dt) : Math.min(car.max, car.sp + 30 * dt);
+      const step = car.sp * dt, k = hx + ',' + hy, ccx = (hx + .5) * T, ccy = (hy + .5) * T;
+      // reaching the middle of a new tile: choose where to go next
+      if (k !== car.tile && (car.cx - ccx) * car.dx + (car.cy - ccy) * car.dy >= 0) {
+        car.tile = k; car.life--;
+        const opts = DIRS4.filter(([dx, dy]) => !(dx === -car.dx && dy === -car.dy) && isRoad(m, hx + dx, hy + dy) && (dx === car.dx && dy === car.dy || isRoad(m, hx + 2 * dx, hy + 2 * dy)));
+        if (!opts.length || car.life <= 0 || !isRoad(m, hx, hy)) car.gone = true;
+        else { const straight = opts.find(([dx, dy]) => dx === car.dx && dy === car.dy), nd = straight && (Math.random() < .7 || opts.length === 1) ? straight : pick(opts);
+          if (nd[0] !== car.dx || nd[1] !== car.dy) { car.cx = ccx; car.cy = ccy; car.dx = nd[0]; car.dy = nd[1]; } }
       }
+      car.cx += car.dx * step; car.cy += car.dy * step;
     }
   }
   // the car's world position: its lane is to the right of the road's centre line
@@ -6455,6 +6820,22 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   function syncDetailBtn() { const on = G.autoDetail !== false; $('detailBtn').textContent = on ? '✨ Auto-details: on' : '✨ Auto-details: off'; $('detailBtn').setAttribute('aria-pressed', on ? 'true' : 'false'); }
   $('detailBtn').addEventListener('click', () => { G.autoDetail = G.autoDetail === false; syncDetailBtn(); sfx('tap'); save(); toast(G.autoDetail ? '✨ Auto-details on: new shops, offices and homes come with a few matching props (you pay for each one).' : '✨ Auto-details off: buildings go down on their own.'); });
   syncDetailBtn();
+  function syncGrowBtn() { const g = grownBlocks().length > 0; $('growBtn').textContent = g ? '🧹 Clear grown city' : '🏙️ Grow city'; $('growBtn').title = g ? 'Remove the generated blocks and streets (buildings you made your own stay)' : 'Fill the empty land of Job City with streets and city blocks (local build)'; }
+  $('growBtn').addEventListener('click', async () => {
+    if (grownBlocks().length) {
+      const S = grownSummary(), gone = S.members - S.keep.length;
+      const kept = [S.up && `${S.up} upgraded`, S.deco && `${S.deco} decorated inside`, S.pigs && `${S.pigs} pig job${S.pigs > 1 ? 's' : ''}`].filter(Boolean).join(', ');
+      const msg = `Clear the grown city? ${S.blocks} generated blocks go away: ${gone} buildings, their sidewalks and the generated streets.`
+        + (S.keep.length ? ` You've made ${S.keep.length} of its buildings your own (${kept}). Those STAY as normal buildings, with their sidewalks and the streets beside them.` : '')
+        + (S.own ? ` ${S.own} thing${S.own > 1 ? 's' : ''} you built inside the blocks also stay.` : '') + ' Everything else you built is not touched.';
+      if (!(await askYes(msg, S.keep.length ? 'Clear the rest' : 'Clear it'))) return;
+      clearGrownCity(); syncGrowBtn(); toast(S.keep.length ? `🧹 Grown city cleared. Kept ${S.keep.length} buildings you'd made your own.` : '🧹 The grown city was cleared.'); sfx('tap'); return;
+    }
+    if (!(await askYes('Grow a whole city on the empty land of Job City? Streets, sidewalks and city blocks fill every free spot. Nothing you built is touched, and the same button clears it again. (A copy of your town is kept first.)', 'Grow it'))) return;
+    try { localStorage.setItem('pigcity-backup-before-city', JSON.stringify(G)); } catch (e) {}
+    const r = growCity(); syncGrowBtn(); sfx('goal'); celebrate();
+    toast(`🏙️ The city grew: ${r.blocks} blocks, ${r.buildings} buildings and ${r.roads} street tiles. Try 🚶 street view!`);
+  });
   function drawBoat(c, x, y, dir, car, skin) {
     const t = G.time || 0, bob = Math.sin(t * 3 + x * .05) * 1.2;
     c.save(); c.translate(x, y + bob); c.scale(dir, 1); c.lineJoin = 'round';
@@ -7551,7 +7932,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     if (dGhost) for (const g of dGhost) items.push({ d: g.x + g.y + sz(g.type) - .005, f: () => { c.globalAlpha = .62; drawSprite(c, g, iso(g.x * T, g.y * T)); c.globalAlpha = 1; } });
     if (!builder) for (const h of hoodsOf(view)) { const list = crowds.get(h.id); if (list) for (const a of list) if (onS(a.x, a.y)) items.push({ d: dw(a.x, a.y), f: () => drawWalker(c, a) }); }
     if (!builder && (view === 'home' || view === 'city')) for (const a of visitors[view]) if (onS(a.x, a.y)) items.push({ d: dw(a.x, a.y), f: () => drawWalker(c, a) });
-    if (!builder) for (const h of hoodsOf(view)) { const tl = traffic.get(h.id); if (tl) for (const car of tl) { const p = carPos(car); if (onS(p.x, p.y)) items.push({ d: dw(p.x, p.y), f: () => drawTCar(c, car) }); } }
+    if (!builder && (view === 'home' || view === 'city')) for (const car of traffic.get(view) || []) { const p = carPos(car); if (onS(p.x, p.y)) items.push({ d: dw(p.x, p.y), f: () => drawTCar(c, car) }); }
     if (view === 'home' || view === 'city') for (const sg of signalsOf(view)) for (const [ox, oy, ax] of SIG_POLES) { const wx = (sg.x + ox) * T, wy = (sg.y + oy) * T; if (onS(wx, wy)) items.push({ d: dw(wx, wy), f: () => drawSignal(c, wx, wy, ax) }); }
     if (!builder) for (const p of G.pigs) {
       if (p.trip && pigMap(p) === view) { const tr = p.trip, P = iso(tr.x, tr.y), u = tr.x / T, far = view === 'home' ? u - (COLS + GPAD + 2) : -(GPAD + 2) - u, al = Math.max(0, Math.min(1, 1 - far / 4)); if (al > 0) items.push({ d: dw(tr.x, tr.y), f: () => { c.globalAlpha = al; if (isWater(view, Math.floor(tr.x / T), Math.floor(tr.y / T))) drawBoat(c, P.x, P.y, tr.dir, p.car, p.skin); else drawCar(c, P.x, P.y, tr.dir, p.car, p.skin, true, tr.spin); c.globalAlpha = 1; } }); }
@@ -7563,6 +7944,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
       for (const rb of roombas) items.push({ d: dw(rb.x, rb.y), f: () => drawRoomba(c, rb) });
     }
     if (!builder) for (const p of G.pigs) if (p.state !== 'admitted' && !p.trip && pigMap(p) === view && onS(p.x, p.y)) items.push({ d: dw(p.x, p.y), f: () => drawPigAt(c, p) });
+    if (street && view === street.m) items.push({ d: dw(street.x, street.y) + .001, f: () => drawStreetPig(c) });
     items.sort((a, b) => a.d - b.d).forEach(i => i.f());
     if (selBld && bl().includes(selBld)) footprint(c, selBld.x, selBld.y, sz(selBld.type), null, '#e9b93b', true);
     // night lights (in world space so they follow the camera)
@@ -7583,7 +7965,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
         else if (b.type === 'ticker' || b.type === 'busstop' || b.type === 'coffeecart') glow(cx, cy - 24, 34, .45 * dk, b.type === 'ticker' ? '255,214,110' : '255,236,190');
         else if (!DECOR[b.type] && !['hay', 'garden', 'park', 'roomba'].includes(b.type)) glow(cx, cy - htOf(b) * .45, 26 + n * 26, .32 * dk);
       }
-      for (const h of hoodsOf(view)) { const tl = traffic.get(h.id); if (tl) for (const car of tl) { const p = carPos(car), P = iso(p.x + car.dx * 12, p.y + car.dy * 12); glow(P.x, P.y - 3, 16, .5 * dk * car.al, '255,240,170'); } }
+      for (const car of traffic.get(view) || []) { const p = carPos(car), P = iso(p.x + car.dx * 12, p.y + car.dy * 12); glow(P.x, P.y - 3, 16, .5 * dk * car.al, '255,240,170'); }
       for (const sg of signalsOf(view)) for (const [ox, oy, ax] of SIG_POLES) { const P = iso((sg.x + ox) * T, (sg.y + oy) * T), st = sigState(ax); glow(P.x, P.y - 28, 9, .7 * dk, st === 'g' ? '95,211,138' : st === 'y' ? '255,201,74' : '255,90,79'); }
       if (view === 'home') for (const f of fireflies) { const P = iso(f.x, f.y); glow(P.x, P.y - 10, 7, (.5 + .5 * Math.sin(f.p * 4)) * .8 * dk, '230,255,140'); }
       c.restore();
@@ -7623,7 +8005,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     const dt = Math.min(.1, (t - last) / 1000 || 0); last = t;
     if (!paused) for (let i = 0; i < G.speed; i++) tick(dt);
     // a drawing error must never stop the simulation or autosave: log it (once a second at most) and keep going
-    panKeys(dt); try { draw(); } catch (e) { try { if (ctx.reset) ctx.reset(); } catch (e2) {} if (t - drawErrT > 1000) { drawErrT = t; console.error('Pig City: draw failed', e); } } sweepSprites(dt);
+    panKeys(dt); streetTick(dt); try { draw(); } catch (e) { try { if (ctx.reset) ctx.reset(); } catch (e2) {} if (t - drawErrT > 1000) { drawErrT = t; console.error('Pig City: draw failed', e); } } sweepSprites(dt);
     uiT -= dt; if (uiT <= 0) { uiT = .25; hudRes(); hudList(); renderPig(); syncTools(); hudGoals(); renderBld(); renderStocks(); renderBanner(); renderDash(); renderHoods(); renderIsleTabs(); renderParkPanel(); }
     saveT -= dt; if (saveT <= 0) { saveT = 5; save(); }
     requestAnimationFrame(loop);
