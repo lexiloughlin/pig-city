@@ -15,6 +15,8 @@
   try { link = JSON.parse(localStorage.getItem(LINK_KEY) || 'null'); } catch (e) {}
   const setLink = l => { link = l; try { if (l) localStorage.setItem(LINK_KEY, JSON.stringify(l)); else localStorage.removeItem(LINK_KEY); } catch (e) {} };
   const linked = () => user && link && link.user === user.id;
+  // a town saved by a newer Pig City is open read-only: never upload it from here (older games lack these hooks)
+  const locked = () => !!(T.readOnly && T.readOnly());
 
   function ago(t) {
     const s = (Date.now() - new Date(t).getTime()) / 1000;
@@ -68,6 +70,7 @@
     } catch (e) { fail(e); }
   }
   async function create() {
+    if (locked()) return;
     const text = T.text(), s = T.summary();
     const { data, error } = await sb.from('towns').insert({ player_id: user.id, name: s.name, state: JSON.parse(text), pig_count: s.pigs, building_count: s.buildings, coins: s.coins, device: 'web' }).select('id, version').single();
     if (error) {
@@ -82,6 +85,7 @@
     const { data, error } = await sb.from('towns').select('state, version').eq('id', id).single();
     if (error) throw error;
     if (!T.valid(data.state)) return T.tellBox("That cloud town couldn't be loaded.");
+    if (T.tooNew && T.tooNew(data.state)) return T.tellBox('That cloud town was saved by a newer version of Pig City. Update the game to play it. The town on this device was not changed.');
     try { localStorage.setItem('pigcity-before-cloud', T.text()); } catch (e) {} // this browser's old town, just in case
     leaving = true;
     setLink({ user: user.id, town: id, version: data.version });
@@ -102,7 +106,7 @@
     await push(true);
   }
   async function push(force) {
-    if (!linked() || busy || leaving) return;
+    if (!linked() || busy || leaving || locked()) return;
     const text = T.text();
     if (text === lastSent && !force) return;
     const s = T.summary();
