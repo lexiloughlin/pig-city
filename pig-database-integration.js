@@ -398,49 +398,6 @@ async function buildDashboard() {
   const summary = await getPigsSummary(gameId);
   const topEarners = await getTopPigEarners(gameId, 5);
   
-// ==================== SYNC EXISTING PIGS ====================
-
-/**
- * Sync all existing pigs from game to database (one-time bulk import)
- * Call this after loading a saved game to populate database with existing pigs
- */
-async function syncAllExistingPigs(gameId, playerId, allPigs) {
-  if (!pigDB || !allPigs || allPigs.length === 0) return;
-  
-  try {
-    console.log(`📊 Syncing ${allPigs.length} existing pigs to database...`);
-    let synced = 0;
-    
-    for (const pig of allPigs) {
-      try {
-        await pigDB.addPig({
-          pig_id: pig.id,
-          player_id: playerId,
-          game_id: gameId || 'main',
-          name: pig.name,
-          breed: pig.breed || 'standard',
-          birth_date: pig.birth_date || new Date().toISOString(),
-          age: Math.floor(pig.age || 0),
-          health: Math.floor(pig.health || 100),
-          joy: Math.floor(pig.joy || 50),
-          total_coins_earned: Math.floor(pig.totalCoins || pig.coins || 0),
-          special_trait: pig.trait || null
-        });
-        synced++;
-      } catch (err) {
-        // Skip if pig already exists
-        if (!err.message.includes('unique constraint')) {
-          console.warn(`⚠️ Failed to sync pig ${pig.name}:`, err.message);
-        }
-      }
-    }
-    
-    console.log(`✅ Synced ${synced} pigs to database!`);
-    return synced;
-  } catch (err) {
-    console.error('❌ Failed to sync existing pigs:', err);
-  }
-}
   // Display summary and leaderboard
   console.table(summary);
   console.table(topEarners);
@@ -448,27 +405,38 @@ async function syncAllExistingPigs(gameId, playerId, allPigs) {
 
 */
 
-// ==================== MAKE FUNCTIONS AVAILABLE GLOBALLY ====================
+// ==================== SYNC EXISTING PIGS ====================
 
-window.pigDatabaseIntegration = {
-  init: initPigDatabase,
-  onPigCreated,
-  onShiftCompleted,
-  onCareActivity,
-  createDailySnapshots,
-  onMarriage,
-  onOffspringBorn,
-  onPigHired,
-  onHealthChanged,
-  getPigsSummary,
-  getTopPigEarners,
-  getWorkplacePerformance,
-  getPigHappinessChart,
-  getPigEarningsChart,
-  exportGamePigData,
-  getDatabaseStatus,
-  syncGameStateWithDatabase
-};
+/**
+ * Sync all existing pigs from game to database (one-time bulk import).
+ * gameId must be the UUID of a player_games row and playerId the signed-in player's id:
+ * the pigs table rejects anything else. allPigs is the game's G.pigs array.
+ */
+async function syncAllExistingPigs(gameId, playerId, allPigs) {
+  if (!pigDB) { console.warn('Pig database not initialized: call pigDatabaseIntegration.init(supabaseClient) first'); return 0; }
+  if (!gameId || !playerId || !allPigs || allPigs.length === 0) { console.warn('syncAllExistingPigs needs a game id, a player id and a list of pigs'); return 0; }
+
+  console.log(`📊 Syncing ${allPigs.length} existing pigs to database...`);
+  let synced = 0;
+  for (const pig of allPigs) {
+    try {
+      await pigDB.addPig(gameId, playerId, {
+        name: pig.name,
+        age: Math.floor(pig.age || 0),
+        skin: pig.skin == null ? null : (typeof pig.skin === 'string' ? pig.skin : JSON.stringify(pig.skin)),
+        personality: pig.trait ? { trait: pig.trait } : null,
+        favoriteSnack: pig.fav == null ? null : String(pig.fav)
+      });
+      synced++;
+    } catch (err) {
+      const msg = (err && err.message) || String(err);
+      // a pig with this name is already in the table: skip it
+      if (!/unique|duplicate/i.test(msg)) console.warn(`⚠️ Failed to sync pig ${pig.name}:`, msg);
+    }
+  }
+  console.log(`✅ Synced ${synced} pigs to database!`);
+  return synced;
+}
 
 // ==================== MAKE FUNCTIONS AVAILABLE GLOBALLY ====================
 

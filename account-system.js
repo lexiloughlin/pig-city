@@ -49,26 +49,15 @@ const AccountSystem = {
         if (this.user) {
           console.log('[Account] Restored user session:', this.user.email);
           this.render();
-    // Initialize Pig Database
-    if (window.pigDatabaseIntegration) {
-      window.pigDatabaseIntegration.init(this.createSupabaseClient());
-      console.log('✅ Pig Database initialized');
-      
-      // Sync existing pigs on first load
-      if (typeof G !== 'undefined' && G.pigs && G.pigs.length > 0) {
-        setTimeout(() => {
-          window.pigDatabaseIntegration.syncAllExistingPigs(
-            G.gameId || 'main',
-            this.user?.id,
-            G.pigs
-          ).then(count => {
-            if (count) console.log(`📊 Synced ${count} existing pigs to database`);
-          });
-        }, 1000);
+        }
       }
+    } catch (e) {
+      console.error('[Account] Failed to restore session:', e);
     }
+
     // Check for OAuth redirect
     this.checkOAuthRedirect();
+  },
 
   // Desktop-only initialization (no cloud sync)
   initLocalOnly() {
