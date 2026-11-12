@@ -2869,7 +2869,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     $('stage').hidden = !map; $('buildPanel').hidden = !map; $('dash').hidden = v !== 'dash'; $('pcse').hidden = v !== 'pcse';
     $('buildTitle').textContent = v === 'park' ? `Build ${PARK_NAME} 🎢` : v === 'city' ? 'Build downtown 🏙️' : v === 'inside' ? `Decorate ${insideName(insideB)} ${isWork(insideB) ? '🪴' : '🛋️'}` : 'Build';
     drawTabs(); drawTools(); renderBld(); renderCozy();
-    $('buildBar').hidden = !(v === 'home' || v === 'city'); $('growBtn').hidden = v !== 'city'; syncGrowBtn();
+    $('buildBar').hidden = !(v === 'home' || v === 'city'); $('growBtn').hidden = !(v === 'city' || v === 'home'); syncGrowBtn();
     $('zoombar').hidden = false; roomLabels(); $('zWalls').hidden = !isHouse(); $('zStreet').hidden = v !== 'home' && v !== 'city'; $('zMap').hidden = v === 'inside' || v === 'park'; hoodSig = ''; parkPanelSig = ''; pSel = null; renderParkPanel();
     if (map) { resize(); if ((v === 'home' || v === 'city' || v === 'park') && !cams[v].init) { camHome(v); cams[v].init = true; } if (isHouse()) houseCamHome(); }
     if (v === 'park' && !G.parkSeen) { G.parkSeen = true; ensurePark(); setTimeout(() => toast(`🎢 Welcome to ${PARK_NAME}! Build rides next to the paths, hire Ride Operators, and set your ticket price. Tourists start coming once you have rides.`), 200); }
@@ -6380,10 +6380,23 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     homes: { name: 'Garden Row', ic: '🏡', zone: 'res', kind: 'cozy', crowd: 4 },
     waterfront: { name: 'Waterfront Walk', ic: '🌊', zone: 'park', kind: 'cozy', crowd: 4 },
     park: { name: 'Pocket Park', ic: '🌳', zone: 'park', kind: 'cozy', crowd: 5, park: true,
-      props: ['blossom', 'citytree', 'flowers', 'hedge', 'planter'] }
+      props: ['blossom', 'citytree', 'flowers', 'hedge', 'planter'] },
+    // Home Town recipes (map: 'home'): the same fully built-up blocks, made of Home Town's own pieces. Cottages with
+    // yards, a Main Street of little shops, hay meadows and village greens, with cherry trees and lanterns where
+    // Job City has street trees and lamps. homePlan() says which block gets which recipe.
+    cottages: { map: 'home', name: 'Cottage Lane', ic: '🏡', zone: 'res', kind: 'cozy', crowd: 4,
+      yard: ['garden', 'flowers', 'tree', 'hedge', 'flowers', 'bench'], props: ['hedge', 'mailbox', 'tree', 'flowers', 'lantern', 'blossom'] },
+    mainstreet: { map: 'home', name: 'Main Street', ic: '☕', zone: 'com', kind: 'cozy', crowd: 6,
+      corner2: [], front: ['cafe', 'salon', 'toys', 'cafe'], back2: [], back: ['garden', 'tree', 'flowers', 'hedge', 'water'],
+      props: ['table', 'planter', 'lantern', 'bench', 'blossom', 'mailbox', 'bikerack', 'busstop'] },
+    meadow: { map: 'home', name: 'Hay Meadow', ic: '🌾', zone: 'farm', kind: 'cozy', crowd: 3, props: ['hedge', 'flowers', 'tree'] },
+    green: { map: 'home', name: 'Village Green', ic: '🌸', zone: 'park', kind: 'cozy', crowd: 5, park: true, centre: 'pond',
+      props: ['tree', 'flowers', 'hedge', 'lantern', 'blossom', 'flowers'] }
   };
+  // Cottages are real homes (4 pigs each), so the Home Town generator builds a limited number of them.
+  const HOME_COTTAGE_MAX = 18; let homeCottages = 0;
   for (const [k, K] of Object.entries(BLOCK_KINDS)) // register each recipe as a (tool-less) preset, so crowds know their schedule
-    DISTRICTS['gen_' + k] = { name: K.name, ic: K.ic, map: 'city', zone: K.zone, kind: K.kind, crowd: K.crowd, w: 0, h: 0, roads: [], paths: [], xwalks: [], items: [], spots: [], conns: [], inspo: 'the city generator', blurb: 'a grown city block', generated: true };
+    DISTRICTS['gen_' + k] = { name: K.name, ic: K.ic, map: K.map || 'city', zone: K.zone, kind: K.kind, crowd: K.crowd, w: 0, h: 0, roads: [], paths: [], xwalks: [], items: [], spots: [], conns: [], inspo: K.map === 'home' ? 'the town generator' : 'the city generator', blurb: K.map === 'home' ? 'a grown town block' : 'a grown city block', generated: true };
   // Irregular streets frame narrow home rows, wide shopping blocks and the south shore.
   const WATERFRONT_Y = ROWS - 3;
   const CITY_LANDMARKS = ['bronsonbank', 'wheekcoffee', 'misomarket', 'tokiramen', 'mochibakery'];
@@ -6403,28 +6416,48 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     }
     return { vx, hy, blocks };
   }
+  // Home Town's plan: quiet 1-wide lanes around the built-in main road. Main Street and the greens sit beside the
+  // main road, cottage lanes fill in around them and the hay meadows are out at the edges.
+  function homePlan() {
+    const vx = [7, 15, 23, 31], hy = [5, 19, 25];
+    const cuts = (lines, lo, hi) => { const ws = [...lines].sort((a, b) => a - b), out = []; let s0 = lo; for (const w of ws) { if (w > s0) out.push([s0, w - 1]); s0 = w + 1; } if (s0 <= hi) out.push([s0, hi]); return out; };
+    const cols = cuts(vx, 0, COLS - 1), rows = cuts(hy.concat(HOME_ROAD), 0, ROWS - 1), blocks = [];
+    const KINDS = [
+      ['meadow', 'cottages', 'cottages', 'cottages', 'meadow'],
+      ['cottages', 'cottages', 'mainstreet', 'green', 'cottages'],
+      ['cottages', 'green', 'mainstreet', 'mainstreet', 'cottages'],
+      ['cottages', 'meadow', 'cottages', 'green', 'cottages'],
+      ['green', 'cottages', 'meadow', 'cottages', 'green']];
+    rows.forEach(([y0, y1], ri) => cols.forEach(([x0, x1], ci) => blocks.push({ x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1, kind: (KINDS[ri] || KINDS[0])[ci] || 'cottages' })));
+    return { vx, hy, blocks };
+  }
+  // what the generator laid on each map, so it can be taken away again (Job City keeps its old save name, G.gen)
+  const genOf = m => m === 'city' ? (G.gen = G.gen || { roads: [], xw: [] }) : (G.genHome = G.genHome || { roads: [], xw: [] });
   function seeded(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
-  function growCity() {
-    const m = 'city', plan = cityPlan(), occ = occMap(m), gen = G.gen = G.gen || { roads: [], xw: [] };
+  function growCity(m = 'city') {
+    const city = m === 'city', plan = city ? cityPlan() : homePlan(), occ = occMap(m), gen = genOf(m), list = listOf(m);
     const free = (x, y) => isLand(m, x, y) && !occ.has(x + ',' + y) && !isPath(m, x, y) && !zoneAt(m, x, y);
     // 1. streets
     const laid = [];
     const lay = (x, y) => { const k = x + ',' + y; if (isRoad(m, x, y) || !free(x, y)) return; roadSets[m].add(k); G.roads[m].push(k); gen.roads.push(k); laid.push(k); };
-    for (const x of plan.vx) for (let y = 0; y < WATERFRONT_Y; y++) lay(x, y);
+    for (const x of plan.vx) for (let y = 0; y < (city ? WATERFRONT_Y : ROWS); y++) lay(x, y);
     for (const y of plan.hy) for (let x = 0; x < COLS; x++) lay(x, y);
     // 2. zebra crossings around every new crossroads of 1-wide streets (never beside the wide built-in roads)
-    const wide = (x, y) => (ROAD.includes(y) && x >= 0 && x < COLS) || (AVENUE.includes(x) && y >= 0 && y < ROWS);
+    const wide = (x, y) => city && ((ROAD.includes(y) && x >= 0 && x < COLS) || (AVENUE.includes(x) && y >= 0 && y < ROWS));
     for (const k of laid) { const [x, y] = k.split(',').map(Number);
       if (!((isRoad(m, x - 1, y) || isRoad(m, x + 1, y)) && (isRoad(m, x, y - 1) || isRoad(m, x, y + 1)))) continue;
       if (DIRS4.some(([dx, dy]) => wide(x + dx, y + dy))) continue;
       for (const [dx, dy] of DIRS4) { const kk = (x + dx) + ',' + (y + dy); if (isRoad(m, x + dx, y + dy) && !wide(x + dx, y + dy) && !xwSets[m].has(kk)) { xwSets[m].add(kk); G.xwalks[m].push(kk); gen.xw.push(kk); } } }
     // 3. blocks
-    let nb = 0; const before = G.city.length;
-    const landmarks = new Set(CITY_LANDMARKS.filter(type => !G.city.some(b => b.type === type)));
-    const blocks = plan.blocks.filter(bk => bk.kind === 'downtown').concat(plan.blocks.filter(bk => bk.kind !== 'downtown'));
+    let nb = 0; const before = list.length;
+    const landmarks = new Set(city ? CITY_LANDMARKS.filter(type => !G.city.some(b => b.type === type)) : []);
+    // downtown blocks go first in Job City (they get the landmarks); in Home Town the blocks by the main road go first (they get the cottages)
+    const blocks = city ? plan.blocks.filter(bk => bk.kind === 'downtown').concat(plan.blocks.filter(bk => bk.kind !== 'downtown'))
+      : plan.blocks.slice().sort((a, b) => Math.abs(a.y + a.h / 2 - HOME_ROAD) - Math.abs(b.y + b.h / 2 - HOME_ROAD));
+    homeCottages = HOME_COTTAGE_MAX;
     for (const bk of blocks) if (growBlock(m, bk, occ, landmarks)) nb++;
     const shore = ROWS - 1;
-    if (isPath(m, AVENUE[0] - 1, shore) && isPath(m, AVENUE[AVENUE.length - 1] + 1, shore)) {
+    if (city && isPath(m, AVENUE[0] - 1, shore) && isPath(m, AVENUE[AVENUE.length - 1] + 1, shore)) {
       for (const x of AVENUE) {
         const k = x + ',' + shore;
         if (xwSets[m].has(k)) continue;
@@ -6432,7 +6465,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
       }
     }
     markGround(); hoodSig = ''; zoneT = 0; dPrev = null; walkCache.clear(); save();
-    return { blocks: nb, buildings: G.city.length - before, roads: laid.length };
+    return { blocks: nb, buildings: list.length - before, roads: laid.length };
   }
   function growBlock(m, bk, occ, landmarks) {
     const K = BLOCK_KINDS[bk.kind], R = seeded(bk.x * 7919 + bk.y * 104729 + 17), pickR = a => a[Math.floor(R() * a.length)];
@@ -6463,12 +6496,31 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
             put((x - ix) % 4 === 3 ? 'blossom' : 'townhouse', x, y);
           } else if ((x + y) % 4 === 0) put(pickR(['hedge', 'flowers', 'citytree']), x, y);
         }
+      } else if (bk.kind === 'cottages') {
+        // up to two cottages on the south front (the side you see), each with a little yard beside it; veggie plots, flowers and cherry trees behind
+        const fy = iy + ih - 2; let homes = 0;
+        if (ih >= 2) for (let x = ix; x < ix + iw;) {
+          if (homes < 2 && homeCottages > 0 && put('hutch', x, fy)) { homes++; homeCottages--; x += 2; if (x < ix + iw) { put(pickR(K.props), x, fy + 1); put(pickR(['flowers', 'hedge']), x, fy); x++; } }
+          else { put(pickR(K.yard), x, fy + 1); x++; }
+        }
+        for (let y = iy; y < iy + ih; y++) for (let x = ix; x < ix + iw; x++) if (okTile(x, y)) {
+          if (y === iy) put((x - ix) % 3 === 1 ? 'tree' : (x - ix) % 3 === 2 ? 'garden' : 'hedge', x, y);
+          else if (y <= fy && (x + y) % 2 === 0) put(pickR(K.yard), x, y);
+        }
+      } else if (bk.kind === 'meadow') {
+        // tidy rows of hay with a veggie plot every few tiles, grass lanes between the rows and a water tower in the corner
+        put('water', ix, iy); put('tree', ix + iw - 1, iy);
+        for (let y = iy; y < iy + ih; y++) for (let x = ix; x < ix + iw; x++) if (okTile(x, y)) {
+          if ((y - iy) % 2 === 0) put((x - ix) % 4 === 3 ? 'garden' : 'hay', x, y);
+          else if ((x - ix) % 3 === 0) put(pickR(K.props), x, y);
+        }
       } else if (K.park) {
         const cx = ix + (iw >> 1), cy = iy + (ih >> 1);
-        if (iw >= 3 && ih >= 3) { put('fountain', cx, cy); for (const [dx, dy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) put('bench', cx + dx, cy + dy); }
+        if (iw >= 3 && ih >= 3) { put(K.centre || 'fountain', cx, cy); for (const [dx, dy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) put('bench', cx + dx, cy + dy); }
+        if (K.map === 'home') { put('park', cx + 2, cy + 1) || put('park', cx - 2, cy + 1); put('tunnel', cx - 2, cy - 1) || put('tunnel', cx + 2, cy - 1); } // a play park and a fleece tunnel on the green
         for (let y = iy; y < iy + ih; y++) for (let x = ix; x < ix + iw; x++) if (okTile(x, y) && x !== cx && y !== cy && (x === ix || y === iy || x === ix + iw - 1 || y === iy + ih - 1)) put(pickR(K.props), x, y); // paths run out from the fountain on its row and column
       } else if (iw < 2 || ih < 2) {
-        for (let y = iy; y < iy + ih; y++) for (let x = ix; x < ix + iw; x++) if ((x + y) % 2 === 0) put(pickR(['citytree', 'blossom', 'streetlamp', 'planter']), x, y);
+        for (let y = iy; y < iy + ih; y++) for (let x = ix; x < ix + iw; x++) if ((x + y) % 2 === 0) put(pickR(K.map === 'home' ? K.props : ['citytree', 'blossom', 'streetlamp', 'planter']), x, y);
       } else {
         const placeLandmark = type => {
           const n = sz(type);
@@ -6498,8 +6550,11 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     }
     layStreets(m, h, [], paths, [], [...taken]);
     for (const it of items) {
-      const b = { type: it.type, x: it.x, y: it.y, t: R() * 3, did: id, map: 'city' };
-      if (['office', 'market', 'salon', 'toys', 'cafe'].includes(b.type)) b.plain = true;
+      const b = { type: it.type, x: it.x, y: it.y, t: R() * 3, did: id };
+      if (m === 'city') b.map = 'city';
+      if (b.type === 'hutch') b.room = { wall: 0, floor: 0, items: [] };
+      if (b.type === 'parkedcar') b.v = Math.floor(R() * PARKED.length);
+      if (m === 'city' && ['office', 'market', 'salon', 'toys', 'cafe'].includes(b.type)) b.plain = true;
       if (b.plain || b.type === 'townhouse') b.v = (b.x + b.y * 3) % 4;
       if (b.type === 'finoffice') b.v = Math.floor(R() * FIRMS.length);
       listOf(m).push(b);
@@ -6511,7 +6566,8 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
       if (P && P.acts && front) h.spots.push({ k: P.acts[0], x: front[0], y: front[1] });
       if (it.type === 'bench') h.spots.push({ k: 'sit', x: it.x + .5, y: it.y + .55 });
       if (it.type === 'busstop') h.spots.push({ k: 'wait', x: it.x + .5, y: it.y + 1.1 });
-      if (it.type === 'fountain') h.spots.push({ k: 'photo', x: it.x + .5, y: it.y + 1.2 });
+      if (it.type === 'fountain' || it.type === 'pond') h.spots.push({ k: 'photo', x: it.x + .5, y: it.y + 1.2 });
+      if (it.type === 'park' || it.type === 'tunnel') h.spots.push({ k: 'play', x: it.x + .5, y: it.y + 1.05 });
       if (it.type === 'coffeecart' || it.type === 'table') h.spots.push({ k: 'coffee', x: it.x + .5, y: it.y + .9 });
     }
     for (const [x, y] of [[bk.x + .5, bk.y + bk.h - .5], [bk.x + bk.w - .5, bk.y + .5], [bk.x + bk.w - .5, bk.y + bk.h - .5]]) if (isPath(m, Math.floor(x), Math.floor(y))) h.spots.push({ k: 'stroll', x, y });
@@ -6523,19 +6579,30 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   // Anything the player made their own is protected: a generated building that was upgraded, decorated inside,
   // or has pigs working in it stays as a normal building, and so do the sidewalks of its block and the streets
   // next to it. Buildings the player placed themselves were never part of a block, so they always stay.
-  const grownBlocks = () => hoodsOf('city').filter(q => q.preset && DISTRICTS[q.preset] && DISTRICTS[q.preset].generated);
+  const grownBlocks = (m = 'city') => hoodsOf(m).filter(q => q.preset && DISTRICTS[q.preset] && DISTRICTS[q.preset].generated);
   const customized = b => L(b) > 1 || workersAt(b).length > 0 || !!b.house?.items?.some(it => !it.starter) || !!b.room?.items?.length;
-  function grownSummary() {
-    const m = 'city', blocks = grownBlocks(), members = blocks.flatMap(h => districtMembers(m, h)), keep = members.filter(customized);
+  // which generated buildings stay when the grown blocks are cleared: the ones the player made their own, and in
+  // Home Town as many generated cottages as it takes for every pig to keep a bed
+  function grownKeeper(m) {
+    const needed = new Set();
+    if (m === 'home') {
+      const spare = grownBlocks(m).flatMap(h => districtMembers(m, h)).filter(b => b.type === 'hutch' && !customized(b));
+      let cap = capacity() - spare.reduce((n, b) => n + CAP[L(b) - 1], 0);
+      for (const b of spare) { if (cap >= G.pigs.length) break; needed.add(b); cap += CAP[L(b) - 1]; }
+    }
+    return b => customized(b) || needed.has(b);
+  }
+  function grownSummary(m = 'city') {
+    const keeper = grownKeeper(m), blocks = grownBlocks(m), members = blocks.flatMap(h => districtMembers(m, h)), keep = members.filter(keeper);
     const own = blocks.reduce((n, h) => n + listOf(m).filter(b => !b.did && b.x >= h.x && b.x < h.x + h.w && b.y >= h.y && b.y < h.y + h.h).length, 0);
     return { blocks: blocks.length, members: members.length, keep, up: keep.filter(b => L(b) > 1).length, deco: keep.filter(b => b.room && b.room.items && b.room.items.length).length,
-      pigs: keep.reduce((n, b) => n + workersAt(b).length, 0), own, roads: ((G.gen && G.gen.roads) || []).length };
+      pigs: keep.reduce((n, b) => n + workersAt(b).length, 0), beds: keep.filter(b => b.type === 'hutch' && !customized(b)).length, own, roads: genOf(m).roads.length };
   }
-  function clearGrownCity() {
-    const m = 'city', gen = G.gen || { roads: [], xw: [] }, keptRects = [];
-    for (const h of grownBlocks()) {
-      const mem = districtMembers(m, h), keep = mem.filter(customized);
-      for (const b of mem) { if (keep.includes(b)) { delete b.did; continue; } for (const q of workersAt(b)) { q.job = null; q.working = false; } G.city.splice(G.city.indexOf(b), 1); if (selBld === b) selBld = null; }
+  function clearGrownCity(m = 'city') {
+    const gen = genOf(m), keptRects = [], list = listOf(m), keeper = grownKeeper(m);
+    for (const h of grownBlocks(m)) {
+      const mem = districtMembers(m, h), keep = mem.filter(keeper);
+      for (const b of mem) { if (keep.includes(b)) { delete b.did; continue; } for (const q of workersAt(b)) { q.job = null; q.working = false; } list.splice(list.indexOf(b), 1); if (selBld === b) selBld = null; }
       if (keep.length) keptRects.push(h); else liftStreets(m, h); // blocks with kept buildings keep their sidewalks
       G.hoods[m] = G.hoods[m].filter(q => q !== h); crowds.delete(h.id); walkCache.delete(h.id);
     }
@@ -6544,7 +6611,8 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     const goneR = new Set(gen.roads.filter(k => !near(k))), goneX = new Set(gen.xw.filter(k => !near(k)));
     for (const k of goneR) roadSets[m].delete(k); for (const k of goneX) xwSets[m].delete(k);
     G.roads[m] = G.roads[m].filter(k => !goneR.has(k)); G.xwalks[m] = G.xwalks[m].filter(k => !goneX.has(k));
-    G.gen = { roads: gen.roads.filter(k => !goneR.has(k)), xw: gen.xw.filter(k => !goneX.has(k)) };
+    const left = { roads: gen.roads.filter(k => !goneR.has(k)), xw: gen.xw.filter(k => !goneX.has(k)) };
+    if (m === 'city') G.gen = left; else G.genHome = left;
     markGround(); hoodSig = ''; zoneT = 0; walkCache.clear(); save();
   }
   // ---------- district preview (placing, or moving one in builder mode) ----------
@@ -6975,21 +7043,32 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   function syncDetailBtn() { const on = G.autoDetail !== false; $('detailBtn').textContent = on ? '✨ Auto-details: on' : '✨ Auto-details: off'; $('detailBtn').setAttribute('aria-pressed', on ? 'true' : 'false'); }
   $('detailBtn').addEventListener('click', () => { G.autoDetail = G.autoDetail === false; syncDetailBtn(); sfx('tap'); save(); toast(G.autoDetail ? '✨ Auto-details on: new shops, offices and homes come with a few matching props (you pay for each one).' : '✨ Auto-details off: buildings go down on their own.'); });
   syncDetailBtn();
-  function syncGrowBtn() { const g = grownBlocks().length > 0; $('growBtn').textContent = g ? '🧹 Clear grown city' : '🏙️ Grow city'; $('growBtn').title = g ? 'Remove the generated blocks and streets (buildings you made your own stay)' : 'Fill the empty land of Job City with streets and city blocks'; }
+  // one button for both maps: "Grow city" in Job City, "Grow town" in Home Town
+  const growMap = () => view === 'city' ? 'city' : 'home';
+  function syncGrowBtn() {
+    const m = growMap(), city = m === 'city', g = grownBlocks(m).length > 0;
+    $('growBtn').textContent = g ? (city ? '🧹 Clear grown city' : '🧹 Clear grown town') : city ? '🏙️ Grow city' : '🏡 Grow town';
+    $('growBtn').title = g ? 'Remove the generated blocks and streets (buildings you made your own stay)' : city ? 'Fill the empty land of Job City with streets and city blocks' : 'Fill the empty land of Home Town with lanes, cottages, a Main Street, hay meadows and village greens';
+  }
   $('growBtn').addEventListener('click', async () => {
-    if (grownBlocks().length) {
-      const S = grownSummary(), gone = S.members - S.keep.length;
-      const kept = [S.up && `${S.up} upgraded`, S.deco && `${S.deco} decorated inside`, S.pigs && `${S.pigs} pig job${S.pigs > 1 ? 's' : ''}`].filter(Boolean).join(', ');
-      const msg = `Clear the grown city? ${S.blocks} generated blocks go away: ${gone} buildings, their sidewalks and the generated streets.`
-        + (S.keep.length ? ` You've made ${S.keep.length} of its buildings your own (${kept}). Those STAY as normal buildings, with their sidewalks and the streets beside them.` : '')
+    const m = growMap(), city = m === 'city', place = city ? 'city' : 'town';
+    if (grownBlocks(m).length) {
+      const S = grownSummary(m), gone = S.members - S.keep.length;
+      const kept = [S.up && `${S.up} upgraded`, S.deco && `${S.deco} decorated inside`, S.pigs && `${S.pigs} pig job${S.pigs > 1 ? 's' : ''}`, S.beds && `${S.beds} cottage${S.beds > 1 ? 's' : ''} your pigs need to sleep in`].filter(Boolean).join(', ');
+      const msg = `Clear the grown ${place}? ${S.blocks} generated blocks go away: ${gone} buildings, their sidewalks and the generated streets.`
+        + (S.keep.length ? ` ${S.keep.length} of its buildings are yours now (${kept}). Those STAY as normal buildings, with their sidewalks and the streets beside them.` : '')
         + (S.own ? ` ${S.own} thing${S.own > 1 ? 's' : ''} you built inside the blocks also stay.` : '') + ' Everything else you built is not touched.';
       if (!(await askYes(msg, S.keep.length ? 'Clear the rest' : 'Clear it'))) return;
-      clearGrownCity(); syncGrowBtn(); toast(S.keep.length ? `🧹 Grown city cleared. Kept ${S.keep.length} buildings you'd made your own.` : '🧹 The grown city was cleared.'); sfx('tap'); return;
+      clearGrownCity(m); syncGrowBtn(); toast(S.keep.length ? `🧹 Grown ${place} cleared. Kept ${S.keep.length} buildings that are yours now.` : `🧹 The grown ${place} was cleared.`); sfx('tap'); return;
     }
-    if (!(await askYes('Grow a whole city on the empty land of Job City? Streets, sidewalks and city blocks fill every free spot. Nothing you built is touched, and the same button clears it again. (A copy of your town is kept first.)', 'Grow it'))) return;
-    try { localStorage.setItem('pigcity-backup-before-city', JSON.stringify(G)); } catch (e) {}
-    const r = growCity(); syncGrowBtn(); sfx('goal'); celebrate();
-    toast(`🏙️ The city grew: ${r.blocks} blocks, ${r.buildings} buildings and ${r.roads} street tiles. Try 🚶 street view!`);
+    const question = city ? 'Grow a whole city on the empty land of Job City? Streets, sidewalks and city blocks fill every free spot. Nothing you built is touched, and the same button clears it again. (A copy of your town is kept first.)'
+      : 'Grow a whole town on the empty land of Home Town? Lanes, brick sidewalks, cottages with yards, a Main Street, hay meadows and village greens fill every free spot. Nothing you built is touched, and the same button clears it again. (A copy of your town is kept first.)';
+    if (!(await askYes(question, 'Grow it'))) return;
+    try { localStorage.setItem(city ? 'pigcity-backup-before-city' : 'pigcity-backup-before-town', JSON.stringify(G)); } catch (e) {}
+    const r = growCity(m); syncGrowBtn();
+    if (!r.blocks) { toast(`There was no free land to grow on in ${city ? 'Job City' : 'Home Town'}. Blocks that are mostly built up, or inside a neighborhood you drew, are left alone.`); return; }
+    sfx('goal'); celebrate(); hudRes();
+    toast(city ? `🏙️ The city grew: ${r.blocks} blocks, ${r.buildings} buildings and ${r.roads} street tiles. Try 🚶 street view!` : `🏡 Home Town grew: ${r.blocks} blocks, ${r.buildings} buildings and ${r.roads} lane tiles. Try 🚶 street view!`);
   });
   function drawBoat(c, x, y, dir, car, skin) {
     const t = G.time || 0, bob = Math.sin(t * 3 + x * .05) * 1.2;

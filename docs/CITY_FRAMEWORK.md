@@ -36,6 +36,16 @@ shops: { name: 'Market Street', ic: '🛍️', zone: 'com', kind: 'downtown', cr
 
 The grid uses 1-wide streets every 7 tiles, lined up with Job City's built-in main road and avenue. Zebra crossings go around every new crossroads, and traffic signals appear on their own.
 
+### Home Town: "🏡 Grow town"
+
+The same button appears in Home Town as **🏡 Grow town** and works the same way, with Home Town's own pieces:
+
+- **Plan:** `homePlan()` lays 1-wide lanes around the built-in main road. Main Street and the village greens sit beside the main road, cottage lanes fill in around them, and hay meadows are at the edges.
+- **Recipes** (in `BLOCK_KINDS`, marked `map: 'home'`): `cottages`, `mainstreet`, `meadow` and `green`.
+- **Cottages are real homes** (4 pigs each), so the generator builds at most `HOME_COTTAGE_MAX` of them.
+- **Clearing** keeps buildings you made your own, plus as many generated cottages as your pigs need to sleep in.
+- What it laid is recorded in `G.genHome`, and the town is copied to `localStorage['pigcity-backup-before-town']` first.
+
 ## 2. Street view: 🚶 button or V
 
 - **Moving:** WASD or the arrow keys walk a guinea pig, in screen directions. Hold Shift to run. The camera drops to street level and follows.
@@ -70,7 +80,6 @@ Cars drive the whole road network of the map on screen. They turn at crossroads 
 ## Ideas this framework is ready for
 
 - **More recipes:** residential (castles with yards), a waterfront promenade, an industrial block.
-- **More plans:** a `homePlan()` for Home Town, using the same `growBlock()`.
 - **More interiors:** cozy layouts for the other workplaces and the remaining shops.
 - **Street view:** click-to-walk, sitting on benches, talking to citizens.
 - **Before any of this goes online:** new building types need the save version (`SAVE_SCHEMA`) raised.
