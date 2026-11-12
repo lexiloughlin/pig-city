@@ -7642,7 +7642,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   // ---------- traffic: little cars on district roads that stop for red lights and for each other (never saved) ----------
   const traffic = new Map();
   const TLOOKS = [{ k: 'car', c: '#e0483f' }, { k: 'car', c: '#5aa9e0' }, { k: 'car', c: '#fbf6ee' }, { k: 'taxi', c: '#f7c948' }, { k: 'car', c: '#a98bd9' }, { k: 'van', c: '#8fd3c4' }, { k: 'bus', c: '#ff9a4d' }, { k: 'car', c: '#f4a3b8' }, { k: 'taxi', c: '#f7c948' }, { k: 'car', c: '#2b3552' }];
-  const TLEN = { car: .34, taxi: .34, van: .4, bus: .66, police: .36, fire: .6 }, LANE = .2;
+  const TLEN = { car: .34, taxi: .34, van: .4, bus: .66, police: .46, fire: .76 }, LANE = .2;
   // Cars use the whole road network of the map you're looking at: they appear on a straight bit of road, drive on,
   // pick a way at each crossroads (mostly straight on), stop at red lights and behind other cars, and leave at a
   // dead end or after a while. Turns only go into real roads (two tiles deep), never into the other lane of a
@@ -7656,6 +7656,71 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     rc.v = roadVer; rc.list = list; return list;
   }
   const DIRS4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+  // ---------- emergency calls (never saved): now and then something happens at a building, and the staffed station's
+  // vehicle drives there with its lights going. The pig gets out, sorts it out, and the town pays a small reward. ----------
+  const calls = { home: [], city: [] }, callT = { police: 18, fire: 32 };
+  const CALLS = {
+    fire: [{ e: '🔥', s: 'Smoke at', r: 'put out the fire at', fire: true }, { e: '🍳', s: 'A burnt hay pie at', r: 'put out the kitchen fire at', fire: true }, { e: '🐱', s: 'A cat is stuck on the roof of', r: 'rescued the cat from the roof of' }],
+    police: [{ e: '🥕', s: 'A carrot thief at', r: 'chased off the carrot thief at' }, { e: '🐹', s: 'A lost piglet near', r: 'walked the lost piglet home from' }, { e: '📢', s: 'A noise complaint at', r: 'settled the noise complaint at' }, { e: '🛒', s: 'A runaway shopping cart at', r: 'caught the runaway cart at' }]
+  };
+  // shortest way along the roads from one tile to the road tile nearest a building
+  function callRoute(m, sx, sy, b) {
+    const n = sz(b.type), prev = new Map([[sx + ',' + sy, null]]), q = [[sx, sy]]; let best = null, bd = 1e9;
+    for (let i = 0; i < q.length; i++) { const [x, y] = q[i], d = Math.abs(x + .5 - (b.x + n / 2)) + Math.abs(y + .5 - (b.y + n / 2)); if (d < bd) { bd = d; best = x + ',' + y; }
+      for (const [dx, dy] of DIRS4) { const k = (x + dx) + ',' + (y + dy); if (!prev.has(k) && isRoad(m, x + dx, y + dy)) { prev.set(k, x + ',' + y); q.push([x + dx, y + dy]); } } }
+    if (!best || bd > n / 2 + 4) return null;
+    const route = []; for (let k = best; k; k = prev.get(k)) route.unshift(k); return route;
+  }
+  function spawnEmergency(m, kind, list, tiles, st) {
+    let best = null, bd = 1e9;
+    for (const [x, y] of tiles) { const ew = isRoad(m, x - 1, y) && isRoad(m, x + 1, y), ns = isRoad(m, x, y - 1) && isRoad(m, x, y + 1); if (!(ew || ns) || (ew && ns) || xwSets[m].has(x + ',' + y)) continue; const d = Math.abs(x - st.x) + Math.abs(y - st.y) + Math.random() * 2; if (d < bd) { bd = d; best = [x, y, ew]; } }
+    if (!best) return null;
+    const [x, y, ew] = best, sgn = Math.random() < .5 ? 1 : -1, car = { cx: (x + .5) * T, cy: (y + .5) * T, dx: ew ? sgn : 0, dy: ew ? 0 : sgn, look: { k: kind, c: kind === 'police' ? '#f7f8fb' : '#d8402f' }, sp: 0, max: kind === 'fire' ? 34 : 40, al: 0, tile: x + ',' + y, life: 140 + Math.random() * 60, driver: pick(workersAt(st)).id };
+    list.push(car); return car;
+  }
+  function startCall(m, kind, list, tiles) {
+    const st = listOf(m).find(b => b.type === kind && workersAt(b).length); if (!st) return;
+    const car = list.find(o => o.look.k === kind && !o.gone && !o.call) || spawnEmergency(m, kind, list, tiles, st); if (!car) return;
+    const pool = listOf(m).filter(b => b !== st && B[b.type] && !DECOR[b.type] && b.x !== undefined && onMain(b.x, b.y)); if (!pool.length) return;
+    const hx = Math.floor(car.cx / T), hy = Math.floor(car.cy / T); let b = null, route = null;
+    for (let i = 0; i < 6 && !route; i++) { b = pick(pool); route = callRoute(m, hx, hy, b); if (route && route.length < 3) route = null; }
+    if (!route) return;
+    const sc = pick(CALLS[kind]), dr = G.pigs.find(q => q.id === car.driver), call = { kind, b, sc, state: 'enroute', t: 80, car, who: dr ? dr.name : 'The crew' };
+    const [nx, ny] = route[1].split(',').map(Number);
+    car.cx = (hx + .5) * T; car.cy = (hy + .5) * T; car.dx = nx - hx; car.dy = ny - hy; car.tile = route[0]; car.route = route; car.call = call; car.gone = false; car.life = 999; car.max = kind === 'fire' ? 58 : 66;
+    calls[m].push(call); toast(`${sc.e} ${sc.s} ${lvName(b)}! ${call.who} is on the way.`); sfx('tap');
+  }
+  function endCall(m, call, ok) {
+    const car = call.car; if (car) { car.call = null; car.route = null; car.parked = false; car.life = 60 + Math.random() * 40; car.max = call.kind === 'fire' ? 34 : 40; }
+    calls[m].splice(calls[m].indexOf(call), 1);
+    if (ok) { const pay = call.kind === 'fire' ? 10 : 6; G.coins += pay; toast(`${call.kind === 'fire' ? '🚒' : '🚓'} ${call.who} ${call.sc.r} ${lvName(call.b)}. +${pay} 🪙`); sfx('goal'); for (const p of G.pigs) p.joy = Math.min(100, p.joy + 1); }
+  }
+  function callsTick(m, dt, list, tiles, night) {
+    for (const call of calls[m].slice()) {
+      if (!listOf(m).includes(call.b) || !list.includes(call.car)) { endCall(m, call, false); continue; }
+      call.t -= dt; if (call.t <= 0) endCall(m, call, call.state === 'work');
+    }
+    if (!night) for (const kind of ['police', 'fire']) { callT[kind] -= dt; if (callT[kind] > 0 || calls[m].some(q => q.kind === kind)) continue; callT[kind] = 75 + Math.random() * 75; startCall(m, kind, list, tiles); }
+  }
+  function drawCall(c, call) {
+    const b = call.b, n = sz(b.type), P = iso((b.x + n / 2) * T, (b.y + n / 2) * T), top = P.y - htOf(b) * .7, t = G.time || 0, sc = call.sc;
+    c.save();
+    if (sc.fire) { // smoke and flames; they shrink while the crew works
+      const k = call.state === 'work' ? Math.max(0, call.t / 7) : 1;
+      for (let i = 0; i < 4; i++) { const ph = (t * .6 + i * .25) % 1; c.fillStyle = `rgba(90,90,100,${.35 * (1 - ph) * (.4 + .6 * k)})`; ell(c, P.x + Math.sin(t + i * 2) * 5 + ph * 8, top - 12 - ph * 34, 5 + ph * 9, 4 + ph * 7); c.fill(); }
+      for (let i = 0; i < 3; i++) { const fx = P.x + (i - 1) * 7, fh = (11 + Math.sin(t * 9 + i * 2) * 3) * k; if (fh < 1) continue;
+        c.fillStyle = '#ff8a3d'; c.beginPath(); c.moveTo(fx - 4, top); c.quadraticCurveTo(fx - 5, top - fh * .6, fx, top - fh); c.quadraticCurveTo(fx + 5, top - fh * .6, fx + 4, top); c.closePath(); c.fill();
+        c.fillStyle = '#ffd24d'; c.beginPath(); c.moveTo(fx - 2, top); c.quadraticCurveTo(fx - 2.5, top - fh * .4, fx, top - fh * .6); c.quadraticCurveTo(fx + 2.5, top - fh * .4, fx + 2, top); c.closePath(); c.fill(); }
+    }
+    const by = top - 34 + Math.sin(t * 4) * 2; c.fillStyle = '#fffaf2'; ell(c, P.x, by, 11, 10); c.fill(); c.strokeStyle = call.kind === 'fire' ? '#d8402f' : '#2f4470'; c.lineWidth = 1.8; c.stroke();
+    c.font = '12px sans-serif'; c.textAlign = 'center'; c.fillStyle = '#000'; c.fillText(sc.e, P.x, by + 4);
+    if (call.state === 'work') { // the pig is out of the vehicle; a firefighter's hose reaches the flames
+      const cp = carPos(call.car), CP = iso(cp.x, cp.y), dir = P.x >= CP.x ? 1 : -1, px = CP.x + dir * 15, py = CP.y + 6, dr = G.pigs.find(q => q.id === call.car.driver);
+      if (sc.fire) { c.strokeStyle = 'rgba(120,200,255,.9)'; c.lineWidth = 2.2; c.setLineDash([4, 3]); c.lineDashOffset = -t * 30; c.beginPath(); c.moveTo(px + dir * 6, py - 8); c.quadraticCurveTo((px + P.x) / 2, Math.min(py, top) - 28, P.x, top - 4); c.stroke(); c.setLineDash([]); }
+      c.translate(px, py); c.fillStyle = 'rgba(0,0,0,.14)'; ell(c, 1, 8, 12, 3); c.fill(); c.scale(dir * .36, .36); drawPig(c, (dr && dr.skin) || { base: '#e9c9a0', ear: '#e0a08a' }, {}); drawUniform(c, call.kind);
+    }
+    c.restore();
+  }
   function trafficTick(dt) {
     if (view !== 'home' && view !== 'city') return;
     const m = view, hr = hourNow(), we = isWeekend(), night = hr < 6 || hr >= 22.5, tiles = roadTiles(m);
@@ -7672,27 +7737,31 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     // the pigs who work there (in uniform). They set off from the road nearest the station and stay out by day.
     if (!night) for (const kind of ['police', 'fire']) {
       if (list.some(o => o.look.k === kind && !o.gone) || Math.random() > dt * 1.2) continue;
-      const st = listOf(m).find(b => b.type === kind && workersAt(b).length); if (!st) continue;
-      let best = null, bd = 1e9;
-      for (const [x, y] of tiles) { const ew = isRoad(m, x - 1, y) && isRoad(m, x + 1, y), ns = isRoad(m, x, y - 1) && isRoad(m, x, y + 1); if (!(ew || ns) || (ew && ns) || xwSets[m].has(x + ',' + y)) continue; const d = Math.abs(x - st.x) + Math.abs(y - st.y) + Math.random() * 2; if (d < bd) { bd = d; best = [x, y, ew]; } }
-      if (!best) continue;
-      const [x, y, ew] = best, sgn = Math.random() < .5 ? 1 : -1, cx = (x + .5) * T, cy = (y + .5) * T;
-      if (list.some(o => Math.hypot(o.cx - cx, o.cy - cy) < T * 1.2)) continue;
-      list.push({ cx, cy, dx: ew ? sgn : 0, dy: ew ? 0 : sgn, look: { k: kind, c: kind === 'police' ? '#f7f8fb' : '#d8402f' }, sp: 0, max: kind === 'fire' ? 34 : 40, al: 0, tile: x + ',' + y, life: 140 + Math.random() * 60, driver: pick(workersAt(st)).id });
+      const st = listOf(m).find(b => b.type === kind && workersAt(b).length); if (st) spawnEmergency(m, kind, list, tiles, st);
     }
+    callsTick(m, dt, list, tiles, night);
     for (let i = list.length - 1; i >= 0; i--) {
       const car = list[i], len = TLEN[car.look.k] * T, ax = car.dx ? 'x' : 'y';
       car.al = car.gone ? car.al - dt * 2 : Math.min(1, car.al + dt * 2.5); if (car.gone && car.al <= 0) { list.splice(i, 1); continue; }
+      if (car.parked) { car.sp = 0; continue; }
+      const rush = !!car.route;
       let stop = false;
       const fx = car.cx + car.dx * (len / 2 + 3), fy = car.cy + car.dy * (len / 2 + 3), tx = Math.floor(fx / T), ty = Math.floor(fy / T), hx = Math.floor(car.cx / T), hy = Math.floor(car.cy / T);
       const enteringXw = xwSets[m].has(tx + ',' + ty) && !(tx === hx && ty === hy) && !xwSets[m].has(hx + ',' + hy) && !isCrossroads(m, hx, hy);
-      if (enteringXw && crossingAxis(m, tx, ty)) { const st = sigState(ax); if (st === 'r' || (st === 'y' && car.sp < 20)) stop = true; }
-      if (!car.gone) for (const o of list) if (o !== car && !o.gone && o.dx === car.dx && o.dy === car.dy) { const ahead = (o.cx - car.cx) * car.dx + (o.cy - car.cy) * car.dy, side = Math.abs((o.cx - car.cx) * car.dy - (o.cy - car.cy) * car.dx); if (side < 6 && ahead > 0 && ahead < (len + TLEN[o.look.k] * T) / 2 + 8) stop = true; }
+      if (enteringXw && crossingAxis(m, tx, ty) && !rush) { const st = sigState(ax); if (st === 'r' || (st === 'y' && car.sp < 20)) stop = true; }
+      if (!car.gone && !rush) for (const o of list) if (o !== car && !o.gone && o.dx === car.dx && o.dy === car.dy) { const ahead = (o.cx - car.cx) * car.dx + (o.cy - car.cy) * car.dy, side = Math.abs((o.cx - car.cx) * car.dy - (o.cy - car.cy) * car.dx); if (side < 6 && ahead > 0 && ahead < (len + TLEN[o.look.k] * T) / 2 + 8) stop = true; }
       car.sp = stop ? Math.max(0, car.sp - 90 * dt) : Math.min(car.max, car.sp + 30 * dt);
       const step = car.sp * dt, k = hx + ',' + hy, ccx = (hx + .5) * T, ccy = (hy + .5) * T;
       // reaching the middle of a new tile: choose where to go next
       if (k !== car.tile && (car.cx - ccx) * car.dx + (car.cy - ccy) * car.dy >= 0) {
         car.tile = k; car.life--;
+        if (car.route) { // on a call: take the next tile of the route; at the last one, pull up and get to work
+          const idx = car.route.indexOf(k), nxt = idx >= 0 ? car.route[idx + 1] : null;
+          if (idx < 0) { const r2 = car.call && callRoute(m, hx, hy, car.call.b); if (r2 && r2.length > 1) { car.route = r2; const [nx, ny] = r2[1].split(',').map(Number); car.cx = ccx; car.cy = ccy; car.dx = nx - hx; car.dy = ny - hy; } else { car.route = null; if (car.call) car.call.t = 0; } }
+          else if (!nxt) { car.cx = ccx; car.cy = ccy; car.sp = 0; car.parked = true; car.route = null; if (car.call) { car.call.state = 'work'; car.call.t = 7; } }
+          else { const [nx, ny] = nxt.split(',').map(Number); if (nx - hx !== car.dx || ny - hy !== car.dy) { car.cx = ccx; car.cy = ccy; car.dx = nx - hx; car.dy = ny - hy; } }
+          car.cx += car.dx * step; car.cy += car.dy * step; continue;
+        }
         const opts = DIRS4.filter(([dx, dy]) => !(dx === -car.dx && dy === -car.dy) && isRoad(m, hx + dx, hy + dy) && (dx === car.dx && dy === car.dy || isRoad(m, hx + 2 * dx, hy + 2 * dy)));
         if (!opts.length || car.life <= 0 || !isRoad(m, hx, hy)) car.gone = true;
         else { const straight = opts.find(([dx, dy]) => dx === car.dx && dy === car.dy), nd = straight && (Math.random() < .7 || opts.length === 1) ? straight : pick(opts);
@@ -7704,7 +7773,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   // the car's world position: its lane is to the right of the road's centre line
   const carPos = car => ({ x: car.cx - car.dy * LANE * T, y: car.cy + car.dx * LANE * T });
   function drawTCar(c, car) {
-    const p = carPos(car), P = iso(p.x, p.y), k = car.look.k, len = TLEN[k], wid = k === 'bus' ? .2 : k === 'fire' ? .19 : .17, hgt = k === 'bus' ? 10 : k === 'van' || k === 'fire' ? 8 : 5;
+    const p = carPos(car), P = iso(p.x, p.y), k = car.look.k, len = TLEN[k], wid = k === 'bus' ? .2 : k === 'fire' ? .24 : k === 'police' ? .21 : .17, hgt = k === 'bus' || k === 'fire' ? 10 : k === 'van' ? 8 : k === 'police' ? 6.5 : 5;
     const alongU = !!car.dx, du = alongU ? len : wid, dv = alongU ? wid : len, o = { x: P.x, y: P.y }, col = car.look.c;
     c.save(); c.globalAlpha = car.al; c.lineJoin = 'round';
     poly(c, [IP(o, -du / 2, -dv / 2), IP(o, du / 2 + .06, -dv / 2), IP(o, du / 2 + .06, dv / 2 + .03), IP(o, -du / 2, dv / 2 + .03)], 'rgba(30,30,60,.2)', null);
@@ -7715,26 +7784,28 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
       const [x, y] = IP(o, 0, 0, hgt + 1.2); c.fillStyle = '#fffaf2'; c.font = '800 3px Nunito, sans-serif'; c.textAlign = 'center'; c.fillText('🥕', x, y + 1);
     } else if (k === 'police' || k === 'fire') {
       // side stripe, a cab at the front with a flashing light bar, a ladder on the engine, and the pig at the wheel
-      const pol = k === 'police', fwd = car.dx + car.dy, cl = pol ? len * .5 : .2, a0 = len / 2 - cl - .03;
-      for (const face of ['L', 'R']) { const K = face === 'L' ? dv / 2 : du / 2, e = (face === 'L' ? du : dv) / 2 - .02; poly(c, fquad(o, face, K + .003, -e, e, 2.6, 4.4), pol ? '#2f4470' : '#f7d36b', null); }
+      const pol = k === 'police', fwd = car.dx + car.dy, cl = pol ? len * .5 : .26, a0 = len / 2 - cl - .03;
+      for (const face of ['L', 'R']) { const K = face === 'L' ? dv / 2 : du / 2, e = (face === 'L' ? du : dv) / 2 - .02; poly(c, fquad(o, face, K + .003, -e, e, 3, 5.4), pol ? '#2f4470' : '#f7d36b', null); }
       const along = fwd > 0 ? a0 : -(a0 + cl), cu = alongU ? along : -du / 2 + .02, cv = alongU ? -dv / 2 + .02 : along, cdu = alongU ? cl : du - .04, cdv = alongU ? dv - .04 : cl;
       if (!pol) { // ladder along the back of the engine
         const zt = 1.2 + hgt + 1;
-        const A = t2 => alongU ? IP(o, t2, -.035, zt) : IP(o, -.035, t2, zt), Bq = t2 => alongU ? IP(o, t2, .035, zt) : IP(o, .035, t2, zt);
+        const A = t2 => alongU ? IP(o, t2, -.05, zt) : IP(o, -.05, t2, zt), Bq = t2 => alongU ? IP(o, t2, .05, zt) : IP(o, .05, t2, zt);
         const L0 = fwd > 0 ? -len / 2 + .04 : -a0 + .02, L1 = fwd > 0 ? a0 - .02 : len / 2 - .04;
-        c.strokeStyle = '#c9ced8'; c.lineWidth = 1; c.beginPath(); let q = A(L0); c.moveTo(q[0], q[1]); q = A(L1); c.lineTo(q[0], q[1]); q = Bq(L0); c.moveTo(q[0], q[1]); q = Bq(L1); c.lineTo(q[0], q[1]);
+        c.strokeStyle = '#c9ced8'; c.lineWidth = 1.3; c.beginPath(); let q = A(L0); c.moveTo(q[0], q[1]); q = A(L1); c.lineTo(q[0], q[1]); q = Bq(L0); c.moveTo(q[0], q[1]); q = Bq(L1); c.lineTo(q[0], q[1]);
         for (let t2 = L0 + .03; t2 < L1; t2 += .06) { const a = A(t2), b2 = Bq(t2); c.moveTo(a[0], a[1]); c.lineTo(b2[0], b2[1]); } c.stroke();
       }
-      box(c, o, cu, cv, cdu, cdv, 1.2 + hgt, 3.4, lit() ? '#ffe6a3' : '#cfe9ff', { top: pol ? '#2f4470' : col });
-      const [lx, ly] = IP(o, cu + cdu / 2 - (alongU ? fwd * cl * .28 : 0), cv + cdv / 2 - (alongU ? 0 : fwd * cl * .28), 1.2 + hgt + 3.4), fl = Math.floor((G.time || 0) * 6) % 2, c1 = '#ff4d4d', c2 = pol ? '#4aa3ff' : '#ffd24d';
-      if (lit()) { c.fillStyle = fl ? 'rgba(255,80,80,.3)' : pol ? 'rgba(80,160,255,.3)' : 'rgba(255,210,80,.3)'; ell(c, lx, ly - 1, 7, 5); c.fill(); }
-      c.fillStyle = fl ? c1 : c2; c.fillRect(lx - 3, ly - 2.2, 3, 2.2); c.fillStyle = fl ? c2 : c1; c.fillRect(lx, ly - 2.2, 3, 2.2); c.strokeStyle = EDGE; c.lineWidth = .5; c.strokeRect(lx - 3, ly - 2.2, 6, 2.2);
+      box(c, o, cu, cv, cdu, cdv, 1.2 + hgt, 4.4, lit() ? '#ffe6a3' : '#cfe9ff', { top: pol ? '#2f4470' : col });
+      const rush = car.call && car.call.state !== 'done';
+      const [lx, ly] = IP(o, cu + cdu / 2 - (alongU ? fwd * cl * .28 : 0), cv + cdv / 2 - (alongU ? 0 : fwd * cl * .28), 1.2 + hgt + 4.4), fl = Math.floor((G.time || 0) * (rush ? 12 : 5)) % 2, c1 = '#ff4d4d', c2 = pol ? '#4aa3ff' : '#ffd24d';
+      if (lit() || rush) { c.fillStyle = fl ? 'rgba(255,80,80,.3)' : pol ? 'rgba(80,160,255,.3)' : 'rgba(255,210,80,.3)'; ell(c, lx, ly - 1, rush ? 12 : 8, rush ? 8 : 6); c.fill(); }
+      c.fillStyle = fl ? c1 : c2; c.fillRect(lx - 4, ly - 3, 4, 3); c.fillStyle = fl ? c2 : c1; c.fillRect(lx, ly - 3, 4, 3); c.strokeStyle = EDGE; c.lineWidth = .6; c.strokeRect(lx - 4, ly - 3, 8, 3);
+      if (car.parked) { c.restore(); return; } // the driver is out on the call
       const dr = G.pigs.find(q => q.id === car.driver), sk = (dr && dr.skin) || { base: '#e9c9a0' }, sx = car.dx - car.dy >= 0 ? 1 : -1;
-      const [hx, hy] = IP(o, cu + cdu / 2 + (alongU ? fwd * cl * .2 : 0), cv + cdv / 2 + (alongU ? 0 : fwd * cl * .2), 1.2 + hgt + 3.4);
-      c.fillStyle = sk.head || sk.base || '#e9c9a0'; ell(c, hx, hy - 2.6, 3.1, 2.7); c.fill(); c.strokeStyle = INK; c.lineWidth = .7; c.stroke();
-      c.fillStyle = sk.ear || '#e0a08a'; ell(c, hx - sx * 2, hy - 4.6, 1.2, .9); c.fill(); c.fillStyle = '#0b0809'; ell(c, hx + sx * 1.4, hy - 2.9, .6, .6); c.fill(); c.fillStyle = sk.nose || '#e07a7a'; ell(c, hx + sx * 2.9, hy - 2, .6, .5); c.fill();
-      c.fillStyle = pol ? '#2f4470' : '#d8402f'; c.beginPath(); c.ellipse(hx, hy - 4.3, 3.2, 2.3, 0, Math.PI, 0); c.closePath(); c.fill(); c.strokeStyle = INK; c.lineWidth = .6; c.stroke();
-      c.fillRect(hx + (sx > 0 ? 0 : -4.2), hy - 4.9, 4.2, 1); c.fillStyle = '#f2c14e'; ell(c, hx + sx * .6, hy - 5.4, .8, .8); c.fill();
+      const [hx, hy] = IP(o, cu + cdu / 2 + (alongU ? fwd * cl * .2 : 0), cv + cdv / 2 + (alongU ? 0 : fwd * cl * .2), 1.2 + hgt + 4.4);
+      c.fillStyle = sk.head || sk.base || '#e9c9a0'; ell(c, hx, hy - 3.6, 4.3, 3.8); c.fill(); c.strokeStyle = INK; c.lineWidth = .8; c.stroke();
+      c.fillStyle = sk.ear || '#e0a08a'; ell(c, hx - sx * 2.8, hy - 6.4, 1.6, 1.2); c.fill(); c.fillStyle = '#0b0809'; ell(c, hx + sx * 2, hy - 4, .8, .8); c.fill(); c.fillStyle = sk.nose || '#e07a7a'; ell(c, hx + sx * 4, hy - 2.8, .8, .7); c.fill();
+      c.fillStyle = pol ? '#2f4470' : '#d8402f'; c.beginPath(); c.ellipse(hx, hy - 6, 4.4, 3.2, 0, Math.PI, 0); c.closePath(); c.fill(); c.strokeStyle = INK; c.lineWidth = .7; c.stroke();
+      c.fillRect(hx + (sx > 0 ? 0 : -5.8), hy - 6.8, 5.8, 1.4); c.fillStyle = '#f2c14e'; ell(c, hx + sx * .8, hy - 7.6, 1.1, 1.1); c.fill();
     } else {
       const cu = alongU ? -du * .08 - du * .5 * .5 : -du / 2 + .02, cv = alongU ? -dv / 2 + .02 : -dv * .08 - dv * .25, cdu = alongU ? du * .52 : du - .04, cdv = alongU ? dv - .04 : dv * .52;
       box(c, o, cu + (car.dx < 0 ? du * .16 : 0), cv + (car.dy < 0 ? dv * .16 : 0), cdu, cdv, 1.2 + hgt, k === 'van' ? 3 : 3.6, lit() ? '#ffe6a3' : '#cfe9ff', { top: col });
@@ -8921,6 +8992,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     if (!builder) for (const h of hoodsOf(view)) { const list = crowds.get(h.id); if (list) for (const a of list) if (onS(a.x, a.y)) items.push({ d: dw(a.x, a.y), f: () => drawWalker(c, a) }); }
     if (!builder && (view === 'home' || view === 'city')) for (const a of visitors[view]) if (onS(a.x, a.y)) items.push({ d: dw(a.x, a.y), f: () => drawWalker(c, a) });
     if (!builder && (view === 'home' || view === 'city')) for (const car of traffic.get(view) || []) { const p = carPos(car); if (onS(p.x, p.y)) items.push({ d: dw(p.x, p.y), f: () => drawTCar(c, car) }); }
+    if (!builder && (view === 'home' || view === 'city')) for (const call of calls[view]) { const n = sz(call.b.type), x = (call.b.x + n) * T, y = (call.b.y + n) * T; if (onS(x, y)) items.push({ d: dw(x + T * 2, y + T * 2), f: () => drawCall(c, call) }); }
     if (view === 'home' || view === 'city') for (const sg of signalsOf(view)) for (const [ox, oy, ax] of SIG_POLES) { const wx = (sg.x + ox) * T, wy = (sg.y + oy) * T; if (onS(wx, wy)) items.push({ d: dw(wx, wy), f: () => drawSignal(c, wx, wy, ax) }); }
     if (!builder) for (const p of G.pigs) {
       if (p.trip && pigMap(p) === view) { const tr = p.trip, P = iso(tr.x, tr.y), u = tr.x / T, far = view === 'home' ? u - (COLS + GPAD + 2) : -(GPAD + 2) - u, al = Math.max(0, Math.min(1, 1 - far / 4)); if (al > 0) items.push({ d: dw(tr.x, tr.y), f: () => { c.globalAlpha = al; if (isWater(view, Math.floor(tr.x / T), Math.floor(tr.y / T))) drawBoat(c, P.x, P.y, tr.dir, p.car, p.skin); else drawCar(c, P.x, P.y, tr.dir, p.car, p.skin, true, tr.spin); c.globalAlpha = 1; } }); }
