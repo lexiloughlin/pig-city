@@ -14,9 +14,6 @@
 // The full list of planned sprites, with sizes, anchors and image-generation prompts, is in
 // docs/ART_ASSET_MANIFEST.md.
 window.PIG_SPRITES = Object.assign(window.PIG_SPRITES || {}, {
-  // Cavy Apartments (a pig home at level 3): the painted Pig City Apts illustration. Anchored at the building's front corner
-  // so the sidewalk plate spills a little past the 2x2 footprint, the way the picture does.
-  'hutch@3': { src: 'assets/sprites/buildings/cavy-apartments.webp', night: 'assets/sprites/buildings/cavy-apartments-night.webp', ax: 457, ay: 825, scale: 5.4, height: 90 },
   // tokiramen:   { src: 'assets/sprites/buildings/toki-ramen.png', night: 'assets/sprites/buildings/toki-ramen-night.png', ax: 256, ay: 600, scale: 4, height: 74 },
   // bronsonbank: { src: 'assets/sprites/buildings/bronson-bank.png', ax: 512, ay: 1400, scale: 4, height: 214 },
 });

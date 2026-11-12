@@ -1190,6 +1190,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     for (const b of G.city) b.map = 'city';
     G.jd = G.jd || { day: dayNum(), place: {}, pig: {}, total: 0 };
     G.jobHist = G.jobHist || [];
+    for (const b of G.buildings.concat(G.city)) if (b.lvl > 2) b.lvl = 2; // level 3 was removed: old saves come back as level 2
     for (const b of G.buildings) if (b.type === 'hutch' && !b.room) b.room = { wall: 0, floor: 0, items: [] };
     for (const p of G.pigs) if (p.loc === 'city' && !G.city.length) p.loc = 'home';
     if (!G.goalsDone) { G.goalsDone = []; if (!fresh) { G.catchup = true; G.stats.built = Math.max(G.stats.built, G.buildings.length - 5); } }
@@ -1997,10 +1998,10 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   }
   function renderBldCanvas(b) {
     const c = $('bcanvas').getContext('2d'); c.setTransform(2, 0, 0, 2, 0, 0); c.clearRect(0, 0, 220, 110);
-    const l = L(b), n = sz(b.type), lift = Math.max(...[l, Math.min(3, l + 1)].map(lv => htOf({ type: b.type, lvl: lv })));
+    const l = L(b), n = sz(b.type), lift = Math.max(...[l, Math.min(2, l + 1)].map(lv => htOf({ type: b.type, lvl: lv })));
     const k = Math.min(n > 1 ? .62 : 1.05, 90 / (lift + 2 * n * HH));
     const one = (lv, cx) => { c.save(); c.translate(cx, 104); c.scale(k, k); c.translate(0, -2 * n * HH); isoBuilding(c, { ...b, x: 0, y: 0, lvl: lv }, { x: 0, y: 0 }); c.restore(); };
-    if (l < 3 && !DECOR[b.type]) { one(l, 55); one(l + 1, 165); c.font = '24px Chewy, sans-serif'; c.textAlign = 'center'; c.fillStyle = '#c9a23a'; c.fillText('➜', 110, 72); }
+    if (l < 2 && !DECOR[b.type]) { one(l, 55); one(l + 1, 165); c.font = '24px Chewy, sans-serif'; c.textAlign = 'center'; c.fillStyle = '#c9a23a'; c.fillText('➜', 110, 72); }
     else one(l, 110);
   }
   // Squealtopia pieces (rides, food stands, park decor) use the same slide-out panel as town buildings
@@ -2908,7 +2909,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     $('buildTitle').textContent = v === 'park' ? `Build ${PARK_NAME} 🎢` : v === 'city' ? 'Build downtown 🏙️' : v === 'inside' ? `Decorate ${insideName(insideB)} ${isWork(insideB) ? '🪴' : '🛋️'}` : 'Build';
     drawTabs(); drawTools(); renderBld(); renderCozy();
     $('buildBar').hidden = !(v === 'home' || v === 'city'); $('growBtn').hidden = !(v === 'city' || v === 'home'); syncGrowBtn();
-    $('zoombar').hidden = false; roomLabels(); $('zWalls').hidden = !isHouse() || isDoll(); $('zStreet').hidden = v !== 'home' && v !== 'city'; $('zMap').hidden = v === 'inside' || v === 'park'; hoodSig = ''; parkPanelSig = ''; pSel = null; renderParkPanel();
+    $('zoombar').hidden = false; roomLabels(); $('zWalls').hidden = !isHouse(); $('zStreet').hidden = v !== 'home' && v !== 'city'; $('zMap').hidden = v === 'inside' || v === 'park'; hoodSig = ''; parkPanelSig = ''; pSel = null; renderParkPanel();
     if (map) { resize(); if ((v === 'home' || v === 'city' || v === 'park') && !cams[v].init) { camHome(v); cams[v].init = true; } if (isHouse()) houseCamHome(); }
     if (v === 'park' && !G.parkSeen) { G.parkSeen = true; ensurePark(); setTimeout(() => toast(`🎢 Welcome to ${PARK_NAME}! Build rides next to the paths, hire Ride Operators, and set your ticket price. Tourists start coming once you have rides.`), 200); }
     if (v === 'city' && G.cityNew) { G.cityNew = false; setTimeout(() => toast('🏙️ Welcome to Job City! Pigs with jobs here drive in around 8am and home after 5pm.'), 200); }
@@ -5688,7 +5689,6 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   }
   function houseTick(dt) {
     if (!isHouse()) return;
-    if (isDoll()) return dollTick(dt);
     const pl = planOf(insideB), H = ensureHouse(insideB), dk = darkness();
     const beds = H.items.filter(i => i.k === 'bed' || i.k === 'hidey' || i.k === 'couch');
     const spots = []; for (const b of beds) { const n = b.k === 'hidey' ? 1 : (F[b.k].w || 1); for (let i = 0; i < n; i++) spots.push(b.r ? [b.x + .55, b.y + i + .5] : [b.x + i + .5, b.y + .55]); }
@@ -5809,7 +5809,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     if (view === 'inside') $('buildTitle').textContent = houseRoom ? `Decorate the ${houseRoom} 🛋️` : `Decorate ${insideName(insideB)} ${isWork(insideB) ? '🪴' : '🛋️'}`;
     $('roomBack').hidden = overview;
     $('roomBack').textContent = isHome(insideB) ? '← Whole home' : '← Building overview';
-    $('zWalls').hidden = !isHouse() || isDoll();
+    $('zWalls').hidden = !isHouse();
   }
   function houseCamRoom() {
     const r = curRoom(); if (!r) return;
@@ -5921,7 +5921,6 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     return (dotPat = c.createPattern(cv, 'repeat'));
   }
   function drawHouse(c) {
-    if (isDoll()) return drawDollhouse(c);
     const b = insideB, pl = planOf(b), H = ensureHouse(b), o = { x: 0, y: 0 }, t = G.time || 0, dk = darkness(), RM = curRoom();
     spriteBudget = 12;
     c.setTransform(dprNow, 0, 0, dprNow, 0, 0);
@@ -5989,7 +5988,6 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     c.globalAlpha = 1;
   }
   function houseClick(sp) {
-    if (isDoll()) return dollClick(sp);
     const b = insideB, H = ensureHouse(b), pl = planOf(b), s = scrToIso(sp.x, sp.y), wpt = isoToWorld(s), tx = Math.floor(wpt.x / T), ty = Math.floor(wpt.y / T), o = { x: 0, y: 0 };
     const pop = (u, v, txt, col) => { const [px, py] = IP(o, u, v, 30); popup(px, py, txt, col, 'inside'); };
     const RM = curRoom();
@@ -6027,121 +6025,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   }
   function turnPlacing() { placeRot ^= 1; sfx('tap'); syncTools(); }
   document.addEventListener('click', e => { if (e.target && e.target.id === 'turnBtn') { e.stopPropagation(); turnPlacing(); } });
-  function houseCamHome() { if (isHome(insideB) && L(insideB) === 3) return dollCam(); const pl = planOf(insideB), p = { x: (pl.W - pl.H) / 2 * HW, y: (pl.W + pl.H) / 2 * HH - 20 }; cams.inside.x = p.x; cams.inside.y = p.y; cams.inside.z = Math.max(.6, Math.min(1.5, Math.min(vw / ((pl.W + pl.H) * HW + 60), vh / ((pl.W + pl.H) * HH + 120)))); }
-  // ---------- the Cavy Apartments dollhouse ----------
-  // A fully upgraded pig home is the painted Pig City Apts building on the map. Going inside shows the painting's cutaway
-  // side as a dollhouse: your pigs live in it, wander the rooms, ride the elevator between floors and sleep in the beds
-  // at night. Tapping a room still opens the normal room decorator (the furniture you place lives there); ← Whole home
-  // comes back to the dollhouse.
-  const DOLL = { src: 'assets/sprites/buildings/cavy-apartments.webp', night: 'assets/sprites/buildings/cavy-apartments-night.webp', k: 2, cx: 0, cy: 330, elev: 752 };
-  // the rooms of the cutaway, in picture pixels (912 wide): x0..x1, y0..y1 is the room, fy is where pigs' feet go;
-  // `name` links a hotspot to a room of the level-3 floor plan (tap to decorate), the rest are places pigs just like to be
-  const DOLL_ROOMS = [
-    { name: 'Bedroom', x0: 332, x1: 508, y0: 212, y1: 342, fy: 330, bed: [405, 318] },
-    { name: 'Bathroom', x0: 510, x1: 598, y0: 212, y1: 342, fy: 330 },
-    { name: 'Kitchen', x0: 600, x1: 845, y0: 212, y1: 342, fy: 330 },
-    { name: 'Media Room', x0: 332, x1: 508, y0: 370, y1: 500, fy: 488, bed: [352, 478] },
-    { name: null, label: 'Bathroom', x0: 510, x1: 598, y0: 370, y1: 500, fy: 488 },
-    { name: 'Dining Room', x0: 600, x1: 845, y0: 370, y1: 500, fy: 488 },
-    { name: null, label: 'Bedroom', x0: 332, x1: 508, y0: 516, y1: 642, fy: 630, bed: [392, 618] },
-    { name: null, label: 'Bathroom', x0: 510, x1: 598, y0: 516, y1: 642, fy: 630 },
-    { name: 'Living Room', x0: 600, x1: 845, y0: 516, y1: 642, fy: 630, bed: [690, 624] },
-    { name: null, label: 'Lobby', x0: 345, x1: 760, y0: 655, y1: 815, fy: 795 },
-    { name: 'Playroom', label: 'Rooftop Garden', x0: 190, x1: 600, y0: 55, y1: 190, fy: 172, bed: [300, 172] } // last so the rooftop lounger is the bed nobody gets until the real beds are taken
-  ];
-  const isDoll = () => isHouse() && L(insideB) === 3 && !houseRoom;
-  const dollPigs = new Map();
-  const dollImg = () => { const im = sprLoad(darkness() > .45 ? DOLL.night : DOLL.src); return im.complete && im.naturalWidth && !im.bad ? im : null; };
-  const dollBox = () => { const im = sprLoad(DOLL.src), W = (im.naturalWidth || 912) / DOLL.k, H = (im.naturalHeight || 955) / DOLL.k; return { W, H, ox: DOLL.cx - W / 2, oy: DOLL.cy - H / 2 }; };
-  const dollRoomAt = (x, y) => DOLL_ROOMS.find(r => x >= r.x0 && x <= r.x1 && y >= r.y0 && y <= r.y1) || null;
-  function dollPt(sp) { const s = scrToIso(sp.x, sp.y), B2 = dollBox(); return { x: (s.x - B2.ox) * DOLL.k, y: (s.y - B2.oy) * DOLL.k }; }
-  function dollHoverRoom() { if (!mapPointer) return null; const r = canvas.getBoundingClientRect(), p = dollPt({ x: mapPointer.clientX - r.left, y: mapPointer.clientY - r.top }); return dollRoomAt(p.x, p.y); }
-  function dollCam() { const { W, H } = dollBox(); cams.inside.x = DOLL.cx; cams.inside.y = DOLL.cy; cams.inside.z = Math.max(.5, Math.min(3, Math.min(vw / (W + 40), vh / (H + 40)))); }
-  // a walk from one spot to another: along the floor, and by the elevator when the floors differ
-  function dollPath(from, to) {
-    const r0 = dollRoomAt(from.x, from.y), r1 = dollRoomAt(to[0], to[1]), f0 = r0 ? r0.fy : from.y, f1 = r1 ? r1.fy : to[1];
-    if (Math.abs(f0 - f1) < 2) return [to];
-    return [[DOLL.elev, f0], [DOLL.elev, f1], to];
-  }
-  function dollTick(dt) {
-    const dk = darkness(), beds = DOLL_ROOMS.filter(r => r.bed).map(r => r.bed), res = houseResidents();
-    for (const id of [...dollPigs.keys()]) if (!res.some(p => p.id === id)) dollPigs.delete(id);
-    res.forEach((p, idx) => {
-      let s = dollPigs.get(p.id);
-      if (!s) { s = { x: 560 + (idx % 3) * 50, y: 795, path: [], wait: .5 + Math.random() * 2, face: 1, lift: false }; dollPigs.set(p.id, s); }
-      const sleepy = dk > .6 || p.nap > 0, bed = beds[idx % beds.length];
-      if (sleepy && !s.sleep) { s.sleep = true; s.path = dollPath(s, [bed[0] + (idx >= beds.length ? 26 : 0), bed[1]]); }
-      if (!sleepy && s.sleep) { s.sleep = false; s.path = []; s.wait = .5; }
-      if (s.path.length) {
-        const [tx, ty] = s.path[0], dx = tx - s.x, dy = ty - s.y, d = Math.hypot(dx, dy), sp = (Math.abs(dy) > Math.abs(dx) ? 90 : 55) * dt;
-        s.lift = Math.abs(dy) > Math.abs(dx);
-        if (Math.abs(dx) > .5) s.face = dx > 0 ? 1 : -1;
-        if (d <= sp) { s.x = tx; s.y = ty; s.path.shift(); } else { s.x += dx / d * sp; s.y += dy / d * sp; }
-        s.moving = true; return;
-      }
-      s.moving = false; s.lift = false;
-      if (s.sleep) return;
-      s.wait -= dt;
-      if (s.wait <= 0) {
-        s.wait = 3 + Math.random() * 5;
-        const r = pick(DOLL_ROOMS), x = r.x0 + 18 + Math.random() * (r.x1 - r.x0 - 36);
-        s.path = dollPath(s, [x, r.fy]);
-      }
-    });
-  }
-  function drawDollhouse(c) {
-    const b = insideB, dk = darkness(), t = G.time || 0, k = DOLL.k, { W, H, ox, oy } = dollBox();
-    c.setTransform(dprNow, 0, 0, dprNow, 0, 0);
-    { const g = c.createLinearGradient(0, 0, 0, vh); g.addColorStop(0, dk > .5 ? '#2b3566' : '#cfe8f7'); g.addColorStop(1, dk > .5 ? '#4a3f6b' : '#fbe3ea'); c.fillStyle = g; c.fillRect(0, 0, vw, vh); }
-    setCamTransform(c);
-    const im = dollImg();
-    if (!im) { c.font = 'bold 14px Nunito, sans-serif'; c.textAlign = 'center'; c.fillStyle = INK; c.fillText('Opening the door…', DOLL.cx, DOLL.cy); return; }
-    c.fillStyle = 'rgba(0,0,0,.14)'; ell(c, DOLL.cx, oy + H - 6, W * .46, 14); c.fill();
-    c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high'; c.drawImage(im, ox, oy, W, H);
-    if (window.__dollRects) for (const r of DOLL_ROOMS) { c.strokeStyle = r.name ? '#e0483f' : '#5aa9e0'; c.lineWidth = 1; c.strokeRect(ox + r.x0 / k, oy + r.y0 / k, (r.x1 - r.x0) / k, (r.y1 - r.y0) / k); c.fillStyle = '#2f3440'; c.fillRect(ox + (r.x0 + 8) / k, oy + r.fy / k - 1, (r.x1 - r.x0 - 16) / k, 1.5); if (r.bed) { c.fillStyle = '#f48fb1'; c.fillRect(ox + r.bed[0] / k - 3, oy + r.bed[1] / k - 3, 6, 6); } }
-    // the room under the pointer
-    const hr = dollHoverRoom();
-    if (hr && !tool) {
-      const x = ox + hr.x0 / k, y = oy + hr.y0 / k, w = (hr.x1 - hr.x0) / k, h = (hr.y1 - hr.y0) / k;
-      c.fillStyle = 'rgba(255,255,255,.16)'; rr(c, x, y, w, h, 5); c.fill(); c.strokeStyle = 'rgba(255,255,255,.9)'; c.lineWidth = 1.6; c.stroke();
-      const txt = hr.name ? `${hr.name} · tap to decorate` : hr.label; c.font = 'bold 10px Nunito, sans-serif'; const tw = c.measureText(txt).width + 14;
-      c.fillStyle = 'rgba(255,255,255,.92)'; rr(c, x + w / 2 - tw / 2, y - 18, tw, 16, 8); c.fill(); c.strokeStyle = '#5b3b2a'; c.lineWidth = 1.2; c.stroke(); c.fillStyle = INK; c.textAlign = 'center'; c.fillText(txt, x + w / 2, y - 6.5);
-    }
-    // the pigs who live here, back to front
-    const res = houseResidents().filter(p => dollPigs.has(p.id)).sort((a, b2) => dollPigs.get(a.id).y - dollPigs.get(b2.id).y);
-    for (const p of res) {
-      const s = dollPigs.get(p.id), px = ox + s.x / k, py = oy + s.y / k, sc = (p.age < 90 ? .2 : .27), bob = s.moving && !s.lift ? Math.abs(Math.sin(t * 10 + p.id)) * 1.2 : 0;
-      c.save(); c.translate(px, py - bob);
-      if (s.lift) { c.globalAlpha = .55; } // riding the elevator: behind the kitchen wall
-      c.fillStyle = 'rgba(0,0,0,.16)'; ell(c, 0, 1 + bob, 11, 2.8); c.fill();
-      if (p.id === selected) { c.strokeStyle = '#fff'; c.lineWidth = 2; ell(c, 0, 1 + bob, 14, 4.5); c.stroke(); }
-      c.translate(0, -22 * sc); c.scale(s.face * sc, sc); drawPig(c, p.skin, { sleep: s.sleep && !s.path.length }); c.restore();
-      c.textAlign = 'center';
-      if (s.sleep && !s.path.length) { c.font = '9px Chewy, sans-serif'; c.fillStyle = '#1f2f5c'; const k2 = (t * .8 + p.id) % 1; c.globalAlpha = 1 - k2; c.fillText('z', px + 7 + k2 * 4, py - 14 - k2 * 8); c.fillText('Z', px + 11 + k2 * 3, py - 20 - k2 * 6); c.globalAlpha = 1; }
-      else if (p.id === selected || !s.moving) { c.font = 'bold 7px Nunito, sans-serif'; c.lineWidth = 2.5; c.strokeStyle = 'rgba(255,255,255,.85)'; c.strokeText(p.name, px, py - 16); c.fillStyle = INK; c.fillText(p.name, px, py - 16); }
-    }
-    // popups + confetti, same as the house
-    c.textAlign = 'center'; c.font = '13px Chewy, "Comic Sans MS", sans-serif';
-    for (const q of popups) { if (q.map !== 'inside' && q.map !== 'any') continue; const P = q.map === 'inside' ? { x: q.x, y: q.y } : iso(q.x, q.y); c.globalAlpha = Math.min(1, q.life / .4); c.lineWidth = 3.5; c.strokeStyle = '#fff'; c.strokeText(q.text, P.x, P.y); c.fillStyle = q.color; c.fillText(q.text, P.x, P.y); }
-    c.globalAlpha = 1; c.setTransform(dprNow, 0, 0, dprNow, 0, 0);
-    const away = houseResidents(true).filter(p => !houseResidents().includes(p));
-    c.font = 'bold 12px Nunito, sans-serif'; c.textAlign = 'left';
-    const lines = [away.length ? 'Out right now: ' + away.map(p => p.name + (p.trip || pigMap(p) === 'city' ? ' 🚗' : p.state ? ' 🏥' : '')).join(', ') : '', 'Tap a room to step inside and decorate it · tap a pig to check on it'].filter(Boolean);
-    lines.forEach((txt, i) => { const w = c.measureText(txt).width; const y = vh - 14 - (lines.length - 1 - i) * 24; c.fillStyle = 'rgba(255,255,255,.88)'; rr(c, 10, y - 15, w + 16, 22, 11); c.fill(); c.fillStyle = INK; c.fillText(txt, 18, y); });
-    for (const q of confetti) { c.globalAlpha = Math.min(1, q.life / .5); c.save(); c.translate(q.x, q.y); c.rotate(q.r); c.fillStyle = q.c; c.fillRect(-3, -1.5, 6, 3); c.restore(); }
-    c.globalAlpha = 1;
-  }
-  function dollClick(sp) {
-    const p = dollPt(sp), k = DOLL.k, { ox, oy } = dollBox(), s = scrToIso(sp.x, sp.y);
-    let best = null, bd = 16;
-    for (const q of houseResidents()) { const st = dollPigs.get(q.id); if (!st) continue; const d = Math.hypot(ox + st.x / k - s.x, oy + st.y / k - 8 - s.y); if (d < bd) { bd = d; best = q; } }
-    if (best) { selected = best.id; best.hop = .4; const st = dollPigs.get(best.id); popup(ox + st.x / k, oy + st.y / k - 22, '♥', '#e07a9a', 'inside'); renderPig(true); listSig = ''; sfx('wheek'); return; }
-    const r = dollRoomAt(p.x, p.y);
-    if (tool || cat === 'style') { toast(r && r.name ? `Tap the ${r.name} to step inside, then place it there.` : 'Step into a room first: tap one of the rooms to decorate it.'); if (r && r.name) enterRoom(r.name); return; }
-    if (r && r.name) enterRoom(r.name);
-    else if (r) toast(`${r.label}: the neighbors' place. Your rooms are the ones with names.`);
-  }
-
+  function houseCamHome() { const pl = planOf(insideB), p = { x: (pl.W - pl.H) / 2 * HW, y: (pl.W + pl.H) / 2 * HH - 20 }; cams.inside.x = p.x; cams.inside.y = p.y; cams.inside.z = Math.max(.6, Math.min(1.5, Math.min(vw / ((pl.W + pl.H) * HW + 60), vh / ((pl.W + pl.H) * HH + 120)))); }
   // ================= URBAN PLANNING =================
   const ZONES = {
     res:  { e: '🏡', name: 'Residential', col: '#7fc1ea', tip: 'Pigs who live here stay happier when the neighborhood has a park or 3+ decorations.' },
@@ -8554,7 +8438,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   if (/[?&]debug\b/.test(location.search)) window.__pc = {
     get G() { return G; }, B, DISTRICTS, setView, cams, cam, iso, T, save, crowds, presetLayout, checkLayout, sprites, kinds,
     setHover(x, y) { hover = { x, y }; }, setTool(t) { tool = t; }, place(key) { placeDistrict(key); }, select(b) { selBld = b; renderBld(); },
-    doll: { pt: dollPt, roomAt: dollRoomAt, hover: dollHoverRoom, box: dollBox, is: isDoll }, hoods: m => hoodsOf(m), at: (m, x, y) => listOf(m).find(b => covers(b, x, y)), walk: (m, h) => walkGrid(m, h), DECOR, sz, toScr: (tx, ty) => { const r = canvas.getBoundingClientRect(), p = isoToScr(iso(tx * T, ty * T)); return { x: p.x + r.left, y: p.y + r.top }; }, tick: (dt, n = 1) => { for (let i = 0; i < n; i++) tick(dt); }
+    hoods: m => hoodsOf(m), at: (m, x, y) => listOf(m).find(b => covers(b, x, y)), walk: (m, h) => walkGrid(m, h), DECOR, sz, toScr: (tx, ty) => { const r = canvas.getBoundingClientRect(), p = isoToScr(iso(tx * T, ty * T)); return { x: p.x + r.left, y: p.y + r.top }; }, tick: (dt, n = 1) => { for (let i = 0; i < n; i++) tick(dt); }
   };
   let seen = false, seen2 = false, seen3 = false;
   try { seen = !!localStorage.getItem('pigcity-seen'); seen2 = !!localStorage.getItem('pigcity-seen2'); seen3 = !!localStorage.getItem('pigcity-seen3'); localStorage.setItem('pigcity-seen', '1'); localStorage.setItem('pigcity-seen2', '1'); localStorage.setItem('pigcity-seen3', '1'); } catch (e) {}
