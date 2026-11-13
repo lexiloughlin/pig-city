@@ -1,0 +1,20 @@
+'use strict';
+const assert=require('node:assert/strict');
+const {themes,identify,busy,weight,facade}=require('../assets/js/district-identity');
+for(const [zone,want] of Object.entries({down:'downtown',res:'residential',com:'shopping'}))assert.equal(identify({zone}),want);
+assert.equal(identify({zone:'com'},{character:'entertainment'}),'entertainment');
+assert.equal(identify({zone:'res',character:'shopping'},{character:'entertainment'}),'shopping');
+for(const invalid of ['unknown','__proto__','toString'])assert.equal(identify({zone:'farm',character:invalid}),null);
+const old={id:42,zone:'res',name:'Old Lane',spots:[{k:'stroll',x:2,y:3}]}, before=JSON.stringify(old);identify(old);assert.equal(JSON.stringify(old),before);
+assert(busy('shopping',13,true)>busy('shopping',7,true));
+assert(busy('shopping',13,true)>busy('shopping',13,false));
+assert(busy('residential',18,false)>busy('residential',12,false));
+assert(busy('entertainment',23,false)>busy('entertainment',9,false));
+assert(busy('entertainment',1,false)>busy('entertainment',4,false));
+assert(weight('downtown','work',8)>weight('residential','work',8));
+assert(weight('shopping','shop',12)>weight('residential','shop',12));
+assert(weight('entertainment','music',22)>weight('entertainment','music',12));
+for(const theme of Object.keys(themes))for(let hr=0;hr<24;hr+=.25){const b=busy(theme,hr,false);if(b!==null)assert(b>=0&&b<=1.2);for(const act of ['shop','stroll','music','dance','work'])assert(Number.isFinite(weight(theme,act,hr)));}
+for(const type of ['bronsonbank','pcse','bbb','hutch','church','hospital','roller'])for(const t of Object.keys(themes))assert.equal(facade(t,{type}),false,`Landmark overwritten: ${type}`);
+assert(facade('residential',{type:'townhouse'}));assert(facade('downtown',{type:'office'}));assert(facade('entertainment',{type:'toys'}));
+console.log('PASS area defaults/overrides, immutable legacy data, distinct daily/weekend schedules, activity preferences, unknown values and landmark preservation');

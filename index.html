@@ -91,7 +91,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
 .hood { background: #fff; border: 2px solid var(--fleece-deep); border-left-width: 6px; border-radius: 12px; padding: 7px 9px; margin-bottom: 8px; }
 .hoodtop { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; }
 .hoodtop b { font-family: var(--font-display); font-weight: 400; font-size: 17px; }
-.hoodzone { width: 100%; font: inherit; font-size: 13px; font-weight: 700; padding: 3px 6px; margin: 4px 0; border: 2px solid var(--ink); border-radius: 10px; background: #fff; color: var(--ink); }
+.hoodzone, .hoodcharacter { width: 100%; font: inherit; font-size: 13px; font-weight: 700; padding: 3px 6px; margin: 4px 0; border: 2px solid var(--ink); border-radius: 10px; background: #fff; color: var(--ink); }
 .hoodstats { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 12px; font-weight: 800; color: var(--muted); }
 #hoods { max-height: 420px; overflow-y: auto; }
 .stage canvas { display: block; width: 100%; height: 100%; cursor: grab; }
@@ -513,6 +513,7 @@ button.famchip:hover { background: #fff3e2; }
 </div>
 <script src="assets/sprites/manifest.js"></script>
 <script src="assets/js/simulation.js"></script>
+<script src="assets/js/district-identity.js"></script>
 <script src="assets/js/gameplay-store.js"></script>
 <script src="assets/js/gameplay-tracking.js"></script>
 <script>
@@ -894,6 +895,19 @@ button.famchip:hover { background: #fff3e2; }
         ['wait', 5.3, 8.35], ['wait', 5.25, 8.7], ['sit', 9.5, 8.55], ['sit', 11.5, 8.55], ['sit', 9.5, 12.5], ['sit', 11.5, 12.5],
         ['photo', 10.5, 9.6], ['stroll', 10.5, 8.5], ['stroll', 8.5, 10.5], ['stroll', 12.5, 10.5], ['stroll', 10.5, 12.5], ['coffee', 8.55, 9.6], ['work', 5.25, 0.6]],
       conns: [['W', 6, 'road'], ['E', 6, 'road'], ['N', 6, 'road'], ['S', 6, 'road'], ['W', 5, 'path'], ['W', 7, 'path'], ['E', 5, 'path'], ['E', 7, 'path'], ['N', 5, 'path'], ['N', 7, 'path'], ['S', 5, 'path'], ['S', 7, 'path']]
+    },
+    popcorn: {
+      name: 'Popcorn Promenade', ic: '🎭', map: 'city', zone: 'com', character: 'entertainment', kind: 'entertainment', crowd: 12, w: 12, h: 9,
+      inspo: 'Art Deco pleasure streets and evening festival plazas',
+      blurb: 'a compact roller coaster, games and toy shops, supper cafés and an open-air music plaza, with illuminated marquees and late evening crowds',
+      roads: [[0,4,12,1]], paths: [[0,3,12,1],[0,5,12,1],[1,6,10,2]], xwalks: [[3,4],[8,4]],
+      items: [['toys',1,2],['cafe',3,2],['sushi',5,2],['toys',7,2],['cafe',10,2],
+        ['blossom',0,0],['tree',4,0],['blossom',8,0],['tree',11,0],['planter',0,2],['streetlamp',9,2],
+        ['bench',1,6],['table',3,6],['coffeecart',5,6],['roller',9,6],['bench',7,7],['statue',10,7],
+        ['lantern',0,7],['flowers',0,8],['blossom',3,8],['flowers',6,8],['streetlamp',11,7],['blossom',11,8]],
+      spots: [['play',1.5,3.2],['coffee',3.5,3.2],['eat',5.5,3.2],['shop',7.5,3.2],['eat',10.5,3.2],
+        ['music',3.5,7.4],['dance',4.5,7.4],['music',6.5,7.4],['play',9.5,5.6],['photo',10.3,6.5],['sit',1.5,6.6]],
+      conns: [['W',4,'road'],['E',4,'road'],['W',3,'path'],['E',3,'path'],['W',5,'path'],['E',5,'path']]
     }
   };
   // each preset shows up as a tool in the Districts tab; it costs what its parts cost, with a 20% bulk-builder discount
@@ -3368,7 +3382,7 @@ button.famchip:hover { background: #fff3e2; }
       }
       if (q.hosp && q.hosp.x === ox && q.hosp.y === oy && m === 'home') { q.hosp.x = x; q.hosp.y = y; }
     }
-    b.x = x; b.y = y; hoodSig = ''; zoneT = 0; save();
+    b.x = x; b.y = y; markGround(); hoodSig = ''; zoneT = 0; save();
   }
   function setView(v) {
     if (v === 'inside' && !insideB) v = 'home';
@@ -5573,11 +5587,67 @@ button.famchip:hover { background: #fff3e2; }
     dbox(c, o, .2, .2, .6, .6, 0, 26, '#d9cfe8');
     dtext(c, o, 'L', .8, .5, 13, '?', '#6a5a8a', 14); dtext(c, o, 'R', .8, .5, 13, '?', '#6a5a8a', 14);
   }
+  // District façades share the normal sprite cache and footprints. Named landmarks retain their own art.
+  function districtFacade(c, b, o) {
+    const theme = DistrictIdentity.themes[b.districtStyle], n = sz(b.type), lv = L(b);
+    if (!theme || !DistrictIdentity.facade(b.districtStyle, b)) return false;
+    const style = b.districtStyle, end = n - .1;
+    if (b.type === 'townhouse') {
+      const walls = ['#ecd1b4', '#c7d8c0', '#e4c4bc', '#d8cedd'], wall = walls[(b.v || 0) % 4], h = 28 + lv * 5;
+      poly(c, [IP(o,0,0),IP(o,1,0),IP(o,1,1),IP(o,0,1)], '#acc78c', null);
+      dbox(c,o,.13,.1,.74,.65,0,h,wall);
+      gableV(c,o,.1,.07,.8,.72,h,13,'#6d7e70',wall);
+      windowsL(c,o,.755,.18,.82,16,h-3,2,1,.2); windowsR(c,o,.875,.16,.68,10,h-3,2,1,.18);
+      kdoor(c,o,'L',.756,.42,.61,15,'#596f60');
+      dbox(c,o,.25,.75,.58,.22,0,3,'#dccbb6');
+      for(const u of [.27,.8])cyl(c,o,u,.92,.018,3,15,'#f9f0dc');
+      dbox(c,o,.24,.73,.6,.23,15,2,'#f2e5cf');
+      dpot(c,o,.2,.82,0,'#ec9baa');dpot(c,o,.85,.82,0,'#fff2aa');
+      return true;
+    }
+    if (style === 'downtown' && ['office','finoffice'].includes(b.type)) {
+      const h = Math.min(htOf(b)-12, 58 + lv*16 + (b.type==='office'?24:0)), stone='#dce0dc', trim='#c1a562';
+      dshadow(c,o,.1,.1,n-.2,n-.2,h);
+      dbox(c,o,.1,.1,n-.2,n-.2,0,17,stone);
+      dbox(c,o,.16,.16,n-.32,n-.32,17,h-17,'#527586');
+      dwinGrid(c,o,'L',n-.16,.19,n-.19,20,h-4,n*3,Math.max(3,Math.floor(h/14)),{seed:b.v||0,frame:'#bccbd0',sky:'#b6dae3',sky2:'#5c8b9c',padA:.2,mullion:false});
+      dwinGrid(c,o,'R',n-.16,.19,n-.19,20,h-4,n*3,Math.max(3,Math.floor(h/14)),{seed:4,frame:'#c5cecc',sky:'#9ec3cf',padA:.2,mullion:false});
+      dbox(c,o,.08,.08,n-.16,n-.16,17,2,trim,{hl:false});
+      cornice(c,o,.12,.12,n-.24,n-.24,h,'#ebe8db',4);
+      kdoor(c,o,'L',end+.005,n*.36,n*.64,14,'#42586c');
+      for(const u of [n*.23,n*.76])dbox(c,o,u,end-.02,.04,.04,0,17,trim);
+      dtext(c,o,'L',end+.01,n/2,18,'CAVY & CO','#273d4e',n===1?3.5:5);
+      return true;
+    }
+    const entertainment = style === 'entertainment', residential = style === 'residential';
+    const h = Math.min(htOf(b)-10, 30+lv*5), wall = entertainment?'#58456d':residential?'#e1d5bb':style==='downtown'?'#b5c5cc':'#c48b72';
+    dshadow(c,o,.1,.1,n-.2,n-.2,h);
+    dbox(c,o,.1,.1,n-.2,n-.2,0,h,wall);
+    cornice(c,o,.07,.07,n-.14,n-.14,h,entertainment?'#dfb96e':'#f5e8d2',3);
+    const glass=lit()?'#f5d993':entertainment?'#b9c0e2':'#afcfce';
+    poly(c,fquad(o,'L',end+.005,.16,n*.43,4,19),glass,'#f3e6cd',1.2);
+    poly(c,fquad(o,'R',end+.005,.17,n-.17,5,19),glass,'#eee1cb',1.2);
+    kdoor(c,o,'L',end+.012,n*.5,n*.72,18,entertainment?'#d8a4bf':'#78594b');
+    if (entertainment) {
+      dbox(c,o,.07,end-.07,n-.14,.2,22,5,'#d3a359',{hl:false});
+      dtext(c,o,'L',end+.14,n/2,25,b.type==='toys'?'PLAY':b.type==='cafe'?'NIGHT CAFE':'SUPPER','#fff2cc',b.type==='cafe'?3.4:5);
+      for(const u of [.17,.32,.47,.62,.77]) { const [x,y]=IP(o,u,end+.13,22.5); c.fillStyle=lit()?'#fff2ae':'#f9d987';ell(c,x,y,1.1,1.1);c.fill(); }
+      for(const u of [.18,n-.22])dbox(c,o,u,.12,.04,n-.24,h+3,7,'#e9b6bb',{hl:false});
+    } else {
+      // Alternating canvas stripes on a projecting awning, with a proper shop window below.
+      for(let i=0;i<8;i++)poly(c,[IP(o,.1+(n-.2)*i/8,end,22),IP(o,.1+(n-.2)*(i+1)/8,end,22),IP(o,.1+(n-.2)*(i+1)/8,end+.16,18),IP(o,.1+(n-.2)*i/8,end+.16,18)],i%2?'#fbefdc':residential?'#78946c':'#ba624c',null);
+      dtext(c,o,'L',end+.005,n/2,h-3,({cafe:'COFFEE',toys:'TOYS',clothes:'BOUTIQUE',furniture:'HOME',market:'MARKET',store:'GENERAL',salon:'SALON',sushi:'SUSHI'})[b.type]||'SHOP','#fff4dc',3.6);
+      dpot(c,o,.08,end+.1,0,residential?'#f1acbd':'#f8d581');
+    }
+    return true;
+  }
+
   function isoBuilding(c, b, o) {
     const lv = L(b), n = sz(b.type), t = G.time || 0;
     c.save(); c.lineJoin = 'round';
     const art = b.type === 'hutch' ? null : spriteArt(b);
-    if (b.plain) {
+    if (districtFacade(c, b, o)) { /* themed architecture already drawn */ }
+    else if (b.plain) {
       const wall = ['#e8c4a2', '#b7d5c6', '#d6c7e8', '#edc3c7'][b.v || 0];
       const end = n - .1, floors = (b.type === 'office' ? 4 : 2) + (b.v || 0) % 2 + lv - 1;
       const height = 14 + floors * 13;
@@ -6049,8 +6119,9 @@ button.famchip:hover { background: #fff3e2; }
   }
   const bLoose = b => { const n = sz(b.type); return { l: n * HW + 34, r: n * HW + 34, t: htOf(b) + 120, b: 2 * n * HH + 30 }; };
   function drawSprite(c, b, o) {
-    const kind = b.type + '|' + L(b) + (b.v ? '|' + b.v : '') + (b.plain ? '|plain' : ''), info = kinds.get(kind), phase = !info || info.anim ? ((b.x % 4) + 4) % 4 : 0;
-    stampSprite(c, kind, seasonIdx() + '|' + (lit() ? 1 : 0) + '|' + phase, bLoose(b), (cx, o2) => isoBuilding(cx, Object.assign({}, b, { x: phase, y: 0 }), o2), o);
+    const districtStyle = buildingCharacter(b);
+    const kind = b.type + '|' + L(b) + (b.v ? '|' + b.v : '') + (b.plain ? '|plain' : '') + '|' + (districtStyle || ''), info = kinds.get(kind), phase = !info || info.anim ? ((b.x % 4) + 4) % 4 : 0;
+    stampSprite(c, kind, seasonIdx() + '|' + (lit() ? 1 : 0) + '|' + phase, bLoose(b), (cx, o2) => isoBuilding(cx, Object.assign({}, b, { x: phase, y: 0, districtStyle }), o2), o);
   }
   // furniture: o is the house origin, the piece is stamped at its own tile
   function furnSprite(c, it, o, alpha) {
@@ -6878,6 +6949,42 @@ button.famchip:hover { background: #fff3e2; }
   }
   const mapOfView = () => view === 'city' ? 'city' : 'home';
   const hoodsOf = m => (G.hoods && G.hoods[m]) || [];
+  const characterOf = h => DistrictIdentity.identify(h, h && DISTRICTS[h.preset]);
+  const characterCache = new WeakMap(), districtSpotCache = new WeakMap();
+  function buildingCharacter(b) {
+    if (b.map === 'park') return null;
+    const key = roadVer + ':' + cityChunkRevision, old = characterCache.get(b);
+    if (old && old.key === key && old.x === b.x && old.y === b.y) return old.character;
+    const h = zoneOfB(b), character = characterOf(h);
+    characterCache.set(b, {key, x:b.x, y:b.y, character}); return character;
+  }
+  function districtProfile(h) {
+    const original = DISTRICTS[h.preset], character = characterOf(h);
+    if (!character) return original;
+    return {kind: character === 'downtown' && original && original.kind === 'finance' ? 'finance' : character,
+      crowd: (original && original.crowd) || 5};
+  }
+  function activitySpots(m, h) {
+    const character = characterOf(h), key = roadVer + ':' + listOf(m).length + ':' + character;
+    const old = districtSpotCache.get(h); if (old && old.key === key) return old.spots;
+    const spots = (h.spots || []).map(sp => ({...sp}));
+    if (!spots.length && character) {
+      for (const b of listOf(m)) {
+        if (!inRect(h,b.x,b.y)) continue;
+        const profile = PROFILE[b.type], f = shopFrontage(m,b);
+        if (profile && profile.acts && f) for (const k of profile.acts) spots.push({k,x:f[0]+.5,y:f[1]+.5});
+        const k = b.type === 'bench' ? 'sit' : ['park','tunnel','roller','toys'].includes(b.type) ? 'play' : ['pond','statue'].includes(b.type) ? 'photo' : null;
+        if (k) spots.push({k,x:b.x+.5,y:b.y+1.05});
+      }
+    }
+    const paths = (h.paths && h.paths.length ? h.paths : G.paths[m]).filter(k => {const [x,y]=k.split(',').map(Number);return inRect(h,x,y);});
+    // Use existing public sidewalks only; never invent routes across gardens or buildings.
+    if (character && (!spots.length || character === 'entertainment')) for (const k of paths.filter((_,i)=>i%4===0).slice(0,8)) {
+      const [x,y]=k.split(',').map(Number), act=character === 'entertainment' ? (spots.length%2 ? 'dance' : 'music') : 'stroll';
+      spots.push({k:act,x:x+.5,y:y+.5});
+    }
+    const result = spots.slice(0,96); districtSpotCache.set(h,{key,spots:result}); return result;
+  }
   function zoneAt(m, x, y) { for (const h of hoodsOf(m)) if (x >= h.x && x < h.x + h.w && y >= h.y && y < h.y + h.h) return h; return null; }
   const zoneOfB = b => zoneAt(b.map === 'city' ? 'city' : 'home', b.x, b.y);
   function hoodStats(m, h) {
@@ -7009,7 +7116,7 @@ button.famchip:hover { background: #fff3e2; }
   let hoodSig = '';
   function renderHoods() {
     const m = mapOfView(), list = hoodsOf(m);
-    const sig = m + '|' + list.map(h => h.id + h.name + h.zone + h.x + h.y + h.w + h.h).join(';') + '|' + Math.floor((G.time || 0) / 2);
+    const sig = m + '|' + list.map(h => h.id + h.name + h.zone + (h.character || '') + h.x + h.y + h.w + h.h).join(';') + '|' + Math.floor((G.time || 0) / 2);
     if (sig === hoodSig) return; hoodSig = sig;
     $('hoodMap').textContent = m === 'city' ? 'Job City' : 'Home Town';
     if (!list.length) { $('hoods').innerHTML = `<p class="small" style="margin-top:0">No neighborhoods in ${m === 'city' ? 'Job City' : 'Home Town'} yet. Open the <b>📐 Planning</b> tab under the map, pick <b>Neighborhood</b>, and drag a rectangle over part of town.</p>`; return; }
@@ -7019,13 +7126,22 @@ button.famchip:hover { background: #fff3e2; }
       return `<div class="hood" data-id="${h.id}" style="border-left-color:${Z.col}">
         <div class="hoodtop"><b>${h.island ? '🏝️ ' : ''}${h.name}</b><span class="tag">${h.island ? 'island · ' : ''}${P ? '🏘️ district · ' : ''}${h.w}×${h.h}</span></div>
         <select class="hoodzone" aria-label="Zoning for ${h.name}">${opts}</select>
+        <label class="small">Area character <select class="hoodcharacter" aria-label="Area character"><option value="" ${!h.character ? 'selected' : ''}>Automatic from area</option>${Object.entries(DistrictIdentity.themes).map(([key,t])=>`<option value="${key}" ${h.character===key?'selected':''}>${t.icon} ${t.name}</option>`).join('')}</select></label>
+        ${characterOf(h) ? `<div class="small district-story"><b>${DistrictIdentity.themes[characterOf(h)].icon} ${DistrictIdentity.themes[characterOf(h)].name}</b><br>${DistrictIdentity.themes[characterOf(h)].architecture}.<br>${DistrictIdentity.themes[characterOf(h)].rhythm}.</div>` : ''}
         <div class="hoodstats"><span>🏠 ${s.n} buildings</span><span>🐹 ${s.pigs.length} ${m === 'city' ? 'workers' : 'residents'}</span>${s.joy !== null ? `<span>${s.joy > 60 ? '😊' : s.joy > 30 ? '😐' : '😟'} ${s.joy}% happy</span>` : ''}<span>💼 ${s.jobs} jobs</span><span>🌳 ${s.decor + s.parks} green</span><span>🛣️ ${s.roads} road</span></div>
         <div class="small" style="margin:4px 0 0">${s.active ? '✅ Zoning bonus active: ' : '⏳ Bonus not active yet: '}${Z.tip}</div>
         ${P ? `<div class="small" style="margin:4px 0 0">${P.ic} <b>${P.name}</b>, inspired by ${P.inspo}. ${districtMembers(m, h).length} pieces · ${(h.spots || []).length} pig spots · ${(h.conns || []).filter(q => q.kind === 'road' && connLinked(m, q)).length}/${(h.conns || []).filter(q => q.kind === 'road').length} roads linked</div>` : ''}
         <div class="btns" style="margin-top:6px"><button class="mini" data-act="go">Go there</button><button class="mini" data-act="ren">Rename</button>${P ? '<button class="mini" data-act="dmove">Move district</button><button class="mini" data-act="ddel">Demolish</button>' : ''}<button class="mini" data-act="del">${h.island ? 'Sink island' : P ? 'Ungroup' : 'Remove'}</button></div></div>`;
     }).join('');
   }
-  $('hoods').addEventListener('change', e => { const el = e.target.closest('.hood'); if (!el || !e.target.classList.contains('hoodzone')) return; const h = hoodsOf(mapOfView()).find(q => q.id === +el.dataset.id); if (h) { h.zone = e.target.value; zoneT = 0; hoodSig = ''; sfx('tap'); save(); } });
+  $('hoods').addEventListener('change', e => {
+    if (!e.target.classList.contains('hoodcharacter')) return;
+    const el=e.target.closest('.hood'), h=el && hoodsOf(mapOfView()).find(q=>q.id===+el.dataset.id);
+    if (!h) return;
+    if (Object.hasOwn(DistrictIdentity.themes,e.target.value)) h.character=e.target.value; else delete h.character;
+    crowds.delete(h.id); walkCache.delete(h.id); markGround(); hoodSig=''; save(); sfx('tap'); renderHoods();
+  });
+  $('hoods').addEventListener('change', e => { const el = e.target.closest('.hood'); if (!el || !e.target.classList.contains('hoodzone')) return; const h = hoodsOf(mapOfView()).find(q => q.id === +el.dataset.id); if (h) { h.zone = e.target.value; markGround(); walkCache.delete(h.id); crowds.delete(h.id); zoneT = 0; hoodSig = ''; sfx('tap'); save(); } });
   $('hoods').addEventListener('click', async e => {
     const btn = e.target.closest('button[data-act]'), el = e.target.closest('.hood'); if (!btn || !el) return;
     const m = mapOfView(), h = hoodsOf(m).find(q => q.id === +el.dataset.id); if (!h) return;
@@ -7046,6 +7162,16 @@ button.famchip:hover { background: #fff3e2; }
     const q4 = (x0, y0, x1, y1) => [IP(O, x0, y0), IP(O, x1, y0), IP(O, x1, y1), IP(O, x0, y1)];
     for (const k of P) {
       const [x, y] = k.split(',').map(Number);
+      const character = characterOf(zoneAt(mapName,x,y)), theme = DistrictIdentity.themes[character];
+      if (theme) {
+        poly(c,q4(x,y,x+1,y+1),theme.paving[(x+y)&1],null);
+        if (character === 'shopping') for(const f of [.25,.5,.75])seg(IP(O,x,y+f),IP(O,x+1,y+f),'rgba(120,70,45,.2)',.6);
+        else {seg(IP(O,x+.5,y),IP(O,x+.5,y+1),'rgba(90,90,100,.18)',.6);seg(IP(O,x,y+.5),IP(O,x+1,y+.5),'rgba(90,90,100,.18)',.6);}
+        if(character==='entertainment' && (x+y)%3===0){const [px,py]=IP(O,x+.5,y+.5);c.save();c.translate(px,py);c.scale(1,.5);c.fillStyle='#e6bd70';star(c,0,0,4);c.restore();}
+        if(has(x,y+1))seg(IP(O,x,y+1),IP(O,x+1,y+1),theme.accent,1.8);
+        if(has(x+1,y))seg(IP(O,x+1,y),IP(O,x+1,y+1),theme.accent,1.8);
+        continue;
+      }
       if (!city) { // Home Town: pale stone sidewalk slabs, with a light kerb where they meet a street
         poly(c, q4(x, y, x + 1, y + 1), (x + y) % 2 ? '#ebe6dc' : '#e5e0d5', null);
         seg(IP(O, x, y + .5), IP(O, x + 1, y + .5), 'rgba(125,115,100,.22)', .6); seg(IP(O, x + .5, y), IP(O, x + .5, y + 1), 'rgba(125,115,100,.22)', .6);
@@ -7379,11 +7505,14 @@ button.famchip:hover { background: #fff3e2; }
       corner2: ['office', 'market'], front: ['finoffice', 'salon', 'toys', 'cafe'],
       back2: ['office', 'market'], back: ['finoffice', 'finoffice', 'citytree'], props: ['blossom', 'streetlamp', 'bikerack', 'planter', 'hydrant', 'trash', 'citytree', 'busstop'] },
     shops: { name: 'Market Street', ic: '🛍️', zone: 'com', kind: 'downtown', crowd: 6,
-      corner2: ['market', 'office'], front: ['salon', 'toys', 'cafe', 'finoffice'],
-      back2: ['market'], back: ['finoffice', 'citytree', 'hedge'], props: ['blossom', 'table', 'planter', 'coffeecart', 'streetlamp', 'bench', 'bikerack'] },
+      corner2: ['misomarket', 'market'], front: ['clothes', 'furniture', 'toys', 'cafe', 'store', 'salon'],
+      back2: ['misomarket'], back: ['mochibakery', 'store', 'citytree', 'hedge'], props: ['blossom', 'table', 'planter', 'coffeecart', 'streetlamp', 'bench', 'bikerack'] },
     offices: { name: 'Office Row', ic: '🏢', zone: 'down', kind: 'finance', crowd: 5,
       corner2: ['office'], front: ['finoffice', 'finoffice', 'cafe', 'dealer'],
       back2: ['office', 'market'], back: ['finoffice', 'citytree'], props: ['citytree', 'streetlamp', 'planter', 'trash', 'ticker', 'hydrant'] },
+    entertainment: { name:'Lantern Quarter', ic:'🎭', zone:'com', character:'entertainment', kind:'entertainment', crowd:9,
+      corner2: [], front:['toys','cafe','sushi','roller'], back2:[], back:['toys','cafe','blossom'],
+      props:['table','lantern','streetlamp','bench','coffeecart','planter','statue','blossom'] },
     homes: { name: 'Garden Row', ic: '🏡', zone: 'res', kind: 'cozy', crowd: 4 },
     waterfront: { name: 'Waterfront Walk', ic: '🌊', zone: 'park', kind: 'cozy', crowd: 4 },
     park: { name: 'Pocket Park', ic: '🌳', zone: 'park', kind: 'cozy', crowd: 5, park: true,
@@ -7415,7 +7544,7 @@ button.famchip:hover { background: #fff3e2; }
   // Cottages are real homes (4 pigs each), so the Home Town generator builds a limited number of them.
   const HOME_COTTAGE_MAX = 18; let homeCottages = 0;
   for (const [k, K] of Object.entries(BLOCK_KINDS)) // register each recipe as a (tool-less) preset, so crowds know their schedule
-    DISTRICTS['gen_' + k] = { name: K.name, ic: K.ic, map: K.map || 'city', zone: K.zone, kind: K.kind, crowd: K.crowd, w: 0, h: 0, roads: [], paths: [], xwalks: [], items: [], spots: [], conns: [], inspo: K.map === 'home' ? 'the town generator' : 'the city generator', blurb: K.map === 'home' ? 'a grown town block' : 'a grown city block', generated: true };
+    DISTRICTS['gen_' + k] = { name: K.name, ic: K.ic, map: K.map || 'city', zone: K.zone, kind: K.kind, character: K.character, crowd: K.crowd, w: 0, h: 0, roads: [], paths: [], xwalks: [], items: [], spots: [], conns: [], inspo: K.map === 'home' ? 'the town generator' : 'the city generator', blurb: K.map === 'home' ? 'a grown town block' : 'a grown city block', generated: true };
   // Irregular streets frame narrow home rows, wide shopping blocks and the south shore.
   const WATERFRONT_Y = ROWS - 3;
   const CITY_LANDMARKS = ['bronsonbank', 'wheekcoffee', 'misomarket', 'tokiramen', 'mochibakery'];
@@ -7426,6 +7555,7 @@ button.famchip:hover { background: #fff3e2; }
     rows.forEach(([y0, y1], ri) => cols.forEach(([x0, x1], ci) => {
       const kind = ri === 3 || (ri === 0 && ci < 2) ? 'homes'
         : (ri === 2 && ci % 3 === 1) || (ri === 0 && ci === 5) ? 'park'
+        : (ri === 2 && ci === 2) || (ri === 1 && ci === 4) ? 'entertainment'
         : ri === 1 && ci >= 2 && ci <= 3 ? 'downtown'
         : ri === 2 && ci >= 3 ? 'offices' : 'shops';
       blocks.push({ x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1, kind });
@@ -7754,8 +7884,8 @@ button.famchip:hover { background: #fff3e2; }
   function outlineRect(c, x, y, w, h, col) { const O = { x: 0, y: 0 }; c.save(); c.setLineDash([6, 5]); c.lineDashOffset = -(G.time || 0) * 10; poly(c, [IP(O, x, y), IP(O, x + w, y), IP(O, x + w, y + h), IP(O, x, y + h)], null, col, 2.2); c.restore(); }
 
   // ---------- activity spots: when pigs and passers-by want to be where ----------
-  const ACT_IC = { eat: '🥕', coffee: '☕', sit: '💭', play: '🛝', stroll: '🌷', wait: '🚌', photo: '📸', work: '💼', shop: '🛍️' };
-  function actWeight(k, h, we) {
+  const ACT_IC = { eat: '🥕', coffee: '☕', sit: '💭', play: '🛝', stroll: '🌷', wait: '🚌', photo: '📸', work: '💼', shop: '🛍️', music: '🎵', dance: '💃' };
+  function actWeight(k, h, we, character = null) {
     const at = (a, b) => h >= a && h < b, night = h < 6.5 || h >= 21.5;
     let w;
     switch (k) {
@@ -7768,12 +7898,14 @@ button.famchip:hover { background: #fff3e2; }
       case 'photo': w = at(9, 18) ? .6 * (we ? 1.6 : 1) : .05; break;
       case 'work': w = we ? .05 : at(7.3, 9.5) ? 1.8 : at(13.2, 14) ? .8 : at(9.5, 16.5) ? .3 : 0; break;
       case 'shop': w = at(10, 19) ? (we ? 1.5 : .8) : .05; break;
+      case 'music': case 'dance': w = at(17,24) || at(0,2) ? 1.6 : at(12,17) ? .35 : 0; break;
       default: w = .3;
     }
-    return night && k !== 'eat' ? w * .2 : w;
+    return (night && !['eat','music','dance'].includes(k) ? w*.2 : w) * DistrictIdentity.weight(character,k,h);
   }
   // how busy a district's sidewalks are right now (0..1.2), by its crowd schedule
   function busyness(kind, h, we) {
+    const themed = DistrictIdentity.busy(kind,h,we); if (themed !== null) return themed;
     const night = h < 6.5 || h >= 22;
     if (kind === 'finance') { const b = night ? .05 : h < 7.3 ? .2 : h < 9.3 ? 1 : h < 11.5 ? .5 : h < 13.5 ? 1 : h < 16.5 ? .55 : h < 18.3 ? .9 : .25; return we ? b * .35 : b; }
     if (kind === 'downtown') { const b = night ? .12 : h < 7.3 ? .35 : h < 9.3 ? 1 : h < 11.5 ? .65 : h < 13.5 ? 1.05 : h < 16.5 ? .75 : h < 19.5 ? 1 : .5; return we ? Math.min(1.2, b * 1.1) : b; }
@@ -7789,8 +7921,9 @@ button.famchip:hover { background: #fff3e2; }
   function pickSpot(m, p) {
     const lr = landRectAt(m, Math.floor(p.x / T), Math.floor(p.y / T)); if (!lr) return null;
     const hr = hourNow(), we = isWeekend(), cand = [];
-    for (const h of hoodsOf(m)) for (const s of h.spots || []) if (s.k !== 'work' && inRect(lr, Math.floor(s.x), Math.floor(s.y))) cand.push(s);
-    return cand.length ? wpick(cand, s => actWeight(s.k, hr, we) * traitAff(p, s.k)) : null;
+    for (const h of hoodsOf(m)) for (const spot of activitySpots(m,h)) if (spot.k !== 'work' && inRect(lr,Math.floor(spot.x),Math.floor(spot.y))) cand.push({spot,character:characterOf(h)});
+    const selected = cand.length ? wpick(cand,q=>actWeight(q.spot.k,hr,we,q.character)*traitAff(p,q.spot.k)) : null;
+    return selected && selected.spot;
   }
   // city workers pop out for lunch at a café or coffee cart near their office
   function lunchSpot(p, wb) {
@@ -7813,11 +7946,16 @@ button.famchip:hover { background: #fff3e2; }
   const CROWD_MIX = {
     finance: [[.75, 'business'], [.1, 'cup'], [.15, 'plain']],
     downtown: [[.28, 'business'], [.24, 'shopper'], [.14, 'student'], [.1, 'barista'], [.08, 'builder'], [.16, 'cup']],
+    residential: [[.5,'plain'],[.3,'student'],[.15,'cup'],[.05,'shopper']],
+    shopping: [[.65,'shopper'],[.2,'cup'],[.1,'barista'],[.05,'student']],
+    entertainment: [[.35,'festival'],[.3,'performer'],[.2,'cup'],[.15,'student']],
     cozy: [[.35, 'plain'], [.3, 'shopper'], [.2, 'student'], [.15, 'cup']]
   };
   function walkerLook(kind) {
     const mix = CROWD_MIX[kind] || CROWD_MIX.cozy, role = (wpick(mix, q => q[0]) || mix[0])[1], fur = pick(GUEST_SKINS);
     switch (role) {
+      case 'festival': return {role,skin:fur,carry:'ticket',hat:'cap',col:pick(PACKS)};
+      case 'performer': return {role,skin:fur,hat:'beret',col:'#a86fba'};
       case 'business': return { role, skin: { base: pick(SUITS), head: pick(COATS).c, suit: true, tie: pick(TIES), ear: '#d99a80', nose: '#d97b7b' }, carry: 'case' };
       case 'shopper': return { role, skin: fur, carry: 'bag' };
       case 'student': return { role, skin: fur, carry: 'pack', hat: Math.random() < .5 ? 'cap' : null, col: pick(PACKS) };
@@ -7830,7 +7968,7 @@ button.famchip:hover { background: #fff3e2; }
   // the tiles a district's citizens may walk on: sidewalks (1) and zebra crossings (2), with a one-tile margin
   const walkCache = new Map();
   function walkGrid(m, h) {
-    const key = roadVer + '|' + h.x + ',' + h.y + '|' + h.w + 'x' + h.h; let g = walkCache.get(h.id);
+    const key = roadVer + '|' + h.x + ',' + h.y + '|' + h.w + 'x' + h.h + '|' + listOf(m).length + '|' + characterOf(h); let g = walkCache.get(h.id);
     if (g && g.key === key) return g;
     const ox = h.x - 1, oy = h.y - 1, W2 = h.w + 2, H2 = h.h + 2, ok = new Uint8Array(W2 * H2);
     for (let j = 0; j < H2; j++) for (let i = 0; i < W2; i++) { const x = ox + i, y = oy + j; ok[j * W2 + i] = isPath(m, x, y) ? 1 : xwSets[m].has(x + ',' + y) && isRoad(m, x, y) ? 2 : 0; }
@@ -7845,7 +7983,7 @@ button.famchip:hover { background: #fff3e2; }
     if (!main.size) { for (const c of comp) if (c >= 0) size.set(c, (size.get(c) || 0) + 1); let best = -1, bn = 0; for (const [c, n] of size) if (n > bn) { bn = n; best = c; } if (best >= 0) main.add(best); }
     g = { key, ox, oy, W2, H2, ok, m, comp, main };
     // spots a walker can actually get to: a reachable sidewalk tile within a short step of the spot
-    g.spots = (h.spots || []).filter(sp => { const t = nearestWalk(g, sp.x, sp.y); return t && (t[0] + .5 - sp.x) ** 2 + (t[1] + .5 - sp.y) ** 2 <= 1.9 * 1.9; });
+    g.spots = activitySpots(m,h).filter(sp => { const t = nearestWalk(g, sp.x, sp.y); return t && (t[0] + .5 - sp.x) ** 2 + (t[1] + .5 - sp.y) ** 2 <= 1.9 * 1.9; });
     walkCache.set(h.id, g); return g;
   }
   const gAt = (g, x, y) => x < g.ox || y < g.oy || x >= g.ox + g.W2 || y >= g.oy + g.H2 ? 0 : g.ok[(y - g.oy) * g.W2 + (x - g.ox)];
@@ -7903,7 +8041,7 @@ button.famchip:hover { background: #fff3e2; }
     a.ri = 0; return true;
   }
   function nextWalkerGoal(a, h, g, hr, we) {
-    const s = Math.random() < .78 && g.spots.length ? wpick(g.spots, q => actWeight(q.k, hr, we)) : null;
+    const s = Math.random() < .78 && g.spots.length ? wpick(g.spots, q => actWeight(q.k, hr, we, characterOf(h))) : null;
     if (s && routeTo(a, g, s.x + (Math.random() - .5) * .25, s.y + (Math.random() - .5) * .15)) { a.goAct = s.k; return; }
     const p = walkerStart(h); a.goAct = null;
     if (!routeTo(a, g, p.x / T + (Math.random() - .5) * .3, p.y / T + (Math.random() - .5) * .3)) { a.route = null; a.leave = true; } // no sidewalk route: fade out rather than walk through buildings
@@ -7979,7 +8117,7 @@ button.famchip:hover { background: #fff3e2; }
   function districtTick(dt) {
     const hr = hourNow(), we = isWeekend(), rain = G.weather.k === 'rain' || G.weather.k === 'snow';
     for (const m of ['home', 'city']) for (const h of hoodsOf(m)) {
-      const P = h.preset && DISTRICTS[h.preset]; if (!P || !h.spots || !h.spots.length) continue;
+      const P = districtProfile(h); if (!P || !activitySpots(m,h).length) continue;
       const step = districtStep(m, h, dt); if (!step) continue;
       updateDistrict(m, h, P, step, hr, we, rain);
     }
@@ -8028,6 +8166,8 @@ button.famchip:hover { background: #fff3e2; }
     if (a.carry === 'pack') { c.beginPath(); c.moveTo(-12, -24); c.quadraticCurveTo(0, -10, 2, 6); c.stroke(); }
     if (a.carry === 'case') { const sw = moving ? Math.sin(a.step) * 2 : 0; c.fillStyle = '#5a3a26'; rr(c, -2 + sw, 12, 18, 13, 2); c.fill(); c.stroke(); c.beginPath(); c.arc(7 + sw, 12, 4, Math.PI, 0); c.stroke(); }
     if (a.carry === 'bag') { c.fillStyle = '#e9c89a'; rr(c, 4, 4, 18, 22, 2); c.fill(); c.stroke(); c.fillStyle = '#7cc35a'; ell(c, 9, 2, 4, 6, -.3); c.fill(); c.stroke(); c.fillStyle = '#ff9a4d'; ell(c, 16, 1, 3, 6, .3); c.fill(); c.stroke(); }
+    if (a.carry === 'ticket') {c.fillStyle='#f4c863';rr(c,8,7,22,12,2);c.fill();c.stroke();c.fillStyle='#874c83';c.fillRect(18,9,2,8);}
+    if (a.hat === 'beret') {c.fillStyle=a.col;c.beginPath();c.ellipse(18,-25,15,6,-.2,0,Math.PI*2);c.fill();c.stroke();}
     if (a.carry === 'cup') { c.fillStyle = '#fffaf2'; c.beginPath(); c.moveTo(34, 2); c.lineTo(46, 2); c.lineTo(44, 18); c.lineTo(36, 18); c.closePath(); c.fill(); c.stroke(); c.fillStyle = '#a0683e'; c.fillRect(35.5, 7, 9, 5); c.fillStyle = '#7a4b2e'; c.fillRect(33, -1, 14, 3.5); }
     if (a.hat === 'hard') { c.fillStyle = '#f7c948'; c.beginPath(); c.ellipse(20, -20, 15, 11, 0, Math.PI, 0); c.closePath(); c.fill(); c.stroke(); c.fillRect(2, -21, 36, 3.5); c.strokeRect(2, -21, 36, 3.5); }
     if (a.hat === 'cap') { c.fillStyle = a.col || '#e0483f'; c.beginPath(); c.ellipse(18, -19, 13, 9, 0, Math.PI, 0); c.closePath(); c.fill(); c.stroke(); c.beginPath(); c.ellipse(32, -19, 9, 3, 0, 0, Math.PI * 2); c.fill(); c.stroke(); }
@@ -9501,7 +9641,7 @@ button.famchip:hover { background: #fff3e2; }
   if (readOnly) $('gameplayStatus').textContent = 'Tracking is paused for this newer save.';
   // test hook: only with ?debug in the URL (used by automated screenshot tests, never in normal play)
   if (/[?&]debug\b/.test(location.search)) window.__pc = {
-    get G() { return G; }, lockSave() { saveLocked = true; }, pause(value = true) { paused = value; }, simulation, productionTick, useTown, get saveProblem() { return saveProblem; }, selectPig(id) { selected = id; renderPig(); }, B, DISTRICTS, setView, cams, cam, iso, T, save, crowds, presetLayout, checkLayout, sprites, kinds, chunkBuildings, districtStep, districtNear, draw, startStreet, stopStreet, streetTick, goInside, setBuilder, growCity,
+    get G() { return G; }, characterOf, buildingCharacter, districtProfile, activitySpots, actWeight, busyness, walkerLook, cityPlan, growTown, drawSprite, isoBuilding, markGround, renderHoods, lockSave() { saveLocked = true; }, pause(value = true) { paused = value; }, simulation, productionTick, useTown, get saveProblem() { return saveProblem; }, selectPig(id) { selected = id; renderPig(); }, B, DISTRICTS, setView, cams, cam, iso, T, save, crowds, presetLayout, checkLayout, sprites, kinds, chunkBuildings, districtStep, districtNear, draw, startStreet, stopStreet, streetTick, goInside, setBuilder, growCity,
     setHover(x, y) { hover = { x, y }; }, setTool(t) { tool = t; }, place(key) { placeDistrict(key); }, select(b) { selBld = b; renderBld(); },
     hoods: m => hoodsOf(m), at: (m, x, y) => listOf(m).find(b => covers(b, x, y)), walk: (m, h) => walkGrid(m, h), DECOR, sz, toScr: (tx, ty) => { const r = canvas.getBoundingClientRect(), p = isoToScr(iso(tx * T, ty * T)); return { x: p.x + r.left, y: p.y + r.top }; }, tick: (dt, n = 1) => { for (let i = 0; i < n; i++) simulation.advance(dt, 1, false, tick); }
   };

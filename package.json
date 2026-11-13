@@ -22,7 +22,9 @@
     "test:tracking:desktop": "electron scripts/test-gameplay-desktop.cjs",
     "test:simulation": "node scripts/test-simulation.cjs && node scripts/test-city-chunks.cjs && node scripts/test-game-bugs.cjs",
     "test:simulation:browser": "electron scripts/test-simulation-browser.cjs",
-    "test:simulation:desktop": "electron scripts/test-simulation-desktop.cjs"
+    "test:simulation:desktop": "electron scripts/test-simulation-desktop.cjs",
+    "test:districts": "node scripts/test-district-identity.cjs && node scripts/test-city-chunks.cjs",
+    "test:districts:browser": "electron scripts/test-district-browser.cjs"
   },
   "devDependencies": {
     "electron": "44.9.3",
