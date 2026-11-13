@@ -1,0 +1,24 @@
+const {app,BrowserWindow,session}=require('electron');
+const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),assert=require('node:assert/strict');
+app.setPath('userData',fs.mkdtempSync(path.join(os.tmpdir(),'pig-city-music-')));app.on('window-all-closed',()=>{});
+app.whenReady().then(async()=>{let code=0;try{
+ session.defaultSession.webRequest.onBeforeRequest({urls:['http://*/*','https://*/*']},(_,cb)=>cb({cancel:true}));
+ const w=new BrowserWindow({show:false,width:1280,height:900,webPreferences:{backgroundThrottling:false}}),errors=[];w.webContents.setAudioMuted(true);
+ w.webContents.on('console-message',(e,...a)=>{const m=e.message||a.join(' ');if(/Uncaught|draw failed|update failed|init failed/.test(m))errors.push(m);});
+ await w.loadFile(path.resolve(process.argv[2]||path.join(__dirname,'../index.html')),{query:{debug:'1',paused:'1'}});
+ const run=s=>w.webContents.executeJavaScript(s),wait=ms=>new Promise(r=>setTimeout(r,ms));
+ const initial=await run(`(async()=>{const a=__pc.themeMusic.audio;if(a.readyState<1)await new Promise((resolve,reject)=>{a.addEventListener('loadedmetadata',resolve,{once:true});a.addEventListener('error',()=>reject(Error('Audio error '+a.error?.code)),{once:true});setTimeout(()=>reject(Error('Audio metadata timed out')),10000);});return {duration:a.duration,paused:a.paused,loop:a.loop,volume:a.volume,codec:a.canPlayType('audio/mp4; codecs="mp4a.40.2"')};})()`);
+ assert(initial.duration>70&&initial.duration<73);assert(initial.paused);assert(initial.loop);assert.equal(initial.volume,.25);assert(initial.codec);
+ w.webContents.sendInputEvent({type:'mouseDown',x:80,y:130,button:'left',clickCount:1});w.webContents.sendInputEvent({type:'mouseUp',x:80,y:130,button:'left',clickCount:1});
+ await wait(1000);assert.equal(await run(`__pc.themeMusic.audio.paused`),false);assert(await run(`__pc.themeMusic.audio.currentTime>0`));
+ await run(`__pc.themeMusic.audio.currentTime=__pc.themeMusic.audio.duration-.2`);await wait(1000);assert(await run(`__pc.themeMusic.audio.currentTime<3`),'Track did not loop');
+ await run(`document.getElementById('soundBtn').click()`);assert(await run(`__pc.themeMusic.audio.paused`));assert.equal(await run(`localStorage.getItem('pigcity-muted')`),'1');
+ await run(`document.getElementById('soundBtn').click()`);await wait(200);assert.equal(await run(`__pc.themeMusic.audio.paused`),false);
+ await run(`const v=document.getElementById('musicVolume');v.value='40';v.dispatchEvent(new Event('input',{bubbles:true}));document.querySelector('[data-spd="3"]').click()`);
+ assert.equal(await run(`__pc.themeMusic.volume`),.4);assert.equal(await run(`__pc.themeMusic.audio.playbackRate`),1);
+ await run(`document.getElementById('musicBtn').click()`);assert(await run(`__pc.themeMusic.audio.paused`));assert.equal(await run(`localStorage.getItem('pigcity-music-muted')`),'1');
+ const loaded=new Promise(r=>w.webContents.once('did-finish-load',r));w.reload();await loaded;
+ assert.equal(await run(`__pc.themeMusic.enabled`),false);assert.equal(await run(`__pc.themeMusic.volume`),.4);assert(await run(`__pc.themeMusic.audio.paused`));
+ await run(`document.getElementById('musicVolume').value='0';document.getElementById('musicVolume').dispatchEvent(new Event('input',{bubbles:true}));document.getElementById('musicBtn').click()`);assert.equal(await run(`__pc.themeMusic.enabled`),true);assert.equal(await run(`__pc.themeMusic.volume`),.25);
+ assert.deepEqual(errors,[]);console.log(JSON.stringify({passed:'Actual AAC metadata/decoding, gesture playback, end-of-song loop, sound/music controls, normal speed at 3x, volume/off persistence, reload and zero-volume recovery',...initial,errors},null,2));w.destroy();
+}catch(e){console.error(e);code=1;}finally{app.exit(code);}});

@@ -22,7 +22,7 @@ app.on('web-contents-created',(_,wc)=>{
   assert.equal(await wc.executeJavaScript(`pigDesktop.backupSave('pigcity-manual-backup',JSON.stringify(__pc.G))`),true);
   assert.ok((await wc.executeJavaScript(`pigDesktop.recoverySaves()`)).length>=2);
   const saved=JSON.parse(fs.readFileSync(path.join(profile,'Saves/town.json'),'utf8'));
-  assert.equal(saved.schema,5); assert.ok(saved.coins>=123);assert.equal(saved.pigs[0].id,1);assert.equal(saved.pigs[0].name,'Test Pig');
+  assert.equal(saved.schema,require('../assets/js/simulation').SCHEMA); assert.ok(saved.coins>=123);assert.equal(saved.pigs[0].id,1);assert.equal(saved.pigs[0].name,'Test Pig');
   const {DatabaseSync}=require('node:sqlite');const db=new DatabaseSync(path.join(profile,'Gameplay/gameplay.sqlite'),{readOnly:true});
   assert.equal(db.prepare("SELECT count(*) n FROM events WHERE kind='care'").get().n,1);assert.equal(db.prepare('pragma integrity_check').get().integrity_check,'ok');db.close();
   const imported = new Promise(r=>wc.once('did-finish-load',r));

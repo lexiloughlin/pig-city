@@ -1,7 +1,7 @@
 /* Shared browser/Node simulation timing and save policy. No rendering or wall-clock catch-up. */
 (function (root) {
   'use strict';
-  const SCHEMA = 5;
+  const SCHEMA = 6;
   function valid(s) {
     return !!s && typeof s === 'object' && Array.isArray(s.pigs) && Array.isArray(s.buildings)
       && s.pigs.every(p => p && typeof p === 'object' && Number.isFinite(p.id))
@@ -18,7 +18,7 @@
   function migrate(s) {
     if (!valid(s)) throw Error('Invalid Pig City town');
     if ((s.schema || 1) > SCHEMA) return s;
-    // Versions 1–4 are deliberately additive: initExtras retains the existing
+    // Versions 1–5 are deliberately additive: initExtras retains the existing
     // building/room/job migrations. Preserve unknown fields and tracking IDs.
     if (s.clock === undefined) s.clock = 0;
     if (s.time === undefined) s.time = 0;

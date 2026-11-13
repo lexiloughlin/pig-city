@@ -1,5 +1,6 @@
 // Disposable profile; never reads/writes the player's browser storage or Mac save.
 const {app, BrowserWindow, session} = require('electron');
+const SCHEMA=require('../assets/js/simulation').SCHEMA;
 const fs=require('node:fs'), path=require('node:path'), os=require('node:os'), assert=require('node:assert/strict');
 app.setPath('userData',fs.mkdtempSync(path.join(os.tmpdir(),'pigcity-simulation-')));
 app.on('window-all-closed',()=>{});
@@ -23,13 +24,13 @@ app.whenReady().then(async()=>{let code=0;try {
     console.log('PASS: supplied legacy export migration and reload ('+parsed.pigs.length+' pigs, '+parsed.buildings.length+' buildings)');
   }
   // Seed versions from the actual full game format, retaining routines and identities.
-  for (const schema of [1,2,3,4,5]) {
+  for (const schema of [1,2,3,4,5,6]) {
     await run(`__pc.lockSave();localStorage.clear();var old=JSON.parse(${JSON.stringify(town)});old.schema=${schema};old.clock=123;localStorage.setItem('pigcity-v1',JSON.stringify(old));localStorage.setItem('pigcity-seen','1');`);
     await reload();
     const result=await run(`({schema:__pc.G.schema, clock:__pc.G.clock, backup:localStorage.getItem('pigcity-before-simulation'), problem:__pc.saveProblem})`);
-    assert.equal(result.schema,5); assert(Math.abs(result.clock-123)<1); assert.equal(result.problem,'');
-    if(schema<5) assert.equal(JSON.parse(result.backup).schema,schema);
-    await run(`__pc.save()`); await reload(); assert.equal(await run(`__pc.G.schema`),5);
+    assert.equal(result.schema,SCHEMA); assert(Math.abs(result.clock-123)<1); assert.equal(result.problem,'');
+    if(schema<SCHEMA) assert.equal(JSON.parse(result.backup).schema,schema);
+    await run(`__pc.save()`); await reload(); assert.equal(await run(`__pc.G.schema`),SCHEMA);
   }
   // Rolling recovery must survive corrupt JSON and valid JSON with an invalid shape.
   for(const broken of ['{','{"pigs":[],"buildings":null}']) {
@@ -45,7 +46,7 @@ app.whenReady().then(async()=>{let code=0;try {
   const pending=await run(`__pc.simulation.advance(.1,1,false,()=>{});__pc.save();__pc.simulation.tasks.get('production').pending`);
   await reload();assert(Math.abs(await run(`__pc.simulation.tasks.get('production').pending`)-pending)<1e-8);
   await run(`[...document.querySelectorAll('button')].find(b=>b.textContent==='💾 Backup').click()`);
-  assert.equal(await run(`JSON.parse(localStorage.getItem('pigcity-manual-backup')).schema`),5);
+  assert.equal(await run(`JSON.parse(localStorage.getItem('pigcity-manual-backup')).schema`),SCHEMA);
   const backup = await run(`localStorage.getItem('pigcity-manual-backup')`);
   const loaded = new Promise(r=>w.webContents.once('did-finish-load',r));
   await run(`__pc.G.coins=123456;__pc.useTown(${JSON.stringify(backup)})`);await loaded;
@@ -57,6 +58,6 @@ app.whenReady().then(async()=>{let code=0;try {
   await new Promise(r=>setTimeout(r,5500));
   assert.equal(await run(`JSON.parse(localStorage.getItem('pigcity-v1')).coins`),654321);
   assert.deepEqual(errors,[]);
-  console.log('PASS: full-game versions 1–5/reloads, pre-migration backup, malformed-primary recovery, future-version protection, failed-load write lock, scheduler residual reload, manual backup, quota error, real-time autosave');
+  console.log('PASS: full-game versions 1–6/reloads, pre-migration backup, malformed-primary recovery, future-version protection, failed-load write lock, scheduler residual reload, manual backup, quota error, real-time autosave');
   w.destroy();
 }catch(e){console.error(e);code=1;}finally{app.exit(code);}});

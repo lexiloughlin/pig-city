@@ -24,7 +24,7 @@ const IS_MAS = !!process.mas;
 app.setName('Pig City');
 
 protocol.registerSchemesAsPrivileged([
-  { scheme: SCHEME, privileges: { standard: true, secure: true, supportFetchAPI: true } },
+  { scheme: SCHEME, privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true } },
 ]);
 
 // ---------- saves (inside the app container when sandboxed) ----------

@@ -24,7 +24,12 @@
     "test:simulation:browser": "electron scripts/test-simulation-browser.cjs",
     "test:simulation:desktop": "electron scripts/test-simulation-desktop.cjs",
     "test:districts": "node scripts/test-district-identity.cjs && node scripts/test-city-chunks.cjs",
-    "test:districts:browser": "electron scripts/test-district-browser.cjs"
+    "test:districts:browser": "electron scripts/test-district-browser.cjs",
+    "test:vacation": "node scripts/test-vacation-island.cjs && node scripts/test-simulation.cjs",
+    "test:vacation:browser": "electron scripts/test-vacation-browser.cjs",
+    "test:music": "node scripts/test-theme-music.cjs",
+    "test:music:browser": "electron scripts/test-theme-music-browser.cjs",
+    "test:music:desktop": "electron scripts/test-theme-music-desktop.cjs"
   },
   "devDependencies": {
     "electron": "44.9.3",
