@@ -163,6 +163,19 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
 /* ---- v2: pig details ---- */
 .traits { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0 2px; justify-content: center; }
 .pill { font-size: 12px; font-weight: 800; background: #fff3e2; border: 1.5px solid var(--wood); border-radius: 999px; padding: 2px 8px; }
+.pfamily { text-align: center; margin: 2px 0 6px; }
+.famrow { display: grid; grid-template-columns: 118px 1fr; gap: 8px; align-items: center; padding: 6px 0; border-top: 2px dashed #f0d9bf; }
+.famrow:first-child { border-top: 0; }
+.famrow.me { background: #ffe9ef; border-radius: 12px; border-top: 0; padding: 6px 8px; margin: 2px -8px; }
+.famrow.me + .famrow { border-top: 0; }
+.famgen { font-family: var(--font-display); font-size: 16px; }
+.famchips { display: flex; flex-wrap: wrap; gap: 6px; }
+.famchip { display: grid; justify-items: center; min-width: 78px; padding: 4px 8px; background: #fff; border: 2px solid var(--ink); border-radius: 12px; font: inherit; color: var(--ink); line-height: 1.2; }
+button.famchip { cursor: pointer; box-shadow: 0 2px 0 var(--ink); }
+button.famchip:hover { background: #fff3e2; }
+.famchip b { font-size: 13px; } .famchip small { font-size: 11px; opacity: .75; }
+.famchip.gone { border-style: dashed; background: #f6efe6; }
+.famfarm { font-size: 24px; height: 40px; display: grid; place-items: center; }
 .pill.link { cursor: pointer; border-color: #e07a9a; background: #ffe9ef; font: inherit; font-size: 12px; font-weight: 800; color: var(--ink); }
 .trait-desc { text-align: center; }
 /* ---- v2: stock exchange ---- */
@@ -370,6 +383,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
           <div class="tag" id="pTag"></div>
           <div class="traits" id="pTraits"></div>
           <p class="small trait-desc" id="pTraitDesc"></p>
+          <div id="pFamily" class="small pfamily"></div>
           <div id="pBars"></div>
           <!-- Game Systems: Pig Needs Display -->
           <div id="pNeeds" class="small" style="margin-top:8px;padding:6px;background:#fff8f4;border-radius:6px;border-left:4px solid #d9455a"></div>
@@ -425,6 +439,14 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     <input type="text" id="askInput" maxlength="22" autocomplete="off" style="width:100%;font:inherit;font-size:18px;padding:8px 12px;border:2px solid var(--ink);border-radius:12px;box-sizing:border-box">
     <div class="btns" style="margin-top:14px;justify-content:flex-end"><button type="button" class="btn ghost" id="askNo">Cancel</button><button type="submit" class="btn" id="askYes">OK</button></div>
   </form>
+</div>
+<div class="overlay" id="famBox" hidden>
+  <div class="panel" role="dialog" aria-modal="true" aria-labelledby="famTitle">
+    <h2 id="famTitle" style="margin-top:0"></h2>
+    <div id="famBody"></div>
+    <p class="small" id="famNote" style="margin-bottom:0"></p>
+    <div class="btns" style="margin-top:14px;justify-content:flex-end"><button type="button" class="btn" id="famClose">Close</button></div>
+  </div>
 </div>
 <div class="overlay" id="tutorial" hidden>
   <div class="panel" role="dialog" aria-modal="true" aria-labelledby="tutTitle">
@@ -1211,6 +1233,27 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   }
   const friendOf = p => p.friend && G.pigs.find(q => q.id === p.friend);
 
+  // ---------- family tree ----------
+  // G.kin is the town's family records: one row per pig, keyed by pig id: { n: name, par: [id, id] or null, gone: true once it left town }.
+  // `par` holds the ids of two other rows in the same table (a self-referencing table), so a whole tree comes from following it again and again.
+  function kinRow(p) { G.kin = G.kin || {}; const r = G.kin[p.id] || (G.kin[p.id] = { n: p.name, par: null }); r.n = p.name; return r; }
+  function recordBirth(baby, a, b) { kinRow(a); kinRow(b); kinRow(baby).par = [a.id, b.id]; }
+  const kinName = id => { const q = G.pigs.find(p => p.id === id); return q ? q.name : G.kin && G.kin[id] ? G.kin[id].n : 'Unknown'; };
+  const parentsOf = id => (G.kin && G.kin[id] && G.kin[id].par) || [];
+  const pupsOf = id => Object.keys(G.kin || {}).map(Number).filter(k => parentsOf(k).includes(id));
+  // Every relative reachable from `id` through `next` (parentsOf = ancestors, pupsOf = descendants), nearest generation first.
+  // Same idea as a recursive SQL query: start with one pig, then keep adding the next generation until nobody new turns up.
+  function kinWalk(id, next) {
+    const seen = new Set([id]), out = [];
+    let row = [id], gen = 0;
+    while (row.length) {
+      const nextRow = []; gen++;
+      for (const k of row) for (const r of next(k)) if (!seen.has(r)) { seen.add(r); nextRow.push(r); out.push({ id: r, gen }); }
+      row = nextRow;
+    }
+    return out;
+  }
+
   // ---------- stock market ----------
   const STOCKS = [
     { s: 'HAY', name: 'Hay Holdings', base: 20, vol: .10, drift: .012, tip: 'steady, pays a little 🌾 dividend' },
@@ -1273,7 +1316,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     try {
       const s = JSON.parse(readSaveText() || 'null');
       if (s && Array.isArray(s.pigs)) {
-        G = s; nextId = Math.max(0, ...G.pigs.map(p => p.id)) + 1;
+        G = s; nextId = Math.max(0, ...G.pigs.map(p => p.id), ...Object.keys(G.kin || {}).map(Number)) + 1; // family records keep ids of pigs who left, so those are never reused
         if (schemaOf(s) > SAVE_SCHEMA) { readOnly = true; saveLocked = true; } // made by a newer Pig City: look, don't save
         return;
       }
@@ -1578,6 +1621,15 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
       $('pTraitDesc').textContent = tr.desc;
       const fb = $('friendBtn'); if (fb) fb.addEventListener('click', () => { selected = fr.id; fr.hop = .5; listSig = ''; renderPig(true); sfx('tap'); });
     }
+    const fam = { par: parentsOf(p.id), pups: pupsOf(p.id) };
+    const famSig = p.id + '|' + fam.par.map(kinName).join('&') + '|' + fam.pups.length;
+    if ($('pFamily').dataset.sig !== famSig) {
+      $('pFamily').dataset.sig = famSig;
+      const line = (fam.par.length ? 'Parents: ' + fam.par.map(kinName).join(' & ') : p.age >= 999 ? 'A founder of the town' : 'No family records yet') + (fam.pups.length ? ` · ${fam.pups.length} pup${fam.pups.length > 1 ? 's' : ''}` : '');
+      $('pFamily').innerHTML = '<span></span> <button class="pill link" id="famBtn" title="See parents, grandparents and pups">🌳 Family tree</button>';
+      $('pFamily').firstChild.textContent = '👪 ' + line;
+      $('famBtn').addEventListener('click', () => { openFamily(p.id); sfx('tap'); });
+    }
     $('pBars').innerHTML = BAR.map(([k, l, col]) => `<div class="bar"><span>${l}</span><div class="track"><div class="fill" style="width:${Math.max(0, p[k])}%;background:${col}"></div></div><span class="num">${Math.round(p[k])}</span></div>`).join('');
     
     // Game Systems: Display needs if available
@@ -1642,6 +1694,51 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     const n = await askText('New name for ' + p.name + '?', p.name, 16);
     if (n && n.trim()) { p.name = n.trim().slice(0, 16); renderPig(true); listSig = ''; save(); }
   });
+
+  // ---------- family tree dialog ----------
+  const GEN_UP = ['Parents', 'Grandparents', 'Great-grandparents'], GEN_DOWN = ['Pups', 'Grandpups', 'Great-grandpups'];
+  const genLabel = (names, g) => names[g - 1] || 'Great-' + 'great-'.repeat(g - 3) + names[1].toLowerCase();
+  let famPrevPause = null;
+  function openFamily(id) {
+    const box = $('famBox');
+    if (box.hidden) { famPrevPause = paused; paused = true; }
+    box.hidden = false;
+    $('famTitle').textContent = '🌳 ' + kinName(id) + "'s family tree";
+    const up = kinWalk(id, parentsOf), down = kinWalk(id, pupsOf), body = $('famBody');
+    body.textContent = '';
+    const addRow = (label, ids, me) => {
+      const row = document.createElement('div'); row.className = 'famrow' + (me ? ' me' : '');
+      const h = document.createElement('div'); h.className = 'famgen'; h.textContent = label; row.appendChild(h);
+      const chips = document.createElement('div'); chips.className = 'famchips';
+      for (const k of ids) {
+        const q = G.pigs.find(x => x.id === k);
+        const chip = document.createElement(q && !me ? 'button' : 'div'); chip.className = 'famchip' + (q ? '' : ' gone');
+        if (q) {
+          const cv = document.createElement('canvas'); cv.width = 60; cv.height = 40;
+          const c = cv.getContext('2d'); c.translate(29, 21); c.scale(.62, .62); drawPig(c, q.skin);
+          chip.appendChild(cv);
+        } else { const g = document.createElement('span'); g.className = 'famfarm'; g.textContent = '🌾'; chip.appendChild(g); }
+        const n = document.createElement('b'); n.textContent = kinName(k); chip.appendChild(n);
+        const t = document.createElement('small'); t.textContent = q ? (q.age < 90 ? 'Baby' : q.age >= 999 ? 'Founder' : 'Grown up') : "At Grandma's farm"; chip.appendChild(t);
+        if (q && !me) { chip.type = 'button'; chip.title = 'Show ' + q.name + "'s family tree"; chip.addEventListener('click', () => { selected = q.id; q.hop = .5; listSig = ''; renderPig(true); openFamily(q.id); sfx('tap'); }); }
+        chips.appendChild(chip);
+      }
+      row.appendChild(chips); body.appendChild(row);
+    };
+    const maxUp = Math.max(0, ...up.map(r => r.gen)), maxDown = Math.max(0, ...down.map(r => r.gen));
+    for (let g = maxUp; g >= 1; g--) addRow(genLabel(GEN_UP, g), up.filter(r => r.gen === g).map(r => r.id));
+    addRow('This pig', [id], true);
+    for (let g = 1; g <= maxDown; g++) addRow(genLabel(GEN_DOWN, g), down.filter(r => r.gen === g).map(r => r.id));
+    const me = G.pigs.find(x => x.id === id);
+    $('famNote').textContent = up.length || down.length ? `${up.length} ancestor${up.length === 1 ? '' : 's'} and ${down.length} descendant${down.length === 1 ? '' : 's'} on record. Click a relative to see their tree.`
+      : me && me.age >= 999 ? 'A founder of the town with no pups yet. When happy pigs have babies, the family tree grows here.'
+      : 'No family records for this pig. Records are kept for every baby born from now on.';
+    setTimeout(() => $('famClose').focus(), 30);
+  }
+  function closeFamily() { if ($('famBox').hidden) return; $('famBox').hidden = true; paused = famPrevPause; famPrevPause = null; }
+  $('famClose').addEventListener('click', closeFamily);
+  $('famBox').addEventListener('click', e => { if (e.target === $('famBox')) closeFamily(); });
+  $('famBox').addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); closeFamily(); } });
 
   // ---------- Hay Harvest Mini-game ----------
   let minigameLastPlay = 0;
@@ -3538,6 +3635,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
       p.health = Math.max(0, Math.min(100, p.health));
       if (p.health <= 0) {
         G.pigs.splice(i, 1);
+        if (G.kin && G.kin[p.id]) { G.kin[p.id].n = p.name; G.kin[p.id].gone = true; }
         toast(`${p.name} moved to Grandma's farm to get better 🥲 Keep the food and water up!`);
         if (selected === p.id) selected = null;
         renderPig(); continue;
@@ -3727,7 +3825,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
         const baby = makePig(name, babySkin(a.skin, b.skin), (a.x + b.x) / 2, (a.y + b.y) / 2, false);
         baby.food = baby.water = 90; baby.joy = 90; baby.bday = yearDay(dayNum()); baby.friend = a.id;
         baby.trait = Math.random() < .5 ? pick([a.trait, b.trait]) : pick(TRAIT_KEYS);
-        G.pigs.push(baby); G.born++; sfx('baby');
+        G.pigs.push(baby); recordBirth(baby, a, b); G.born++; sfx('baby');
         popup(baby.x, baby.y - 24, 'New baby! 🍼', '#e07a9a');
         toast(`${a.name} and ${b.name} had a baby: ${name}! 🍼`);
         const t = townTitle(G.pigs.length);
