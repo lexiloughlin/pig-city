@@ -163,6 +163,19 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
 /* ---- v2: pig details ---- */
 .traits { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0 2px; justify-content: center; }
 .pill { font-size: 12px; font-weight: 800; background: #fff3e2; border: 1.5px solid var(--wood); border-radius: 999px; padding: 2px 8px; }
+.pfamily { text-align: center; margin: 2px 0 6px; }
+.famrow { display: grid; grid-template-columns: 118px 1fr; gap: 8px; align-items: center; padding: 6px 0; border-top: 2px dashed #f0d9bf; }
+.famrow:first-child { border-top: 0; }
+.famrow.me { background: #ffe9ef; border-radius: 12px; border-top: 0; padding: 6px 8px; margin: 2px -8px; }
+.famrow.me + .famrow { border-top: 0; }
+.famgen { font-family: var(--font-display); font-size: 16px; }
+.famchips { display: flex; flex-wrap: wrap; gap: 6px; }
+.famchip { display: grid; justify-items: center; min-width: 78px; padding: 4px 8px; background: #fff; border: 2px solid var(--ink); border-radius: 12px; font: inherit; color: var(--ink); line-height: 1.2; }
+button.famchip { cursor: pointer; box-shadow: 0 2px 0 var(--ink); }
+button.famchip:hover { background: #fff3e2; }
+.famchip b { font-size: 13px; } .famchip small { font-size: 11px; opacity: .75; }
+.famchip.gone { border-style: dashed; background: #f6efe6; }
+.famfarm { font-size: 24px; height: 40px; display: grid; place-items: center; }
 .pill.link { cursor: pointer; border-color: #e07a9a; background: #ffe9ef; font: inherit; font-size: 12px; font-weight: 800; color: var(--ink); }
 .trait-desc { text-align: center; }
 /* ---- v2: stock exchange ---- */
@@ -231,13 +244,18 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
 .dgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
 @media (max-width: 700px) { .dgrid { grid-template-columns: 1fr; } }
 .dcard { background: #fff; border: 2px solid var(--fleece-deep); border-radius: 14px; padding: 8px 10px; min-width: 0; }
+.bankrow { display: grid; grid-template-columns: 96px 1fr 76px; gap: 8px; align-items: center; font-size: 13px; font-weight: 800; margin: 6px 0; }
+.bankrow input[type=range] { width: 100%; accent-color: var(--hay-deep); } .bankrow select { font: inherit; font-size: 13px; font-weight: 700; border: 2px solid var(--ink); border-radius: 10px; padding: 2px 6px; background: #fff; min-width: 0; }
+.bankrow b { text-align: right; font-variant-numeric: tabular-nums; }
+.banklegend { display: flex; gap: 14px; justify-content: center; } .banklegend i { display: inline-block; width: 11px; height: 11px; border-radius: 3px; margin-right: 5px; }
+.board .neg { color: var(--alert); } .board .pos { color: #3c8a2e; }
 .dcard h3 { font-family: var(--font-display); font-weight: 400; font-size: 17px; margin: 0 0 6px; }
 .hbar { display: grid; grid-template-columns: 136px 1fr 40px; gap: 6px; align-items: center; font-size: 12px; font-weight: 800; margin: 4px 0; }
 .hbar .ht { height: 14px; background: #f1e3dc; border-radius: 999px; overflow: hidden; border: 1.5px solid var(--ink); }
 .hbar .hf { height: 100%; border-radius: 999px; }
 .hbar .hn { text-align: right; font-variant-numeric: tabular-nums; }
 .hbar .hl { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-#incomeChart { width: 100%; height: 150px; display: block; }
+#incomeChart, #bankChart { width: 100%; height: 150px; display: block; }
 .board { width: 100%; border-collapse: collapse; font-size: 13px; }
 .board th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); padding: 4px 6px; border-bottom: 2px solid var(--fleece-deep); }
 .board td { padding: 5px 6px; border-bottom: 1px solid #f1e3dc; white-space: nowrap; }
@@ -287,6 +305,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
         <button class="vtab" data-v="park" role="tab">🎢 Squealtopia</button>
         <button class="vtab" data-v="dash" role="tab">📊 Jobs Dashboard</button>
         <button class="vtab" data-v="pcse" role="tab">📈 PCSE</button>
+        <button class="vtab" data-v="bank" role="tab">🏦 Bank</button>
         <button class="vtab inside" data-v="inside" role="tab" id="insideTab" hidden>🏠 Inside</button>
       </div>
       <div class="panel dash" id="dash" hidden>
@@ -298,6 +317,26 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
           <div class="dcard"><h3>Job income per day</h3><canvas id="incomeChart" width="640" height="300"></canvas></div>
         </div>
         <div class="dcard"><h3>Commute board 🚗</h3><div class="boardwrap"><table class="board"><thead><tr><th>Pig</th><th>Job</th><th>Where</th><th>Car</th><th>Right now</th><th class="num">🪙 today</th></tr></thead><tbody id="boardBody"></tbody></table></div></div>
+      </div>
+      <div class="panel dash" id="bankView" hidden>
+        <h2>Pig City Bank 🏦</h2>
+        <p class="small" style="margin-top:0" id="bankSub"></p>
+        <div id="bankLocked" class="small">Build <b>Masaki Capital</b> in Home Town, or <b>Bronson Bank</b> or <b>Bron Corp</b> in Job City, to open the bank. Every grown-up pig then gets an account.</div>
+        <div id="bankOpenBox" hidden>
+          <div class="kpis" id="bankKpis"></div>
+          <div class="dgrid">
+            <div class="dcard">
+              <h3>You set the rates</h3>
+              <label class="bankrow"><span>Savings rate</span><input type="range" id="bankSav" min="0" max="8" step="0.5"><b id="bankSavV"></b></label>
+              <label class="bankrow"><span>Loan rate</span><input type="range" id="bankLoan" min="3" max="20" step="0.5"><b id="bankLoanV"></b></label>
+              <label class="bankrow"><span>Lending</span><select id="bankPolicy"><option value="0">Strict: only great credit</option><option value="1">Normal</option><option value="2">Easy: almost anyone</option></select><b></b></label>
+              <p class="small" id="bankTip" style="margin:6px 0 0"></p>
+            </div>
+            <div class="dcard"><h3>Deposits and loans per day</h3><canvas id="bankChart" width="640" height="300"></canvas><div class="small banklegend"><span><i style="background:#5aa9e0"></i>Deposits</span><span><i style="background:#e07a9a"></i>Loans out</span></div></div>
+          </div>
+          <div class="dcard" style="margin-bottom:12px"><h3>Accounts</h3><div class="boardwrap"><table class="board"><thead><tr><th>Pig</th><th class="num">Checking</th><th class="num">Savings</th><th>Loan</th><th class="num">Credit score</th></tr></thead><tbody id="bankAccBody"></tbody></table></div></div>
+          <div class="dcard"><h3>Latest transactions</h3><div class="boardwrap"><table class="board"><thead><tr><th>Day</th><th>Pig</th><th>What</th><th class="num">🪙</th></tr></thead><tbody id="bankLedBody"></tbody></table></div></div>
+        </div>
       </div>
       <div class="panel pcse" id="pcse" hidden>
         <div class="pcse-head">
@@ -346,7 +385,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
           <p class="small" id="bDesc" style="margin:0 0 6px"></p>
           <p class="small" id="bInfo" style="margin-top:0"></p>
           <p class="small" id="bNext"></p>
-          <div class="btns"><button class="btn alt" id="goInBtn" hidden>Go inside 🚪</button><button class="btn" id="upBtn">Upgrade</button><button class="btn ghost" id="bClose">Close</button></div>
+          <div class="btns"><button class="btn alt" id="goInBtn" hidden>Go inside 🚪</button><button class="btn ghost" id="styleBtn" hidden title="Switch this home to the next house look">🎨 New look</button><button class="btn" id="upBtn">Upgrade</button><button class="btn ghost" id="bClose">Close</button></div>
         </aside>
         <div class="buildbar" id="buildBar"><button class="btn" id="builderBtn" aria-pressed="false" title="Builder mode: move buildings around (B)">🏗️ Builder mode</button><button class="btn" id="growBtn" title="Fill the empty land of Job City with streets and city blocks" hidden>🏙️ Grow city</button><button class="btn" id="detailBtn" aria-pressed="true" title="When on, new shops, offices and homes come with a few matching props nearby (paid, removable)">✨ Auto-details: on</button><span class="buildtip" id="buildTip" hidden>Click a building to pick it up, then click where it should go. <b>Esc</b> puts it back. Whole districts move from the Neighborhoods panel.</span></div>
         <div class="zoombar" id="zoombar"><button class="ibtn" id="zStreet" title="Street view: walk around on foot (V)" aria-label="Street view" aria-pressed="false">🚶</button><button class="ibtn" id="zIn" title="Zoom in" aria-label="Zoom in">+</button><button class="ibtn" id="zOut" title="Zoom out" aria-label="Zoom out">−</button><button class="ibtn" id="zHome" title="Back to the middle" aria-label="Recenter">⌖</button><button class="ibtn" id="zBig" title="Big map: hide the side panels" aria-label="Big map">⛶</button><button class="ibtn" id="zMap" title="Planning overlays: neighborhoods, services, happiness" aria-label="Planning overlays">🗺️</button><button class="ibtn" id="zWalls" title="Walls up / cutaway / down" aria-label="Change wall view" hidden>🧱</button></div>
@@ -370,6 +409,8 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
           <div class="tag" id="pTag"></div>
           <div class="traits" id="pTraits"></div>
           <p class="small trait-desc" id="pTraitDesc"></p>
+          <div id="pFamily" class="small pfamily"></div>
+          <div id="pBank" class="small pfamily" hidden></div>
           <div id="pBars"></div>
           <!-- Game Systems: Pig Needs Display -->
           <div id="pNeeds" class="small" style="margin-top:8px;padding:6px;background:#fff8f4;border-radius:6px;border-left:4px solid #d9455a"></div>
@@ -427,6 +468,14 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     <div class="btns" style="margin-top:14px;justify-content:flex-end"><button type="button" class="btn ghost" id="askNo">Cancel</button><button type="submit" class="btn" id="askYes">OK</button></div>
   </form>
 </div>
+<div class="overlay" id="famBox" hidden>
+  <div class="panel" role="dialog" aria-modal="true" aria-labelledby="famTitle">
+    <h2 id="famTitle" style="margin-top:0"></h2>
+    <div id="famBody"></div>
+    <p class="small" id="famNote" style="margin-bottom:0"></p>
+    <div class="btns" style="margin-top:14px;justify-content:flex-end"><button type="button" class="btn" id="famClose">Close</button></div>
+  </div>
+</div>
 <div class="overlay" id="tutorial" hidden>
   <div class="panel" role="dialog" aria-modal="true" aria-labelledby="tutTitle">
     <h2 id="tutTitle">Welcome, Mayor! 🐹</h2>
@@ -463,6 +512,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   </div>
 </div>
 <script src="assets/sprites/manifest.js"></script>
+<script src="assets/js/simulation.js"></script>
 <script src="assets/js/gameplay-store.js"></script>
 <script src="assets/js/gameplay-tracking.js"></script>
 <script>
@@ -588,6 +638,18 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     toys:   { name: 'Toy Shop', ic: '🧸', cat: 'biz', cost: 75, desc: '2 jobs: makes the whole town happier' },
     haymill: { name: 'Hay Mill', ic: '🌾', cat: 'biz', cost: 85, desc: 'Play the Hay Harvest game to earn bonus 🪙. Once per day!' },
     roller:  { name: 'Roller Coaster', ic: '🎢', cat: 'biz', cost: 120, desc: 'Play the Pressure Rush game to race your pig and earn bonus 🪙. 3 free plays then wait!' },
+    // small-town buildings for Home Town (the Town tab)
+    diner:    { name: "Poke's Diner", ic: '🍔', cat: 'town', cost: 85, desc: 'A red-and-cream diner with a long window and a neon sign. 2 cook jobs; hungry neighbors stop in to eat' },
+    store:    { name: 'General Store', ic: '🛒', cat: 'town', cost: 80, desc: 'An old wooden general store with a porch awning and crates out front. 2 shopkeeper jobs; neighbors shop here' },
+    library:  { name: 'Wheek Library', ic: '📚', cat: 'town', cost: 110, desc: 'A little stone library with columns and a green roof. 2 librarian jobs' },
+    school:   { name: 'Piglet Schoolhouse', ic: '🏫', cat: 'town', cost: 140, desc: 'A red brick schoolhouse with a bell tower and a flag. 2×2, 2 teacher jobs' },
+    church:   { name: 'Little Chapel', ic: '⛪', cat: 'town', cost: 160, desc: 'A white chapel with stained glass and a tall steeple. A 2×2 landmark with a big happiness boost' },
+    townhall: { name: 'Town Hall', ic: '🏛️', cat: 'town', cost: 180, desc: 'The town hall with a clock tower over the front doors. A 2×2 landmark with a big happiness boost' },
+    police:   { name: 'Pig Police Station', ic: '🚓', cat: 'town', cost: 150, desc: 'A blue brick police station with a gold star and a garage bay. 2×2, 2 officer jobs' },
+    fire:     { name: 'Pig Fire Station', ic: '🚒', cat: 'town', cost: 150, desc: 'A red brick fire station with the engine in its bay and a hose tower. 2×2, 2 firefighter jobs' },
+    post:     { name: 'Pig Post Office', ic: '📮', cat: 'town', cost: 90, desc: 'A little post office with a blue awning, a mailbox and a flag. 2 mail carrier jobs' },
+    furniture: { name: 'Cozy Hutch Furniture', ic: '🛋️', cat: 'town', cost: 95, desc: 'An outlet shop with sofas and lamps in the window. 2 seller jobs; neighbors shop here' },
+    clothes:  { name: 'Fluff & Thread Clothing', ic: '👗', cat: 'town', cost: 95, desc: 'An outlet shop with dresses, shirts and hats in the window. 2 seller jobs; neighbors shop here' },
     hospital: { name: 'Pig Hospital', ic: '🏥', cat: 'help', cost: 150, desc: 'Sick pigs check in and come out healthy (3 beds, 2×2)' },
     vet:    { name: 'Vet', ic: '🩺', cat: 'help', cost: 120, desc: 'Sick pigs heal faster' },
     sitter: { name: 'Pig Sitter', ic: '👩‍🌾', cat: 'help', cost: 90, desc: 'Hires a sitter who pets, feeds & restocks' },
@@ -631,7 +693,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     bikerack:  { name: 'Bike Rack', ic: '🚲', cat: 'street', cost: 9, both: true, desc: 'A rack of little pig bicycles.' },
     hydrant:   { name: 'Fire Hydrant', ic: '🧯', cat: 'street', cost: 5, city: true, desc: 'A cheerful red hydrant for the curb.' },
     road:   { name: 'Road', ic: '🛣️', cat: 'plan', cost: 2, any: true, desc: 'Drag across the map to pave streets (2 🪙 a tile). Bulldoze removes them.' },
-    path:   { name: 'Sidewalk', ic: '🧱', cat: 'plan', cost: 1, any: true, desc: 'Drag to lay brick sidewalks and plazas (1 🪙 a tile)' },
+    path:   { name: 'Sidewalk', ic: '🧱', cat: 'plan', cost: 1, any: true, desc: 'Drag to lay sidewalks and plazas (1 🪙 a tile)' },
     island: { name: 'Island', ic: '🏝️', cat: 'plan', cost: 150, any: true, desc: 'Drag a rectangle out in the water to raise a new island town (150 🪙)' },
     bridge: { name: 'Bridge', ic: '🌉', cat: 'plan', cost: 4, any: true, desc: 'Drag from one shore to another (island to island, or island to town) and the bridge finds its way across the water (4 🪙 a tile)' },
     zone:   { name: 'Neighborhood', ic: '📐', cat: 'plan', cost: 0, any: true, desc: 'Drag a rectangle to draw a neighborhood, then name and zone it' },
@@ -639,12 +701,12 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     upgrade: { name: 'Upgrade', ic: '⬆️', cat: 'tool', cost: 0, desc: 'Click a building to make it fancier' },
     bulldoze: { name: 'Bulldoze', ic: '🚜', cat: 'tool', cost: 0, desc: 'Remove a building, refunds half' }
   };
-  const CATS = [['home', '🏡 Homes & food'], ['biz', '💼 Shops & jobs'], ['help', '🧑‍⚕️ Helpers'], ['district', '🏘️ Districts'], ['decor', '🌷 Decor'], ['street', '🚏 Streets'], ['plan', '📐 Planning'], ['tool', '🛠️ Tools']];
+  const CATS = [['home', '🏡 Homes & food'], ['biz', '💼 Shops & jobs'], ['town', '⛪ Town'], ['help', '🧑‍⚕️ Helpers'], ['district', '🏘️ Districts'], ['decor', '🌷 Decor'], ['street', '🚏 Streets'], ['plan', '📐 Planning'], ['tool', '🛠️ Tools']];
   const CITY_CATS = [['cdown', '🏙️ Downtown'], ['cbiz', '🏢 Businesses'], ['district', '🏘️ Districts'], ['cdecor', '🌳 City decor'], ['street', '🚏 Streets'], ['plan', '📐 Planning'], ['tool', '🛠️ Tools']];
   const SHARED_CATS = ['district', 'street']; // tabs that show in both maps (each item still says which map it belongs to)
   const DECOR = { tree: 1, flowers: .6, bench: 1, lantern: 1.2, pond: 2.5, citytree: 1, streetlamp: 1, fountain: 2.5,
     hedge: .6, planter: .6, table: .5, busstop: .5, parkedcar: .2, mailbox: .3, trash: .3, coffeecart: .8, tunnel: 1, statue: 2.5, ticker: .6,
-    blossom: 1.2, bikerack: .3, hydrant: .2 };
+    blossom: 1.2, bikerack: .3, hydrant: .2, church: 3, townhall: 3 };
   // ---------- business profiles: one data model for what a building is and how it earns ----------
   //   cls     what kind of place it is (shown in the building panel)
   //   zone    which neighborhood zoning boosts its workers' pay ('com' commercial, 'down' downtown)
@@ -658,6 +720,12 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     misomarket:  { cls: 'Grocery', zone: 'com', acts: ['shop'], spend: 2, perk: 'sells groceries · +1 🫑 per shift' },
     wheekcoffee: { cls: 'Café', zone: 'com', acts: ['coffee', 'eat'], spend: 2, perk: 'the busiest coffee stop downtown' },
     cafe:        { cls: 'Café', zone: 'com', acts: ['coffee'], spend: 1 },
+    diner:       { cls: 'Restaurant', zone: 'com', acts: ['eat'], spend: 2, perk: 'serves burgers and hay fries to passers-by' },
+    store:       { cls: 'General store', zone: 'com', acts: ['shop'], spend: 1, perk: 'neighbors shop here' },
+    library:     { cls: 'Library', zone: 'com' }, school: { cls: 'School', zone: 'com' },
+    furniture:   { cls: 'Outlet shop', zone: 'com', acts: ['shop'], spend: 2, perk: 'neighbors shop for sofas and lamps' },
+    clothes:     { cls: 'Outlet shop', zone: 'com', acts: ['shop'], spend: 2, perk: 'neighbors shop for outfits' },
+    police:      { cls: 'Police station', zone: 'com' }, fire: { cls: 'Fire station', zone: 'com' }, post: { cls: 'Post office', zone: 'com' },
     sushi:       { cls: 'Restaurant', zone: 'com', acts: ['eat'], spend: 1 },
     market:      { cls: 'Grocery', zone: 'com', acts: ['shop'], spend: 1 },
     finoffice:   { cls: 'Office', zone: 'down' }, office: { cls: 'Office', zone: 'down' }, pcse: { cls: 'Stock exchange', zone: 'down' },
@@ -696,6 +764,88 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
       ],
       spots: [['coffee', 8.5, 3.0], ['coffee', 9.5, 3.05], ['eat', 10.5, 3.0], ['wait', 11.5, 3.1], ['sit', 2.5, 7.95], ['sit', 5.5, 7.95], ['play', 3.5, 8.05], ['play', 1.95, 7.6], ['stroll', 4.5, 8.6], ['stroll', 1.5, 8.5]],
       conns: [['W', 4, 'road'], ['E', 4, 'road'], ['S', 8, 'road'], ['W', 3, 'path'], ['E', 3, 'path'], ['W', 5, 'path'], ['E', 5, 'path'], ['S', 7, 'path'], ['S', 9, 'path']]
+    },
+    mainst: {
+      name: 'Main Street', ic: '🏪', map: 'home', zone: 'com', kind: 'cozy', crowd: 8, w: 12, h: 7,
+      inspo: 'the main street of a little American town',
+      blurb: "Town Hall with its clock tower, Poke's Diner, the General Store, the library, a café, a salon and a toy shop along one street, with two houses, lamps and benches",
+      roads: [[0, 3, 12, 1]],
+      paths: [[0, 2, 12, 1], [0, 4, 12, 1]],
+      xwalks: [[4, 3], [8, 3]],
+      items: [
+        ['townhall', 5, 0], ['diner', 1, 1], ['store', 3, 1], ['library', 8, 1], ['cafe', 10, 1],
+        ['tree', 0, 0], ['tree', 2, 0], ['tree', 4, 0], ['tree', 7, 0], ['tree', 9, 0], ['tree', 11, 0],
+        ['hedge', 0, 1], ['planter', 2, 1], ['bench', 4, 1], ['mailbox', 7, 1], ['planter', 9, 1], ['bikerack', 11, 1],
+        ['lantern', 0, 5], ['salon', 1, 5], ['planter', 2, 5], ['toys', 3, 5], ['bench', 4, 5], ['hutch', 5, 5, 3], ['mailbox', 7, 5], ['hutch', 8, 5, 1], ['parkedcar', 10, 5, 2], ['blossom', 11, 5],
+        ['tree', 0, 6], ['flowers', 1, 6], ['hedge', 2, 6], ['tree', 3, 6], ['flowers', 4, 6], ['hedge', 7, 6], ['tree', 10, 6], ['flowers', 11, 6]
+      ],
+      spots: [['eat', 1.5, 2.3], ['shop', 3.5, 2.3], ['sit', 4.5, 1.6], ['photo', 6, 2.45], ['stroll', 8.5, 2.4], ['coffee', 10.5, 2.3],
+        ['shop', 1.5, 4.6], ['shop', 3.5, 4.6], ['sit', 4.5, 5.55], ['stroll', 6.5, 4.5], ['stroll', 9.5, 4.5], ['eat', 2.4, 2.5]],
+      conns: [['W', 3, 'road'], ['E', 3, 'road'], ['W', 2, 'path'], ['E', 2, 'path'], ['W', 4, 'path'], ['E', 4, 'path']]
+    },
+    maple: {
+      name: 'Maple Lane', ic: '🏡', map: 'home', zone: 'res', kind: 'cozy', crowd: 5, w: 11, h: 8,
+      inspo: 'a leafy residential street',
+      blurb: '7 homes in five different looks (cottage, bungalow, farmhouse, brick colonial, victorian) along one street, with mailboxes, hedges, a play park and a fleece tunnel',
+      roads: [[0, 3, 11, 1]],
+      paths: [[0, 2, 11, 1], [0, 4, 11, 1]],
+      xwalks: [[5, 3]],
+      items: [
+        ['hutch', 0, 0, 2], ['hutch', 3, 0, 1], ['hutch', 6, 0, 4], ['hutch', 9, 0, 3],
+        ['tree', 2, 0], ['mailbox', 2, 1], ['tree', 5, 0], ['hedge', 5, 1], ['tree', 8, 0], ['mailbox', 8, 1],
+        ['hutch', 0, 5, 0], ['hutch', 3, 5, 2], ['hutch', 9, 5, 1],
+        ['parkedcar', 2, 5, 1], ['hedge', 2, 6], ['lantern', 5, 5], ['flowers', 5, 6], ['park', 6, 5], ['bench', 7, 5], ['tunnel', 7, 6], ['flowers', 6, 6], ['tree', 8, 5], ['hedge', 8, 6],
+        ['tree', 0, 7], ['flowers', 1, 7], ['hedge', 3, 7], ['flowers', 4, 7], ['tree', 6, 7], ['flowers', 7, 7], ['tree', 10, 7]
+      ],
+      spots: [['play', 6.5, 5.95], ['sit', 7.5, 5.55], ['play', 7.5, 6.6], ['stroll', 2.5, 2.5], ['stroll', 8.5, 4.5], ['stroll', 5.5, 4.5], ['stroll', 5.5, 2.5]],
+      conns: [['W', 3, 'road'], ['E', 3, 'road'], ['W', 2, 'path'], ['E', 2, 'path'], ['W', 4, 'path'], ['E', 4, 'path']]
+    },
+    chapel: {
+      name: 'Chapel Green', ic: '⛪', map: 'home', zone: 'res', kind: 'cozy', crowd: 5, w: 10, h: 9,
+      inspo: 'a village green with a white chapel',
+      blurb: 'the Little Chapel and the Piglet Schoolhouse on a green with a pond, benches, flower beds and a play park',
+      roads: [[0, 8, 10, 1]],
+      paths: [[0, 7, 10, 1], [4, 3, 2, 4], [2, 6, 2, 1]],
+      xwalks: [[4, 8]],
+      items: [
+        ['church', 4, 1], ['school', 0, 4],
+        ['tree', 0, 0], ['tree', 2, 1], ['hedge', 3, 1], ['flowers', 3, 2], ['hedge', 6, 1], ['blossom', 6, 2], ['tree', 7, 0], ['tree', 9, 0], ['tree', 0, 2],
+        ['bench', 6, 4], ['pond', 7, 4], ['tree', 8, 3], ['flowers', 8, 5], ['bench', 7, 5], ['tree', 9, 5], ['park', 8, 6], ['lantern', 6, 6], ['lantern', 3, 5], ['flowers', 2, 4], ['flowers', 3, 4], ['mailbox', 9, 6], ['hedge', 9, 3]
+      ],
+      spots: [['photo', 5, 3.4], ['sit', 6.5, 4.55], ['sit', 7.5, 5.55], ['stroll', 4.5, 5.5], ['stroll', 5.5, 6.5], ['play', 8.5, 6.95], ['stroll', 2.5, 6.5]],
+      conns: [['W', 8, 'road'], ['E', 8, 'road'], ['W', 7, 'path'], ['E', 7, 'path']]
+    },
+    outlets: {
+      name: 'Piggy Outlets', ic: '🛍️', map: 'home', zone: 'com', kind: 'cozy', crowd: 9, w: 12, h: 7,
+      inspo: 'an open-air outlet mall',
+      blurb: 'Furniture, clothing, toys, the general store, a salon, a café, the post office and a diner around a plaza with benches, tables and a coffee cart, plus a row of parking',
+      roads: [[0, 6, 12, 1]],
+      paths: [[0, 5, 12, 1], [0, 2, 12, 2]],
+      xwalks: [[5, 6]],
+      items: [
+        ['tree', 0, 0], ['parkedcar', 1, 0, 1], ['parkedcar', 2, 0, 2], ['tree', 3, 0], ['parkedcar', 4, 0, 0], ['parkedcar', 5, 0, 3], ['tree', 6, 0], ['parkedcar', 7, 0, 2], ['parkedcar', 8, 0, 1], ['tree', 9, 0], ['parkedcar', 10, 0, 0], ['tree', 11, 0],
+        ['hedge', 0, 1], ['clothes', 1, 1], ['furniture', 2, 1], ['blossom', 3, 1], ['toys', 4, 1], ['store', 5, 1], ['planter', 6, 1], ['salon', 7, 1], ['cafe', 8, 1], ['blossom', 9, 1], ['post', 10, 1], ['hedge', 11, 1],
+        ['lantern', 0, 3], ['bench', 1, 3], ['table', 3, 3], ['coffeecart', 5, 3], ['statue', 6, 3], ['table', 8, 3], ['bench', 10, 3], ['lantern', 11, 3],
+        ['tree', 0, 4], ['diner', 2, 4], ['bikerack', 4, 4], ['flowers', 5, 4], ['flowers', 7, 4], ['furniture', 8, 4], ['clothes', 9, 4], ['busstop', 10, 4], ['tree', 11, 4]
+      ],
+      spots: [['shop', 1.5, 2.3], ['shop', 2.5, 2.3], ['shop', 4.5, 2.3], ['shop', 5.5, 2.3], ['shop', 7.5, 2.3], ['coffee', 8.5, 2.3], ['coffee', 5.5, 2.7], ['sit', 1.5, 3.55], ['sit', 10.5, 3.55],
+        ['eat', 2.5, 5.3], ['shop', 8.5, 5.3], ['shop', 9.5, 5.3], ['wait', 10.5, 5.2], ['photo', 6.5, 2.6], ['stroll', 6, 5.5]],
+      conns: [['W', 6, 'road'], ['E', 6, 'road'], ['W', 5, 'path'], ['E', 5, 'path']]
+    },
+    civic: {
+      name: 'Civic Square', ic: '🚓', map: 'home', zone: 'com', kind: 'cozy', crowd: 6, w: 10, h: 7,
+      inspo: 'the public buildings of a small town',
+      blurb: 'The police station, the fire station, the post office and Town Hall along one street, with the schoolhouse, the library and a play park behind',
+      roads: [[0, 6, 10, 1]],
+      paths: [[0, 5, 10, 1], [0, 2, 10, 1]],
+      xwalks: [[5, 6]],
+      items: [
+        ['tree', 0, 0], ['tree', 2, 0], ['tree', 4, 0], ['school', 6, 0], ['pond', 8, 0], ['tree', 9, 0],
+        ['flowers', 0, 1], ['park', 1, 1], ['bench', 2, 1], ['flowers', 3, 1], ['library', 4, 1], ['hedge', 8, 1], ['flowers', 9, 1],
+        ['police', 0, 3], ['tree', 2, 3], ['hedge', 2, 4], ['fire', 3, 3], ['tree', 5, 3], ['parkedcar', 5, 4, 3], ['mailbox', 6, 3], ['post', 6, 4], ['lantern', 7, 3], ['bench', 7, 4], ['townhall', 8, 3]
+      ],
+      spots: [['photo', 9, 5.25], ['stroll', 1, 5.4], ['stroll', 4, 5.4], ['sit', 7.5, 4.55], ['sit', 2.5, 1.55], ['play', 1.5, 1.95], ['stroll', 5, 2.5], ['stroll', 8, 2.5]],
+      conns: [['W', 6, 'road'], ['E', 6, 'road'], ['W', 5, 'path'], ['E', 5, 'path'], ['W', 2, 'path'], ['E', 2, 'path']]
     },
     haystreet: {
       name: 'Hay Street Financial District', ic: '💹', map: 'city', zone: 'down', kind: 'finance', crowd: 10, w: 12, h: 12,
@@ -933,6 +1083,15 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     cafe:  { title: 'Barista', place: 'Hay Latte Café', emoji: '☕', pay: 2, every: 5 },
     salon: { title: 'Stylist', place: 'Fluff Salon', emoji: '✂️', pay: 3, every: 7 },
     toys:  { title: 'Toy Seller', place: 'Toy Shop', emoji: '🧸', pay: 2, every: 6 },
+    diner: { title: 'Cook', place: "Poke's Diner", emoji: '🍔', pay: 2, every: 5 },
+    police: { title: 'Police Officer', place: 'Pig Police Station', emoji: '👮', pay: 3, every: 6, slots: [2, 3, 4] },
+    fire: { title: 'Firefighter', place: 'Pig Fire Station', emoji: '🚒', pay: 3, every: 6, slots: [2, 3, 4] },
+    post: { title: 'Mail Carrier', place: 'Pig Post Office', emoji: '📮', pay: 2, every: 6 },
+    furniture: { title: 'Furniture Seller', place: 'Cozy Hutch Furniture', emoji: '🛋️', pay: 2, every: 6 },
+    clothes: { title: 'Clothing Seller', place: 'Fluff & Thread Clothing', emoji: '👗', pay: 2, every: 6 },
+    store: { title: 'Shopkeeper', place: 'General Store', emoji: '🛒', pay: 2, every: 6 },
+    library: { title: 'Librarian', place: 'Wheek Library', emoji: '📚', pay: 2, every: 6, slots: [2, 2, 3] },
+    school: { title: 'Teacher', place: 'Piglet Schoolhouse', emoji: '🍎', pay: 3, every: 6, slots: [2, 3, 4] },
     bank:  { title: 'Analyst', place: 'Masaki Capital', emoji: '💼', pay: 3, every: 5 },
     office:  { title: 'Coder', place: 'Wheek Tech HQ', emoji: '💻', pay: 4, every: 5, slots: [4, 5, 6] },
     factory: { title: 'Hay Maker', place: 'Hay Factory', emoji: '🏭', pay: 1, every: 6, slots: [3, 4, 5] },
@@ -962,6 +1121,10 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     cafe: ['Hay Latte Café', 'Hay Latte Café Deluxe', 'Hay Latte Roastery'], salon: ['Fluff Salon', 'Fluff Salon Deluxe', 'Fluff Spa & Salon'],
     toys: ['Toy Shop', 'Toy Shop Deluxe', 'Toy Mega Store'], sitter: ['Pig Sitter', 'Sitter Cottage', 'Sitter Studio'],
     roomba: ['Poop Roomba', 'Roomba Plus', 'Roomba Max'],
+    police: ['Pig Police Station', 'Pig Police Precinct', 'Pig Police HQ'], fire: ['Pig Fire Station', 'Pig Fire House', 'Pig Fire Brigade HQ'], post: ['Pig Post Office', 'Pig Post & Parcel', 'Grand Pig Post'],
+    furniture: ['Cozy Hutch Furniture', 'Cozy Hutch Home Store', 'Cozy Hutch Showroom'], clothes: ['Fluff & Thread Clothing', 'Fluff & Thread Boutique', 'Fluff & Thread Outlet'],
+    diner: ["Poke's Diner", "Poke's Big Diner", "Poke's Drive-In"], store: ['General Store', 'General Store & Feed', 'Grand Mercantile'],
+    library: ['Wheek Library', 'Wheek Reading Room', 'Wheek Grand Library'], school: ['Piglet Schoolhouse', 'Piglet Elementary', 'Piglet Academy'],
     office: ['Wheek Tech HQ', 'Wheek Tech Tower', 'Wheek Tech Campus'], factory: ['Hay Factory', 'Big Hay Factory', 'Robo Hay Works'],
     market: ['Veggie Market', 'Veggie Supermarket', 'Veggie Mega Mart'], sushi: ['Sushi Spot', 'Sushi House', 'Sushi Palace'],
     dealer: ['Zoomies Motors', 'Zoomies Showroom', 'Zoomies Gigafactory'], pcse: ['PCSE Tower', 'PCSE Grand Hall', 'PCSE Sky Exchange'],
@@ -971,7 +1134,10 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     mochibakery: ['Mochi Bakery', 'Mochi Pâtisserie', 'Mochi Grand Bakery'], misomarket: ['Miso Market', 'Miso Supermarket', 'Miso Food Hall'],
     wheekcoffee: ['Wheek Coffee', 'Wheek Coffee House', 'Wheek Coffee Roastery']
   };
-  const lvName = (b, l = L(b)) => (LV_NAMES[b.type] || [B[b.type].name])[l - 1] || B[b.type].name;
+  // looks a pig home can have (b.v picks one)
+  const HOUSE_STYLES = [{ n: ['Cavy Cottage', 'Cavy Townhouse'] }, { n: ['Craftsman Bungalow', 'Craftsman House'] }, { n: ['Farmhouse', 'Big Farmhouse'] }, { n: ['Brick Colonial', 'Grand Colonial'] }, { n: ['Victorian', 'Grand Victorian'] }];
+  const houseStyle = b => (b.v || 0) % HOUSE_STYLES.length;
+  const lvName = (b, l = L(b)) => b.type === 'hutch' && l < 3 ? HOUSE_STYLES[houseStyle(b)].n[l - 1] : ((LV_NAMES[b.type] || [B[b.type].name])[l - 1] || B[b.type].name);
   function perkText(t, l) {
     const every = k => +(RATE[k] / MULT[l - 1]).toFixed(1) + 's';
     switch (t) {
@@ -989,6 +1155,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
       case 'roomba': return ['Normal speed', 'Fast', 'Super fast'][l - 1];
     }
     if (JOBS[t]) return `${(JOBS[t].slots || SLOT_N)[l - 1]} jobs` + (PROFILE[t] && PROFILE[t].perk ? ` · ${PROFILE[t].perk}` : '');
+    if (t === 'church' || t === 'townhall') return 'Landmark · big happiness boost for the whole town';
     if (DECOR[t]) return t === 'lantern' ? 'Decoration · glows at night, cozy pigs' : B[t].cat === 'street' ? B[t].desc : 'Decoration · makes pigs happier';
     return '';
   }
@@ -1097,6 +1264,27 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   }
   const friendOf = p => p.friend && G.pigs.find(q => q.id === p.friend);
 
+  // ---------- family tree ----------
+  // G.kin is the town's family records: one row per pig, keyed by pig id: { n: name, par: [id, id] or null, gone: true once it left town }.
+  // `par` holds the ids of two other rows in the same table (a self-referencing table), so a whole tree comes from following it again and again.
+  function kinRow(p) { G.kin = G.kin || {}; const r = G.kin[p.id] || (G.kin[p.id] = { n: p.name, par: null }); r.n = p.name; return r; }
+  function recordBirth(baby, a, b) { kinRow(a); kinRow(b); kinRow(baby).par = [a.id, b.id]; }
+  const kinName = id => { const q = G.pigs.find(p => p.id === id); return q ? q.name : G.kin && G.kin[id] ? G.kin[id].n : 'Unknown'; };
+  const parentsOf = id => (G.kin && G.kin[id] && G.kin[id].par) || [];
+  const pupsOf = id => Object.keys(G.kin || {}).map(Number).filter(k => parentsOf(k).includes(id));
+  // Every relative reachable from `id` through `next` (parentsOf = ancestors, pupsOf = descendants), nearest generation first.
+  // Same idea as a recursive SQL query: start with one pig, then keep adding the next generation until nobody new turns up.
+  function kinWalk(id, next) {
+    const seen = new Set([id]), out = [];
+    let row = [id], gen = 0;
+    while (row.length) {
+      const nextRow = []; gen++;
+      for (const k of row) for (const r of next(k)) if (!seen.has(r)) { seen.add(r); nextRow.push(r); out.push({ id: r, gen }); }
+      row = nextRow;
+    }
+    return out;
+  }
+
   // ---------- stock market ----------
   const STOCKS = [
     { s: 'HAY', name: 'Hay Holdings', base: 20, vol: .10, drift: .012, tip: 'steady, pays a little 🌾 dividend' },
@@ -1116,6 +1304,127 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
       for (let i = 0; i < HIST; i++) { x += -.08 * x + k.vol * .25 * gauss(); hist.push(+(k.base * Math.exp(x)).toFixed(2)); }
       G.mkt.st[k.s] = { x, base: k.base, p: hist[HIST - 1], hist, own: 0, cost: 0, shock: 0 };
     }
+  }
+  // ---------- Pig City Bank ----------
+  // G.bank is the bank's books:
+  //   acc   one account per grown-up pig, keyed by pig id: checking, savings, loan (or null), credit score
+  //   led   the transaction ledger, oldest first: [day, pig id, what, amount]
+  //   rate  yearly interest rates the mayor sets (a year is 12 game days); policy = how easily loans are approved
+  //   eq    the bank's own money. Loan interest adds to it; savings interest and unpaid loans take from it.
+  const LOAN_KINDS = [['car', '🚗', 'a car upgrade', 6], ['home', '🛋️', 'a home makeover', 8], ['school', '🎓', 'night classes', 4], ['trip', '🏖️', 'a beach trip', 2], ['biz', '💡', 'a business idea', 11]]; // last number: size in days of wages
+  const loanKind = k => LOAN_KINDS.find(q => q[0] === k) || LOAN_KINDS[0];
+  const BANK_POLICY = [['Strict', 700, .25], ['Normal', 620, .35], ['Easy', 540, .5]]; // name, lowest credit score, biggest share of a day's wage a payment may take
+  const BANK_FLOOR = 120, LOAN_DAYS = 24; // capital the bank keeps before paying the town; days to repay a loan
+  const r2 = v => Math.round(v * 100) / 100;
+  const bankOpen = () => count('bank') + count('bronsonbank') + count('bbb') > 0;
+  function initBank() {
+    G.bank = Object.assign({ acc: {}, led: [], rate: { sav: 3, loan: 9 }, policy: 1, eq: 150, hist: [], day: { int: 0, paid: 0, lost: 0, div: 0 } }, G.bank);
+  }
+  const bankAcc = p => G.bank.acc[p.id] || (G.bank.acc[p.id] = { chk: 0, sav: 0, loan: null, score: 650, late: 0, inc: 0, wage: 0 });
+  function bankLog(p, what, amt) { const L = G.bank.led; L.push([dayNum(), p.id, what, r2(amt), p.name]); if (L.length > 200) L.splice(0, L.length - 200); }
+  function bankTotals() { let dep = 0, loans = 0; for (const a of Object.values(G.bank.acc)) { dep += a.chk + a.sav; if (a.loan) loans += a.loan.amt; } return { dep, loans, res: dep + G.bank.eq - loans }; }
+  // payday: a pig's wage also lands in its own checking account (the town earns its coins exactly as before)
+  function bankPay(p, pay) { if (!G.bank || p.age < 90 || !bankOpen()) return; const a = bankAcc(p); a.chk = r2(a.chk + pay); a.inc = (a.inc || 0) + pay; }
+  // once a day, at midnight: wages are posted, bills paid, interest added, loans collected, new loans decided
+  function bankDay() {
+    if (!G.bank) initBank();
+    const K = G.bank; if (!bankOpen()) return;
+    const day = dayNum() - 1; // the day that just ended
+    if (!K.opened) { K.opened = dayNum(); setTimeout(() => toast('🏦 Pig City Bank is open! Every grown-up pig has an account now. See the 🏦 Bank tab.'), 3600); }
+    K.day = { int: 0, paid: 0, lost: 0, div: 0 };
+    const pol = BANK_POLICY[K.policy] || BANK_POLICY[1], news = [];
+    for (const id of Object.keys(K.acc)) if (!G.pigs.some(p => p.id === +id)) { const a = K.acc[id]; if (a.loan) { K.eq = r2(K.eq - a.loan.amt); K.day.lost += a.loan.amt; } delete K.acc[id]; } // a pig who left town: its loan is lost
+    for (const p of G.pigs) {
+      if (p.age < 90) continue;
+      const a = bankAcc(p);
+      a.wage = a.inc || 0; a.inc = 0;
+      if (a.wage) bankLog(p, 'Paycheck', a.wage);
+      // rent, food and fun: most of a paycheck goes back out
+      const bills = Math.min(a.chk, r2(a.wage * ((has(p, 'fancy') ? .65 : .5) + Math.random() * .2) + 4));
+      if (bills > 0) { a.chk = r2(a.chk - bills); bankLog(p, 'Bills and shopping', -bills); }
+      // interest on savings (the bank pays it)
+      const si = r2(a.sav * K.rate.sav / 100 / YEAR);
+      if (si > 0) { a.sav = r2(a.sav + si); K.eq = r2(K.eq - si); K.day.paid = r2(K.day.paid + si); bankLog(p, 'Savings interest', si); }
+      // loan payment: interest for the day plus a slice of what is owed
+      if (a.loan) {
+        const Ln = a.loan, li = r2(Ln.amt * K.rate.loan / 100 / YEAR), due = r2(Math.min(Ln.amt, Ln.pay) + li);
+        if (a.chk < due && a.sav > 0) { const mv = Math.min(a.sav, r2(due - a.chk)); a.sav = r2(a.sav - mv); a.chk = r2(a.chk + mv); }
+        if (a.chk >= due) {
+          a.chk = r2(a.chk - due); Ln.amt = r2(Ln.amt - (due - li)); K.eq = r2(K.eq + li); K.day.int = r2(K.day.int + li); a.late = 0; a.score = Math.min(850, a.score + 4);
+          bankLog(p, 'Loan payment', -due);
+          if (Ln.amt <= .01) { a.loan = null; a.score = Math.min(850, a.score + 25); p.joy = Math.min(100, p.joy + 10); news.push(`🏦 ${p.name} paid off the loan for ${loanKind(Ln.k)[2]}! 🎉`); }
+        } else {
+          a.late++; a.score = Math.max(300, a.score - 30); bankLog(p, 'Missed loan payment', 0);
+          if (a.late >= 3) {
+            K.eq = r2(K.eq - Ln.amt); K.day.lost = r2(K.day.lost + Ln.amt); bankLog(p, 'Loan written off', Ln.amt);
+            news.push(`🏦 ${p.name} couldn't repay a loan. The bank lost ${Math.round(Ln.amt)} 🪙.`);
+            a.loan = null; a.late = 0; a.score = Math.max(300, a.score - 120); p.joy = Math.max(0, p.joy - 15);
+          }
+        }
+      } else if (a.wage) a.score = Math.min(850, a.score + 1);
+      // spare money moves to savings: the better the savings rate, the more pigs put away
+      if (a.chk > 20) { const mv = r2((a.chk - 20) * Math.min(.9, .3 + K.rate.sav * .07)); a.chk = r2(a.chk - mv); a.sav = r2(a.sav + mv); bankLog(p, 'Moved to savings', mv); }
+      // a big nest egg gets spent on something nice now and then
+      if (a.wage && a.sav > a.wage * 10 && Math.random() < .2) { const sp = r2(a.sav * (.3 + Math.random() * .2)); a.sav = r2(a.sav - sp); p.joy = Math.min(100, p.joy + 8); G.coins += Math.round(sp * .1); bankLog(p, 'Treated themselves', -sp); }
+    }
+    // loan applications: pigs with a job and no loan sometimes ask for one
+    const want = Math.max(.2, Math.min(1.5, 1.7 - K.rate.loan / 10)); let asked = 0;
+    for (const p of G.pigs.slice().sort(() => Math.random() - .5)) {
+      if (asked >= 3) break;
+      const a = K.acc[p.id]; if (!a || a.loan || a.wage < 10 || !jobOf(p) || Math.random() > .3 * want) continue;
+      asked++;
+      const kd = pick(LOAN_KINDS), amt = Math.max(15, Math.round(a.wage * kd[3] * (.8 + Math.random() * .4))), pay = r2(amt / LOAN_DAYS), T0 = bankTotals();
+      const ok = a.score >= pol[1] && pay <= a.wage * pol[2] && T0.res - amt >= T0.dep * .1;
+      if (!ok) { bankLog(p, `Loan declined ${kd[1]}`, 0); p.joy = Math.max(0, p.joy - 3); continue; }
+      a.loan = { k: kd[0], amt, orig: amt, pay, d0: dayNum() }; p.joy = Math.min(100, p.joy + 12); p.hop = .6;
+      const spent = Math.round(amt * .2); G.coins += spent; // the loan gets spent in town
+      bankLog(p, `New loan ${kd[1]}`, amt);
+      news.push(`🏦 ${p.name} took a ${amt} 🪙 loan for ${kd[2]} ${kd[1]} (+${spent} 🪙 spent in town)`);
+    }
+    // the bank's day: profit above its safety cushion is paid to the town; a bank in the red is topped up by the town
+    const profit = r2(K.day.int - K.day.paid - K.day.lost);
+    if (profit > 0 && K.eq > BANK_FLOOR) { const dv = Math.floor(Math.min(profit * .5, K.eq - BANK_FLOOR)); if (dv >= 1) { K.eq = r2(K.eq - dv); G.coins += dv; K.day.div = dv; news.push(`🏦 The bank paid the town ${dv} 🪙 from its profit.`); } }
+    if (K.eq < 0) { const need = Math.min(Math.floor(G.coins), Math.ceil(-K.eq)); if (need > 0) { G.coins -= need; K.eq = r2(K.eq + need); news.push(`🏦 The bank ran out of money! The town covered ${need} 🪙. Try a lower savings rate or stricter lending.`); } }
+    const T1 = bankTotals();
+    K.hist.push({ d: day, dep: Math.round(T1.dep), loans: Math.round(T1.loans), profit }); if (K.hist.length > 20) K.hist.shift();
+    news.slice(0, 2).forEach((m, i) => setTimeout(() => toast(m), 4200 + i * 3400));
+  }
+  const escH = t => String(t).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[ch]);
+  let bankCtlSig = '';
+  function renderBank() {
+    if (view !== 'bank') return;
+    const open = !!G.bank && bankOpen();
+    $('bankLocked').hidden = open; $('bankOpenBox').hidden = !open;
+    $('bankSub').textContent = open ? `Day ${dayNum()} · ${hudClock()} · Paychecks land in each pig's account. Everything else happens at midnight: bills, interest, loan payments and new loans.` : '';
+    if (!open) return;
+    const K = G.bank, T0 = bankTotals(), n = Object.values(K.acc), withLoan = n.filter(a => a.loan).length, last = K.hist[K.hist.length - 1];
+    const kp = [['💰', Math.round(T0.dep), 'Pig deposits'], ['📄', Math.round(T0.loans), `Loans out (${withLoan})`], ['🏛️', Math.round(T0.res), 'Cash in the vault'], ['🏦', Math.round(K.eq), "Bank's own money"], [last && last.profit < 0 ? '📉' : '📈', last ? Math.round(last.profit * 10) / 10 : 0, 'Profit yesterday']];
+    $('bankKpis').innerHTML = kp.map(([e, v, l]) => `<div class="kpi"><div class="kv">${e} ${v}</div><div class="kl">${l}</div></div>`).join('');
+    const sig = K.rate.sav + '|' + K.rate.loan + '|' + K.policy;
+    if (sig !== bankCtlSig) {
+      bankCtlSig = sig; $('bankSav').value = K.rate.sav; $('bankLoan').value = K.rate.loan; $('bankPolicy').value = K.policy;
+      $('bankSavV').textContent = K.rate.sav + '% a year'; $('bankLoanV').textContent = K.rate.loan + '% a year';
+      const gap = K.rate.loan - K.rate.sav;
+      $('bankTip').textContent = (gap < 3 ? 'The two rates are close, so the bank earns very little on each loan. ' : '') + (K.rate.sav >= 5 ? 'Pigs save a lot at this rate, and the bank pays a lot of interest. ' : K.rate.sav <= 1 ? 'Pigs save less at this rate. ' : '') + (K.rate.loan >= 14 ? 'Few pigs want a loan this expensive. ' : K.rate.loan <= 6 ? 'Cheap loans: lots of pigs will ask. ' : '') + (K.policy === 2 ? 'Easy lending means more loans, and more that never get repaid.' : K.policy === 0 ? 'Strict lending is safe, but few pigs qualify.' : '');
+      if (!$('bankTip').textContent) $('bankTip').textContent = 'The bank earns the loan rate, pays the savings rate, and keeps the difference. A year is 12 game days.';
+    }
+    // deposits and loans per day: past days + right now
+    const days = K.hist.slice(-7).concat([{ d: dayNum(), dep: Math.round(T0.dep), loans: Math.round(T0.loans), now: true }]);
+    const cv = $('bankChart'), c = cv.getContext('2d'), Wc = cv.width, Hc = cv.height, pl = 58, pb = 34, mv = Math.max(10, ...days.map(d => Math.max(d.dep, d.loans)));
+    c.clearRect(0, 0, Wc, Hc); c.font = '700 18px Nunito, sans-serif'; c.strokeStyle = '#f1e3dc'; c.lineWidth = 1.5;
+    for (let i = 0; i <= 3; i++) { const y = Hc - pb - (Hc - pb - 14) * i / 3; c.beginPath(); c.moveTo(pl, y); c.lineTo(Wc - 6, y); c.stroke(); c.fillStyle = '#8a6a52'; c.textAlign = 'right'; c.textBaseline = 'middle'; c.fillText(Math.round(mv * i / 3), pl - 8, y); }
+    const bw = (Wc - pl - 10) / 8;
+    days.forEach((d, i) => {
+      const x = pl + 4 + i * bw, half = (bw - 12) / 2;
+      [[d.dep, '#5aa9e0'], [d.loans, '#e07a9a']].forEach(([v, col], k) => { const h = (Hc - pb - 14) * v / mv; c.fillStyle = col; rr(c, x + k * (half + 2), Hc - pb - Math.max(2, h), half, Math.max(2, h), 5); c.fill(); });
+      c.fillStyle = '#8a6a52'; c.textAlign = 'center'; c.textBaseline = 'alphabetic'; c.fillText(d.now ? 'now' : 'D' + d.d, x + (bw - 12) / 2, Hc - 8);
+    });
+    const pigs = G.pigs.filter(p => K.acc[p.id]).sort((a, b) => (K.acc[b.id].chk + K.acc[b.id].sav) - (K.acc[a.id].chk + K.acc[a.id].sav));
+    $('bankAccBody').innerHTML = pigs.length ? pigs.map(p => {
+      const a = K.acc[p.id], sc = Math.round(a.score), tag = sc >= 740 ? 'Great' : sc >= 660 ? 'Good' : sc >= 580 ? 'Fair' : 'Poor';
+      return `<tr data-id="${p.id}"><td><b>${escH(p.name)}</b></td><td class="num">${Math.round(a.chk)}</td><td class="num">${Math.round(a.sav)}</td><td>${a.loan ? `${loanKind(a.loan.k)[1]} ${Math.round(a.loan.amt)} of ${Math.round(a.loan.orig)} left${a.late ? ` · <span class="neg">${a.late} missed</span>` : ''}` : '—'}</td><td class="num">${sc} · ${tag}</td></tr>`;
+    }).join('') : '<tr><td colspan="5">No accounts yet. Grown-up pigs get one at their first paycheck.</td></tr>';
+    $('bankLedBody').innerHTML = K.led.length ? K.led.slice(-25).reverse().map(([d, id, what, amt, nm]) => `<tr data-id="${id}"><td>D${d}</td><td>${escH((G.pigs.find(p => p.id === id) || { name: nm || 'A pig' }).name)}</td><td>${escH(what)}</td><td class="num ${amt < 0 ? 'neg' : amt > 0 ? 'pos' : ''}">${amt ? (amt > 0 ? '+' : '') + Math.round(amt * 10) / 10 : '—'}</td></tr>`).join('') : '<tr><td colspan="4">Nothing yet. The first entries show up after midnight.</td></tr>';
   }
   function gauss() { let u = 0, v = 0; while (!u) u = Math.random(); while (!v) v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
   // ---------- in-game dialogs (the Mac app can't use the browser's prompt box) ----------
@@ -1145,8 +1454,8 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   // ride or furniture types, new required fields). A town saved by a NEWER version than this one opens read-only:
   // it is shown, but this copy of the game never writes over it (web storage, Mac save file or cloud).
   //   1 = everything before the downtown update (saves had no schema field)   2 = downtown landmarks + districts
-  //   4 = home upgrades capped at level 2
-  const SAVE_SCHEMA = 4;
+  //   4 = home upgrades capped at level 2; 5 = centralized scheduler residuals
+  const SAVE_SCHEMA = PigSimulation.SCHEMA;
   const schemaOf = s => (s && Number.isFinite(s.schema) ? s.schema : 1);
   let readOnly = false;
   function readSaveText() {
@@ -1155,16 +1464,42 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     if (!txt) { try { txt = localStorage.getItem('pigcity-v1'); } catch (e) {} }
     return txt;
   }
-  const validTown = s => s && typeof s === 'object' && Array.isArray(s.pigs) && Array.isArray(s.buildings);
+  const validTown = PigSimulation.valid;
+  let saveProblem = '', recoveredSave = false;
+  function keepBackup(key, text) {
+    PigSimulation.decode(text);
+    let browserError = null;
+    try { localStorage.setItem(key, text); } catch (e) { browserError = e; }
+    if (desk && desk.backupSave) { if (!desk.backupSave(key, text)) throw Error('Desktop backup failed'); }
+    else if (browserError) throw browserError;
+  }
+  function recoveryTexts() {
+    const result = [];
+    if (desk && desk.recoverySaves) { try { result.push(...desk.recoverySaves()); } catch (e) {} }
+    for (const key of ['pigcity-v1', 'pigcity-backup', 'pigcity-manual-backup', 'pigcity-before-simulation', 'pigcity-before-tracking']) {
+      try { const text = localStorage.getItem(key); if (text) result.push(text); } catch (e) {}
+    }
+    return result;
+  }
   function load() {
-    try {
-      const s = JSON.parse(readSaveText() || 'null');
-      if (s && Array.isArray(s.pigs)) {
-        G = s; nextId = Math.max(0, ...G.pigs.map(p => p.id)) + 1;
-        if (schemaOf(s) > SAVE_SCHEMA) { readOnly = true; saveLocked = true; } // made by a newer Pig City: look, don't save
+    const primary = readSaveText();
+    const candidates = [primary, ...recoveryTexts()].filter(Boolean);
+    for (const text of candidates) {
+      try {
+        const s = PigSimulation.decode(text);
+        if (schemaOf(s) <= SAVE_SCHEMA && schemaOf(s) < SAVE_SCHEMA) {
+          // Never migrate the only copy. Refuse writes if backup storage fails.
+          try { keepBackup('pigcity-before-simulation', text); }
+          catch (e) { saveProblem = 'Migration backup failed: ' + e.message; saveLocked = true; }
+        }
+        G = schemaOf(s) > SAVE_SCHEMA ? s : PigSimulation.migrate(s);
+        nextId = Math.max(0, ...G.pigs.map(p => p.id), ...Object.keys(G.kin || {}).map(Number)) + 1;
+        if (schemaOf(s) > SAVE_SCHEMA) { readOnly = true; saveLocked = true; }
+        recoveredSave = text !== primary;
         return;
-      }
-    } catch (e) {}
+      } catch (e) { /* try a verified recovery copy */ }
+    }
+    if (candidates.length) { saveLocked = true; saveProblem = 'No valid save could be opened. Import an exported town to recover; existing copies are protected.'; }
     G = newTown();
   }
   var tracking = null;
@@ -1174,15 +1509,33 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   function trackCheckpoint() {
     if (tracking && !readOnly) { try { tracking.checkpoint(); } catch (e) { tracking.fail(e); console.error('Gameplay tracking:', e); } }
   }
+  var simulation = null;
   var cityChunkRevision = 0;
+  let lastBackupAt = 0;
+  function townText() {
+    if (simulation && !readOnly) G.simulation = Object.fromEntries([...simulation.tasks].map(([name, task]) => [name, task.pending]));
+    return JSON.stringify(G);
+  }
   function save() {
     cityChunkRevision++;
     if (saveLocked || readOnly) return;
     trackCheckpoint();
     G.schema = SAVE_SCHEMA;
-    let txt; try { txt = JSON.stringify(G); } catch (e) { return; }
-    try { localStorage.setItem('pigcity-v1', txt); } catch (e) {}
-    if (desk) { try { desk.writeSave(txt); } catch (e) {} }
+    let txt; try { txt = townText(); } catch (e) { saveProblem = 'Save could not be serialized. Export a recovery copy if possible.'; return; }
+    let browserOK = false, desktopOK = false;
+    try {
+      const previous = localStorage.getItem('pigcity-v1');
+      // A damaged primary must never replace a good recovery copy.
+      if (previous && Date.now() - lastBackupAt >= 60000) {
+        let validPrevious = false;
+        try { PigSimulation.decode(previous); validPrevious = true; } catch (e) {}
+        if (validPrevious) { localStorage.setItem('pigcity-backup', previous); lastBackupAt = Date.now(); }
+      }
+      localStorage.setItem('pigcity-v1', txt); browserOK = true;
+    } catch (e) { saveProblem = 'Browser save failed: ' + e.message; }
+    if (desk) { try { desktopOK = desk.writeSave(txt) === true; } catch (e) { saveProblem = 'Desktop save failed: ' + e.message; } }
+    if (!browserOK || (desk && !desktopOK)) saveProblem = 'Save needs attention. Export your town now to keep a copy.';
+    else saveProblem = '';
     if (tracking) tracking.flush().catch(e => tracking.fail(e));
   }
   function initExtras(fresh) {
@@ -1198,6 +1551,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     for (const p of G.pigs) givePersonality(p);
     pickFriends();
     initMarket();
+    initBank();
     initPlanning();
     if (G.babiesOff === undefined) G.babiesOff = true;
     if (!G.city) { G.city = [{ type: 'office', x: 2, y: 2, t: 0, map: 'city' }]; G.cityNew = true; }
@@ -1205,6 +1559,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     G.jd = G.jd || { day: dayNum(), place: {}, pig: {}, total: 0 };
     G.jobHist = G.jobHist || [];
     for (const b of G.buildings) if (b.type === 'hutch' && !b.room) b.room = { wall: 0, floor: 0, items: [] };
+    for (const b of G.buildings) if (b.type === 'hutch' && b.v === undefined) b.v = (((b.x * 7 + b.y * 13) % HOUSE_STYLES.length) + HOUSE_STYLES.length) % HOUSE_STYLES.length; // older towns: give each home one of the house looks
     for (const p of G.pigs) if (p.loc === 'city' && !G.city.length) p.loc = 'home';
     if (!G.goalsDone) { G.goalsDone = []; if (!fresh) { G.catchup = true; G.stats.built = Math.max(G.stats.built, G.buildings.length - 5); } }
   }
@@ -1215,7 +1570,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     for (const p of G.pigs) if (OLD_NAMES.has(p.name)) { const n = NAMES.find(n => !used.has(n)); if (n) { used.add(n); p.name = n; } }
   }
 
-  const SIZE = { hutch: 2, hospital: 2, office: 2, pcse: 2, bbb: 2, bronsonbank: 2, misomarket: 2, wheekcoffee: 2 };
+  const SIZE = { police: 2, fire: 2, church: 2, school: 2, townhall: 2, hutch: 2, hospital: 2, office: 2, pcse: 2, bbb: 2, bronsonbank: 2, misomarket: 2, wheekcoffee: 2 };
   const sz = t => SIZE[t] || 1;
   const PER_CASTLE = 4;
   const capacity = () => G.buildings.filter(b => b.type === 'hutch').reduce((n, b) => n + CAP[L(b) - 1], 0);
@@ -1318,7 +1673,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   }
   // build-menu pictures: the real isometric art, drawn once per type and reused
   const thumbCache = new Map();
-  const hasThumb = k => B[k] && ['cdown', 'cbiz', 'cdecor', 'street', 'home', 'biz', 'help', 'decor'].includes(B[k].cat) && !['roomba', 'sitter'].includes(k);
+  const hasThumb = k => B[k] && ['cdown', 'cbiz', 'cdecor', 'street', 'home', 'biz', 'town', 'help', 'decor'].includes(B[k].cat) && !['roomba', 'sitter'].includes(k);
   function bldThumb(k, cv) {
     let img = thumbCache.get(k);
     if (!img) {
@@ -1387,7 +1742,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   $('soundBtn').addEventListener('click', () => { muted = !muted; try { localStorage.setItem('pigcity-muted', muted ? '1' : '0'); } catch (e) {} syncSound(); sfx('tap'); });
 
   // ---------- pause & speed ----------
-  let paused = false;
+  let paused = /[?&]debug\b/.test(location.search) && /[?&]paused\b/.test(location.search);
   function syncSpeed() {
     document.querySelectorAll('[data-spd]').forEach(b => b.setAttribute('aria-pressed', !paused && +b.dataset.spd === G.speed ? 'true' : 'false'));
     $('pauseBtn').textContent = paused ? '▶' : '❚❚'; $('pauseBtn').setAttribute('aria-pressed', paused ? 'true' : 'false');
@@ -1477,6 +1832,17 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
       $('pTraitDesc').textContent = tr.desc;
       const fb = $('friendBtn'); if (fb) fb.addEventListener('click', () => { selected = fr.id; fr.hop = .5; listSig = ''; renderPig(true); sfx('tap'); });
     }
+    const fam = { par: parentsOf(p.id), pups: pupsOf(p.id) };
+    const famSig = p.id + '|' + fam.par.map(kinName).join('&') + '|' + fam.pups.length;
+    if ($('pFamily').dataset.sig !== famSig) {
+      $('pFamily').dataset.sig = famSig;
+      const line = (fam.par.length ? 'Parents: ' + fam.par.map(kinName).join(' & ') : p.age >= 999 ? 'A founder of the town' : 'No family records yet') + (fam.pups.length ? ` · ${fam.pups.length} pup${fam.pups.length > 1 ? 's' : ''}` : '');
+      $('pFamily').innerHTML = '<span></span> <button class="pill link" id="famBtn" title="See parents, grandparents and pups">🌳 Family tree</button>';
+      $('pFamily').firstChild.textContent = '👪 ' + line;
+      $('famBtn').addEventListener('click', () => { openFamily(p.id); sfx('tap'); });
+    }
+    { const a = G.bank && bankOpen() && p.age >= 90 ? G.bank.acc[p.id] : null; $('pBank').hidden = !a;
+      if (a) $('pBank').textContent = `🏦 Checking ${Math.round(a.chk)} · Savings ${Math.round(a.sav)}` + (a.loan ? ` · Loan ${Math.round(a.loan.amt)} left ${loanKind(a.loan.k)[1]}` : '') + ` · Credit ${Math.round(a.score)}`; }
     $('pBars').innerHTML = BAR.map(([k, l, col]) => `<div class="bar"><span>${l}</span><div class="track"><div class="fill" style="width:${Math.max(0, p[k])}%;background:${col}"></div></div><span class="num">${Math.round(p[k])}</span></div>`).join('');
     
     // Game Systems: Display needs if available
@@ -1545,6 +1911,51 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     const n = await askText('New name for ' + p.name + '?', p.name, 16);
     if (n && n.trim()) { p.name = n.trim().slice(0, 16); renderPig(true); listSig = ''; save(); }
   });
+
+  // ---------- family tree dialog ----------
+  const GEN_UP = ['Parents', 'Grandparents', 'Great-grandparents'], GEN_DOWN = ['Pups', 'Grandpups', 'Great-grandpups'];
+  const genLabel = (names, g) => names[g - 1] || 'Great-' + 'great-'.repeat(g - 3) + names[1].toLowerCase();
+  let famPrevPause = null;
+  function openFamily(id) {
+    const box = $('famBox');
+    if (box.hidden) { famPrevPause = paused; paused = true; }
+    box.hidden = false;
+    $('famTitle').textContent = '🌳 ' + kinName(id) + "'s family tree";
+    const up = kinWalk(id, parentsOf), down = kinWalk(id, pupsOf), body = $('famBody');
+    body.textContent = '';
+    const addRow = (label, ids, me) => {
+      const row = document.createElement('div'); row.className = 'famrow' + (me ? ' me' : '');
+      const h = document.createElement('div'); h.className = 'famgen'; h.textContent = label; row.appendChild(h);
+      const chips = document.createElement('div'); chips.className = 'famchips';
+      for (const k of ids) {
+        const q = G.pigs.find(x => x.id === k);
+        const chip = document.createElement(q && !me ? 'button' : 'div'); chip.className = 'famchip' + (q ? '' : ' gone');
+        if (q) {
+          const cv = document.createElement('canvas'); cv.width = 60; cv.height = 40;
+          const c = cv.getContext('2d'); c.translate(29, 21); c.scale(.62, .62); drawPig(c, q.skin);
+          chip.appendChild(cv);
+        } else { const g = document.createElement('span'); g.className = 'famfarm'; g.textContent = '🌾'; chip.appendChild(g); }
+        const n = document.createElement('b'); n.textContent = kinName(k); chip.appendChild(n);
+        const t = document.createElement('small'); t.textContent = q ? (q.age < 90 ? 'Baby' : q.age >= 999 ? 'Founder' : 'Grown up') : "At Grandma's farm"; chip.appendChild(t);
+        if (q && !me) { chip.type = 'button'; chip.title = 'Show ' + q.name + "'s family tree"; chip.addEventListener('click', () => { selected = q.id; q.hop = .5; listSig = ''; renderPig(true); openFamily(q.id); sfx('tap'); }); }
+        chips.appendChild(chip);
+      }
+      row.appendChild(chips); body.appendChild(row);
+    };
+    const maxUp = Math.max(0, ...up.map(r => r.gen)), maxDown = Math.max(0, ...down.map(r => r.gen));
+    for (let g = maxUp; g >= 1; g--) addRow(genLabel(GEN_UP, g), up.filter(r => r.gen === g).map(r => r.id));
+    addRow('This pig', [id], true);
+    for (let g = 1; g <= maxDown; g++) addRow(genLabel(GEN_DOWN, g), down.filter(r => r.gen === g).map(r => r.id));
+    const me = G.pigs.find(x => x.id === id);
+    $('famNote').textContent = up.length || down.length ? `${up.length} ancestor${up.length === 1 ? '' : 's'} and ${down.length} descendant${down.length === 1 ? '' : 's'} on record. Click a relative to see their tree.`
+      : me && me.age >= 999 ? 'A founder of the town with no pups yet. When happy pigs have babies, the family tree grows here.'
+      : 'No family records for this pig. Records are kept for every baby born from now on.';
+    setTimeout(() => $('famClose').focus(), 30);
+  }
+  function closeFamily() { if ($('famBox').hidden) return; $('famBox').hidden = true; paused = famPrevPause; famPrevPause = null; }
+  $('famClose').addEventListener('click', closeFamily);
+  $('famBox').addEventListener('click', e => { if (e.target === $('famBox')) closeFamily(); });
+  $('famBox').addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); closeFamily(); } });
 
   // ---------- Hay Harvest Mini-game ----------
   let minigameLastPlay = 0;
@@ -1943,8 +2354,9 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   $('resetBtn').addEventListener('click', async () => {
     if (!(await askYes('Start a brand new town? Your current town will be gone. (Tip: 💾 Export town first to keep a copy.)', 'Start over'))) return;
     if (readOnly && !(await askYes('This town was saved by a newer version of Pig City. Starting over here REPLACES it on this device. Are you sure?', 'Replace it'))) return;
+    try { keepBackup('pigcity-manual-backup', townText()); } catch (e) { toast('Could not back up your town: ' + e.message); return; }
     readOnly = false; saveLocked = false;
-    G = newTown(); initExtras(true); syncBaby(); stockSig = "x"; drops.length = 0; selBld = null; confetti.length = 0; selected = null; listSig = ''; jobSig = ''; save(); hudRes(); renderPig(); syncTools(); toast('A fresh start! Welcome to your new town.');
+    G = newTown(); if (simulation) { simulation.reset(); for (const task of simulation.tasks.values()) task.pending = 0; } initExtras(true); syncBaby(); stockSig = "x"; drops.length = 0; selBld = null; confetti.length = 0; selected = null; listSig = ''; jobSig = ''; save(); hudRes(); renderPig(); syncTools(); toast('A fresh start! Welcome to your new town.');
   });
 
   // ---------- export / import a town file ----------
@@ -1964,13 +2376,35 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   }
   // replace this device's town with another one and restart the game
   function useTown(txt) {
-    try { localStorage.setItem('pigcity-v1', txt); } catch (e) {}
-    if (desk) { try { desk.writeSave(txt, true); } catch (e) {} }
-    saveLocked = true; location.reload();
+    try {
+      const town = PigSimulation.decode(txt);
+      if (schemaOf(town) > SAVE_SCHEMA) throw Error('Update Pig City before opening this town');
+      keepBackup('pigcity-manual-backup', townText());
+      const migrated = JSON.stringify(PigSimulation.migrate(town));
+      // Desktop is authoritative there; acknowledge the atomic write before reload.
+      if (desk && desk.writeSave(migrated) !== true) throw Error('Desktop save failed');
+      try { localStorage.setItem('pigcity-v1', migrated); } catch (e) { if (!desk) throw e; }
+      saveLocked = true; location.reload();
+    } catch (e) { toast('Town could not be loaded: ' + e.message); }
   }
+  const backupButton = document.createElement('button');
+  backupButton.className = 'btn ghost'; backupButton.textContent = '💾 Backup';
+  backupButton.onclick = () => { try { keepBackup('pigcity-manual-backup', townText()); toast('Backup kept on this device. Export town for a separate file.'); } catch (e) { toast('Backup failed: ' + e.message); } };
+  const recoverButton = document.createElement('button');
+  recoverButton.className = 'btn ghost'; recoverButton.textContent = '↩ Recover';
+  recoverButton.onclick = async () => {
+    const copies = recoveryTexts().filter(text => { try { return schemaOf(PigSimulation.decode(text)) <= SAVE_SCHEMA; } catch (e) { return false; } });
+    // Prefer the explicit manual backup; fallback to the rolling copy.
+    let text; try { text = localStorage.getItem('pigcity-manual-backup') || localStorage.getItem('pigcity-backup'); } catch (e) {}
+    if (!copies.includes(text)) text = copies.find(t => t !== readSaveText());
+    if (!text) { toast('No recovery copy found. Use Import town to open an exported file.'); return; }
+    const town = PigSimulation.decode(text);
+    if (await askYes(`Recover backup with ${town.pigs.length} pigs and ${town.buildings.length} buildings? A backup of this town will be kept first.`, 'Recover')) useTown(text);
+  };
+  $('exportBtn').after(backupButton, recoverButton);
   // hooks for cloud saves (assets/cloud.js, web version only)
   window.pigTown = {
-    text: () => JSON.stringify(G),
+    text: townText,
     summary: () => ({ name: (G.townName || 'Pig City').slice(0, 40), pigs: G.pigs.length, buildings: G.buildings.length, coins: Math.round(G.coins) }),
     valid: validTown, use: useTown, toast, ask, askText, askYes, tellBox,
     get tracking() { return tracking; },
@@ -2015,6 +2449,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   }
   // Squealtopia pieces (rides, food stands, park decor) use the same slide-out panel as town buildings
   function renderParkBld(b) {
+    $('styleBtn').hidden = true;
     const P = ensurePark(), R = RIDES[b.type], S = STANDS[b.type], D = PDECOR[b.type], def = B[b.type], ic = def.ic;
     $('bName').textContent = `${ic} ${def.name}`;
     const land = LANDS[landOf(b.x, b.y)];
@@ -2057,6 +2492,8 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     if (b.map === 'park') { renderParkBld(b); return; }
     const l = L(b);
     $('bName').textContent = lvName(b);
+    $('styleBtn').hidden = !(b.type === 'hutch' && l < 3);
+    $('styleBtn').onclick = () => { if (selBld !== b) return; b.v = (houseStyle(b) + 1) % HOUSE_STYLES.length; sfx('tap'); save(); renderBld(); };
     $('bLvl').textContent = `Level ${l} ` + '★'.repeat(l) + '☆'.repeat(3 - l);
     $('bInfo').textContent = perkText(b.type, l) + (JOBS[b.type] ? ` · ${workersAt(b).length} working now` : '');
     { // what this place is, and (for shops) whether it is open and what customers have paid
@@ -2369,7 +2806,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
       if (!fits(tool, tx, ty)) { toast(isRoad(view, tx, ty) ? "You can't build on the road." : sz(tool) > 1 ? `The ${B[tool].name} needs a free 2×2 patch (it grows toward the bottom of the screen from where you click).` : 'Something is already built there.'); return; }
       if (G.coins < B[tool].cost) { toast(`You need ${B[tool].cost} 🪙 for a ${B[tool].name}.`); return; }
       if (!B[tool].both && !!B[tool].city !== (view === 'city')) { toast(view === 'city' ? 'That one belongs in Home Town.' : 'That one belongs in Job City.'); return; }
-      const nb = { type: tool, x: tx, y: ty, t: 0 }; if (view === 'city') nb.map = 'city'; if (tool === 'hutch') nb.room = { wall: 0, floor: 0, items: [] };
+      const nb = { type: tool, x: tx, y: ty, t: 0 }; if (view === 'city') nb.map = 'city'; if (tool === 'hutch') { nb.room = { wall: 0, floor: 0, items: [] }; nb.v = Math.floor(Math.random() * HOUSE_STYLES.length); }
       if (tool === 'parkedcar') nb.v = Math.floor(Math.random() * PARKED.length); if (tool === 'finoffice') nb.v = Math.floor(Math.random() * FIRMS.length);
       G.coins -= B[tool].cost; bl().push(nb); G.stats.built++; sfx('build');
       { const P = isoToScr(iso((tx + sz(tool) / 2) * T, (ty + sz(tool) / 2) * T)); for (let i = 0; i < 16; i++) confetti.push({ x: P.x + (Math.random() - .5) * 20, y: P.y - 10, vx: (Math.random() - .5) * 120, vy: -60 - Math.random() * 80, r: Math.random() * 6, vr: (Math.random() - .5) * 12, c: ['#c9a23a', '#a77c4c', '#fff', '#9cc65a'][i % 4], life: .8 + Math.random() * .4 }); }
@@ -2559,7 +2996,36 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     return props;
   }
   function workersHere(b) { return G.pigs.filter(p => { const jb = jobOf(p); return jb === b && pigMap(p) === (b.map || 'home') && !p.trip; }); }
+  // police and fire uniforms: a jacket across the body and the cap or helmet. Drawn in the pig's own coordinates.
+  function drawUniform(c, kind, hat = true) {
+    c.save(); c.lineWidth = 2; c.strokeStyle = INK; c.lineJoin = 'round';
+    if (kind === 'police') {
+      c.fillStyle = '#2f4470'; rr(c, -13, -19, 25, 38, 9); c.fill(); c.stroke();
+      c.fillStyle = '#1d2b4a'; c.fillRect(-13, 3, 25, 4);
+      c.fillStyle = '#f2c14e'; c.beginPath(); for (let i = 0; i < 10; i++) { const r = i % 2 ? 2 : 4.6, a = -Math.PI / 2 + i * Math.PI / 5; c.lineTo(4 + Math.cos(a) * r, -8 + Math.sin(a) * r); } c.closePath(); c.fill(); c.lineWidth = 1; c.stroke(); c.lineWidth = 2;
+      if (hat) { c.fillStyle = '#2f4470'; c.beginPath(); c.ellipse(19, -19, 13, 10, 0, Math.PI, 0); c.closePath(); c.fill(); c.stroke();
+        c.fillStyle = '#1d2b4a'; c.fillRect(6, -22, 26, 4); c.strokeRect(6, -22, 26, 4); c.beginPath(); c.ellipse(33, -18.5, 9, 3, 0, 0, Math.PI * 2); c.fill(); c.stroke();
+        c.fillStyle = '#f2c14e'; ell(c, 20, -26, 2.8, 2.8); c.fill(); c.lineWidth = 1; c.stroke(); }
+    }
+    if (kind === 'fire') {
+      c.fillStyle = '#d9a441'; rr(c, -13, -19, 25, 38, 9); c.fill(); c.stroke();
+      c.fillStyle = '#fff27a'; c.fillRect(-13, -9, 25, 4); c.fillRect(-13, 6, 25, 4); c.fillStyle = '#c9ced8'; c.fillRect(-13, -7.6, 25, 1.2); c.fillRect(-13, 7.4, 25, 1.2);
+      if (hat) { c.fillStyle = '#d8402f'; c.beginPath(); c.ellipse(18, -18, 20, 4.5, 0, 0, Math.PI * 2); c.fill(); c.stroke();
+        c.beginPath(); c.ellipse(19, -19, 14, 12, 0, Math.PI, 0); c.closePath(); c.fill(); c.stroke();
+        c.beginPath(); c.moveTo(8, -26); c.quadraticCurveTo(19, -36, 31, -24); c.stroke();
+        c.fillStyle = '#f2c14e'; c.beginPath(); c.moveTo(24, -27); c.lineTo(31, -27); c.lineTo(31, -22); c.lineTo(27.5, -19.5); c.lineTo(24, -22); c.closePath(); c.fill(); c.lineWidth = 1; c.stroke(); }
+    }
+    c.restore();
+  }
+  // which uniform a pig wears on the town map: police officers and firefighters keep theirs on all day
+  const uniCache = new WeakMap();
+  function uniformOf(p) {
+    if (!p.job) return null; let u = uniCache.get(p.job);
+    if (u === undefined) { const jb = listOf(p.job.map || 'home').find(b => b.x === p.job.x && b.y === p.job.y); u = jb && (jb.type === 'police' || jb.type === 'fire') ? jb.type : null; uniCache.set(p.job, u); }
+    return u;
+  }
   function drawHat(c, kind, p) {
+    if (kind === 'police' || kind === 'fire') { drawUniform(c, kind); return; }
     if (p && ceoOf(p) === kind) return;
     c.save(); c.lineWidth = 2; c.strokeStyle = INK;
     if (kind === 'bbb') { c.fillStyle = '#2f8a4a'; c.fillRect(8, -21, 26, 4); c.strokeRect(8, -21, 26, 4); c.fillStyle = 'rgba(64,170,96,.85)'; c.beginPath(); c.moveTo(30, -21); c.lineTo(48, -15); c.lineTo(31, -16); c.closePath(); c.fill(); c.stroke(); }
@@ -2914,15 +3380,15 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     if (v !== 'inside') houseRoom = null;
     if (insideB) $('insideTab').textContent = `${B[insideB.type].ic} ${insideName(insideB)}`;
     const map = v === 'home' || v === 'city' || v === 'inside' || v === 'park';
-    $('stage').hidden = !map; $('buildPanel').hidden = !map; $('dash').hidden = v !== 'dash'; $('pcse').hidden = v !== 'pcse';
+    $('stage').hidden = !map; $('buildPanel').hidden = !map; $('dash').hidden = v !== 'dash'; $('pcse').hidden = v !== 'pcse'; $('bankView').hidden = v !== 'bank';
     $('buildTitle').textContent = v === 'park' ? `Build ${PARK_NAME} 🎢` : v === 'city' ? 'Build downtown 🏙️' : v === 'inside' ? `Decorate ${insideName(insideB)} ${isWork(insideB) ? '🪴' : '🛋️'}` : 'Build';
     drawTabs(); drawTools(); renderBld(); renderCozy();
     $('buildBar').hidden = !(v === 'home' || v === 'city'); $('growBtn').hidden = !(v === 'city' || v === 'home'); syncGrowBtn();
-    $('zoombar').hidden = false; roomLabels(); $('zWalls').hidden = !isHouse() || isDoll(); $('zStreet').hidden = v !== 'home' && v !== 'city'; $('zMap').hidden = v === 'inside' || v === 'park'; hoodSig = ''; parkPanelSig = ''; pSel = null; renderParkPanel();
+    $('zoombar').hidden = false; roomLabels(); $('zWalls').hidden = !isHouse(); $('zStreet').hidden = v !== 'home' && v !== 'city'; $('zMap').hidden = v === 'inside' || v === 'park'; hoodSig = ''; parkPanelSig = ''; pSel = null; renderParkPanel();
     if (map) { resize(); if ((v === 'home' || v === 'city' || v === 'park') && !cams[v].init) { camHome(v); cams[v].init = true; } if (isHouse()) houseCamHome(); }
     if (v === 'park' && !G.parkSeen) { G.parkSeen = true; ensurePark(); setTimeout(() => toast(`🎢 Welcome to ${PARK_NAME}! Build rides next to the paths, hire Ride Operators, and set your ticket price. Tourists start coming once you have rides.`), 200); }
     if (v === 'city' && G.cityNew) { G.cityNew = false; setTimeout(() => toast('🏙️ Welcome to Job City! Pigs with jobs here drive in around 8am and home after 5pm.'), 200); }
-    if (v === 'dash') renderDash(); if (v === 'pcse') { stockSig = ''; renderStocks(); }
+    if (v === 'dash') renderDash(); if (v === 'pcse') { stockSig = ''; renderStocks(); } if (v === 'bank') renderBank();
     renderIsleTabs();
   }
   const insideName = b => lvName(b);
@@ -2972,6 +3438,11 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     $('boardBody').innerHTML = rows;
   }
   $('boardBody').addEventListener('click', e => { const tr = e.target.closest('tr'); if (!tr) return; selected = +tr.dataset.id; listSig = ''; renderPig(true); sfx('tap'); });
+  for (const id of ['bankAccBody', 'bankLedBody']) $(id).addEventListener('click', e => { const tr = e.target.closest('tr'); if (!tr || !tr.dataset.id || !G.pigs.some(p => p.id === +tr.dataset.id)) return; selected = +tr.dataset.id; listSig = ''; renderPig(true); sfx('tap'); });
+  $('bankSav').addEventListener('input', e => { G.bank.rate.sav = +e.target.value; renderBank(); });
+  $('bankLoan').addEventListener('input', e => { G.bank.rate.loan = +e.target.value; renderBank(); });
+  $('bankPolicy').addEventListener('change', e => { G.bank.policy = +e.target.value; renderBank(); save(); });
+  for (const id of ['bankSav', 'bankLoan']) $(id).addEventListener('change', () => save());
   function hudClock() { const h = hourNow(), hh = Math.floor(h), mm = Math.floor((h - hh) * 6) * 10; return `${(hh + 11) % 12 + 1}:${String(mm).padStart(2, '0')} ${hh < 12 ? 'am' : 'pm'}`; }
 
   // ---------- goals ----------
@@ -3243,6 +3714,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     trackCheckpoint();
     const d = dayNum(), yd = yearDay(d);
     pickFriends();
+    bankDay();
     if (G.jd.day !== d) { G.jobHist.push({ d: G.jd.day, v: Math.round(G.jd.total) }); if (G.jobHist.length > 20) G.jobHist.shift(); G.jd = { day: d, place: {}, pig: {}, total: 0 }; }
     if ((d - 1) % SEASON_DAYS === 0 && d > 1) { const s = season(); toast(`${s.e} ${s.name} is here!${s.name === 'Winter' ? ' Hay grows slower, stock up.' : s.name === 'Spring' ? ' Baby season: pigs feel romantic.' : ''}`); celebrate(); }
     const hay = G.mkt.st.HAY.own; if (hay >= 5) { const n = Math.floor(hay / 5); G.hay += n; setTimeout(() => toast(`🌾 Hay Holdings paid a dividend: +${n} 🌾`), 3500); }
@@ -3332,19 +3804,14 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   function logPay(p, b, pay) {
     trackEvent('wage_paid', p, { amount: pay }, b);
     const J = G.jd; J.total += pay; J.pig[p.id] = (J.pig[p.id] || 0) + pay;
+    bankPay(p, pay);
     const k = (b.map === 'city' ? '🏙️ ' : b.map === 'park' ? '🎢 ' : '🏡 ') + JOBS[b.type].place; J.place[k] = (J.place[k] || 0) + pay;
   }
 
   // ---------- simulation ----------
-  function tick(dt) {
-    refreshZones(dt);
-    worldTick(dt); insideTick(dt); houseTick(dt); parkTick(dt); districtTick(dt); trafficTick(dt); standaloneTick(dt);
-    G.time += dt;
-    const parks = lvlSum('park') * (evOn('spa') ? 1.5 : 1), vets = lvlSum('vet');
-    const decor = G.buildings.reduce((s, b) => s + (DECOR[b.type] || 0) * (zoneBonus.get(b) === 'park' ? 2 : 1), 0), lanterns = count('lantern');
-    const dark = darkness(), wk = G.weather.k, sn = season().name;
-    const cityDecor = (G.city || []).reduce((s, b) => s + (DECOR[b.type] || 0), 0), home = residents(), hourH = hourNow();
-    // production (weather, seasons and events change the pace)
+  const pigPoses = new WeakMap();
+  function productionTick(dt) {
+    const sn = season().name, wk = G.weather.k;
     for (const b of G.buildings) {
       if (!RATE[b.type]) continue;
       let wx = 1;
@@ -3363,6 +3830,15 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
         if (b.type === 'bank') { G.coins += 2; popup(cx, cy, '+2 🪙', '#1f2f5c'); }
       }
     }
+  }
+  function tick(dt) {
+    refreshZones(dt);
+    worldTick(dt); insideTick(dt); houseTick(dt); parkTick(dt); districtTick(dt); trafficTick(dt); standaloneTick(dt);
+    G.time += dt;
+    const parks = lvlSum('park') * (evOn('spa') ? 1.5 : 1), vets = lvlSum('vet');
+    const decor = G.buildings.reduce((s, b) => s + (DECOR[b.type] || 0) * (zoneBonus.get(b) === 'park' ? 2 : 1), 0), lanterns = count('lantern');
+    const dark = darkness(), wk = G.weather.k, sn = season().name;
+    const cityDecor = (G.city || []).reduce((s, b) => s + (DECOR[b.type] || 0), 0), home = residents(), hourH = hourNow();
     const dirt = Math.min(1, G.poops.length / 30);
     G.warnT = (G.warnT || 0) - dt;
     if (G.warnT <= 0 && G.pigs.length) {
@@ -3372,6 +3848,9 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     }
     for (let i = G.pigs.length - 1; i >= 0; i--) {
       const p = G.pigs[i];
+      let pose = pigPoses.get(p);
+      if (!pose) { pose = {}; pigPoses.set(p, pose); }
+      pose.x = p.x; pose.y = p.y; pose.map = pigMap(p);
       p.age += dt; p.petCd = Math.max(0, p.petCd - dt); p.hop = Math.max(0, p.hop - dt);
       if (!p.leaveH) { p.leaveH = 7.3 + Math.random() * .9; p.backH = 16.8 + Math.random() * .9; }
       if (p.trip) { driveTick(p, dt); p.food = Math.max(0, p.food - .3 * dt); p.water = Math.max(0, p.water - .3 * dt); continue; }
@@ -3432,6 +3911,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
       if (p.health <= 0) {
         trackEvent('pig_relocated', p, { reason: 'grandmas_farm' });
         G.pigs.splice(i, 1);
+        if (G.kin && G.kin[p.id]) { G.kin[p.id].n = p.name; G.kin[p.id].gone = true; }
         toast(`${p.name} moved to Grandma's farm to get better 🥲 Keep the food and water up!`);
         if (selected === p.id) selected = null;
         renderPig(); continue;
@@ -3623,7 +4103,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
         const baby = makePig(name, babySkin(a.skin, b.skin), (a.x + b.x) / 2, (a.y + b.y) / 2, false);
         baby.food = baby.water = 90; baby.joy = 90; baby.bday = yearDay(dayNum()); baby.friend = a.id;
         baby.trait = Math.random() < .5 ? pick([a.trait, b.trait]) : pick(TRAIT_KEYS);
-        G.pigs.push(baby); G.born++; sfx('baby');
+        G.pigs.push(baby); recordBirth(baby, a, b); G.born++; sfx('baby');
         trackCheckpoint();
         trackEvent('birth', baby, { parent_ids: [a.trackingId, b.trackingId] });
         popup(baby.x, baby.y - 24, 'New baby! 🍼', '#e07a9a');
@@ -4331,6 +4811,8 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     const l = L(b) - 1;
     const H = ({ hutch: [80, 84, 60], hospital: [44, 56, 68], vet: [50, 50, 50], bank: [60, 70, 120], cafe: [52, 64, 72], salon: [50, 62, 70], toys: [52, 64, 72], sitter: [36, 40, 44], roomba: [12, 12, 12], water: [48, 52, 50], hay: [10, 18, 30], garden: [10, 10, 30], park: [40, 40, 40], tree: [46, 46, 46], citytree: [46, 46, 46], flowers: [10, 10, 10], bench: [22, 22, 22], lantern: [42, 42, 42], streetlamp: [46, 46, 46], pond: [8, 8, 8], fountain: [32, 32, 32], office: [124, 148, 172], factory: [48, 50, 52], market: [30, 34, 36], sushi: [36, 40, 44], dealer: [32, 36, 40], pcse: [80, 92, 104], bbb: [180, 206, 232],
       finoffice: [72, 94, 116], hedge: [16, 16, 16], planter: [18, 18, 18], table: [30, 30, 30], busstop: [36, 36, 36], parkedcar: [18, 18, 18], mailbox: [22, 22, 22], trash: [18, 18, 18], coffeecart: [34, 34, 34], tunnel: [16, 16, 16], statue: [46, 46, 46], ticker: [44, 44, 44],
+      police: [56, 64, 72], fire: [74, 82, 90], post: [50, 54, 58], furniture: [44, 48, 52], clothes: [44, 48, 52],
+      diner: [46, 50, 54], store: [50, 56, 62], library: [48, 52, 56], school: [66, 74, 82], church: [100, 100, 100], townhall: [102, 102, 102],
       bronsonbank: [214, 240, 266], tokiramen: [74, 86, 98], mochibakery: [74, 86, 98], misomarket: [68, 76, 86], wheekcoffee: [104, 118, 132], blossom: [52, 52, 52], bikerack: [14, 14, 14], hydrant: [15, 15, 15] })[b.type];
     const se = sprEntry(b); if (se && se.height) return se.height;
     return H ? H[l] : 48; // fallback keeps types without a height entry from breaking the renderer
@@ -4776,6 +5258,315 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     }
   };
 
+  // ================= HOME TOWN: house looks and small-town buildings =================
+  // an arched opening on a wall (doors, chapel windows)
+  function darch(c, o, face, k, a0, a1, z0, z1, fill, frame = '#fffaf2', lw = 1) {
+    const am = (a0 + a1) / 2, ra = (a1 - a0) / 2, rz = Math.min((z1 - z0) * .4, ra * HW * .95), pts = [fpt(o, face, k, a0, z0), fpt(o, face, k, a1, z0), fpt(o, face, k, a1, z1 - rz)];
+    for (let i = 1; i < 8; i++) { const th = i / 8 * Math.PI; pts.push(fpt(o, face, k, am + ra * Math.cos(th), z1 - rz + rz * Math.sin(th))); }
+    pts.push(fpt(o, face, k, a0, z1 - rz)); poly(c, pts, fill, frame, lw);
+  }
+  // a front porch along the L wall: deck, posts and a sloped roof
+  function dporch(c, o, u0, u1, v0, depth, zr, drop, roofCol, postCol = '#fffaf2', deck = '#d9c2a0') {
+    dbox(c, o, u0, v0, u1 - u0, depth, 0, 2.2, deck, { hl: false, noAO: true });
+    const n = Math.max(2, Math.round((u1 - u0) / .45) + 1);
+    for (let i = 0; i < n; i++) { const u = u0 + .04 + (u1 - u0 - .08) * i / (n - 1), p = IP(o, u, v0 + depth - .04, 2.2), q = IP(o, u, v0 + depth - .04, zr - drop); c.strokeStyle = EDGE; c.lineWidth = 2.6; c.beginPath(); c.moveTo(p[0], p[1]); c.lineTo(q[0], q[1]); c.stroke(); c.strokeStyle = postCol; c.lineWidth = 1.6; c.beginPath(); c.moveTo(p[0], p[1]); c.lineTo(q[0], q[1]); c.stroke(); }
+    { const a = IP(o, u0 + .04, v0 + depth - .04, 6.5), b2 = IP(o, u1 - .04, v0 + depth - .04, 6.5); c.strokeStyle = postCol; c.lineWidth = 1; c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(b2[0], b2[1]); c.stroke(); }
+    poly(c, [IP(o, u0 - .05, v0, zr), IP(o, u1 + .05, v0, zr), IP(o, u1 + .05, v0 + depth + .05, zr - drop), IP(o, u0 - .05, v0 + depth + .05, zr - drop)], roofCol, EDGE, 1);
+    poly(c, [IP(o, u0 - .05, v0 + depth + .05, zr - drop), IP(o, u1 + .05, v0 + depth + .05, zr - drop), IP(o, u1 + .05, v0 + depth + .05, zr - drop - 1.8), IP(o, u0 - .05, v0 + depth + .05, zr - drop - 1.8)], shade(roofCol, -.18), EDGE, .7);
+  }
+  function dbush(c, o, u, v, bloom) { const [x, y] = IP(o, u, v, 0); c.fillStyle = '#5e995f'; ell(c, x, y - 3, 6.5, 4.6); c.fill(); c.strokeStyle = EDGE; c.lineWidth = .7; c.stroke(); if (bloom) { c.fillStyle = bloom; for (const [dx, dy] of [[-2.5, -4.5], [2, -5], [.2, -2.4]]) { ell(c, x + dx, y + dy, 1.3, 1.3); c.fill(); } } }
+  function dchimney(c, o, u, v, z, h, col = '#b9836b') { dbox(c, o, u, v, .17, .17, z, h, col, { hl: false, noAO: true }); dbox(c, o, u - .02, v - .02, .21, .21, z + h, 1.8, shade(col, -.2), { hl: false, noAO: true }); }
+  // the four extra looks for a pig home (levels 1 and 2). Body sits on u .2-1.8, v .14-1.5; the front yard is v 1.5-2.
+  function houseArt(c, o, b, lv) {
+    const st = houseStyle(b), s0 = b.x * 11 + b.y * 17 + st, U = .2, V = .14, DU = 1.6, DV = 1.36, FV = V + DV, RU = U + DU;
+    poly(c, [IP(o, 0, 0), IP(o, 2, 0), IP(o, 2, 2), IP(o, 0, 2)], '#a8cb82', EDGE);
+    poly(c, [IP(o, .86, FV), IP(o, 1.14, FV), IP(o, 1.14, 2), IP(o, .86, 2)], '#e2c3a6', null);
+    if (st === 1) { // craftsman bungalow: sage siding, low brown roof, a deep porch across the front
+      const h = lv === 1 ? 24 : 40, WALL = '#b9cfa6', ROOF = '#7a5a44', TRIM = '#fff6e2';
+      dshadow(c, o, U, V, DU, DV, h + 12); dbox(c, o, U, V, DU, DV, 0, h, WALL);
+      dwin(c, o, 'L', FV, .36, .7, 7, 18, { seed: s0, frame: TRIM, transom: true }); dwin(c, o, 'L', FV, 1.3, 1.64, 7, 18, { seed: s0 + 1, frame: TRIM, transom: true });
+      poly(c, fquad(o, 'L', FV + .004, .88, 1.12, 2.2, 18), TRIM, EDGE, .9); poly(c, fquad(o, 'L', FV + .006, .91, 1.09, 2.2, 16.5), '#8a5a3a', null);
+      dwinGrid(c, o, 'R', RU, V + .1, FV - .1, 6, 19, 3, 1, { seed: s0 + 9, frame: TRIM, padA: .22 });
+      if (lv > 1) { dwinGrid(c, o, 'L', FV, U + .1, RU - .1, 25, h - 3, 3, 1, { seed: s0 + 20, frame: TRIM, padA: .24, boxes: ['#f6a5c0', '#fff1a8'] }); dwinGrid(c, o, 'R', RU, V + .1, FV - .1, 25, h - 3, 3, 1, { seed: s0 + 30, frame: TRIM, padA: .24 }); }
+      dbox(c, o, U - .04, V - .04, DU + .08, DV + .08, h, 1.8, TRIM, { hl: false, noAO: true });
+      gableU(c, o, U, V, DU, DV, h + 1.8, 15, ROOF, WALL, .1);
+      dchimney(c, o, 1.36, .44, h + 8, 12);
+      dporch(c, o, .3, 1.7, FV, .3, 21.5, 4.5, shade(ROOF, .12), TRIM);
+      dbush(c, o, .16, 1.9, '#f6a5c0'); dbush(c, o, 1.84, 1.9, '#fff1a8');
+    } else if (st === 2) { // farmhouse: white boards, red tin roof, gable to the street, porch with a red door
+      const h = lv === 1 ? 28 : 44, WALL = '#fbf6ea', ROOF = '#b5534a', TRIM = '#fffaf2';
+      dshadow(c, o, U, V, DU, DV, h + 16); dbox(c, o, U, V, DU, DV, 0, h, WALL);
+      for (let z = 4; z < h; z += 4) { const p = fpt(o, 'L', FV + .003, U, z), q = fpt(o, 'L', FV + .003, RU, z); c.strokeStyle = 'rgba(120,100,80,.16)'; c.lineWidth = .6; c.beginPath(); c.moveTo(p[0], p[1]); c.lineTo(q[0], q[1]); c.stroke(); }
+      dwin(c, o, 'L', FV, .34, .68, 7, 18, { seed: s0, frame: TRIM, sillCol: '#d8cdbb' }); dwin(c, o, 'L', FV, 1.32, 1.66, 7, 18, { seed: s0 + 1, frame: TRIM, sillCol: '#d8cdbb' });
+      poly(c, fquad(o, 'L', FV + .004, .88, 1.12, 2.2, 18), TRIM, EDGE, .9); poly(c, fquad(o, 'L', FV + .006, .91, 1.09, 2.2, 16.5), '#c9483f', null);
+      dwinGrid(c, o, 'R', RU, V + .1, FV - .1, 6, 19, 3, 1, { seed: s0 + 9, frame: TRIM, padA: .24 });
+      if (lv > 1) { dwinGrid(c, o, 'L', FV, U + .16, RU - .16, 26, h - 3, 3, 1, { seed: s0 + 20, frame: TRIM, padA: .26 }); dwinGrid(c, o, 'R', RU, V + .1, FV - .1, 26, h - 3, 3, 1, { seed: s0 + 30, frame: TRIM, padA: .24 }); }
+      gableV(c, o, U, V, DU, DV, h, 22, ROOF, WALL, .08);
+      for (let i = 1; i < 6; i++) { const v = V + i * DV / 6, a = IP(o, RU + .08, v, h), b2 = IP(o, U + DU / 2, v, h + 22); c.strokeStyle = 'rgba(255,255,255,.2)'; c.lineWidth = .7; c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(b2[0], b2[1]); c.stroke(); }
+      dwin(c, o, 'L', FV, .88, 1.12, h + 4, h + 13, { seed: s0 + 40, frame: TRIM, sill: false });
+      dchimney(c, o, 1.5, .5, h + 4, 16, '#c7b8a6');
+      dporch(c, o, .26, 1.74, FV, .3, 22, 4, ROOF, TRIM, '#cdb89a');
+      dbush(c, o, .14, 1.9, '#fff'); dbush(c, o, 1.86, 1.9, '#f6a5c0');
+    } else if (st === 3) { // brick colonial: red brick, slate roof, shutters, a white door with a little pediment, two chimneys
+      const h = lv === 1 ? 32 : 46, WALL = '#c2705c', ROOF = '#5f6678', TRIM = '#fff6e8', SH = '#2f5d4a', rows = lv === 1 ? 2 : 3, rh = (h - 6) / rows;
+      dshadow(c, o, U, V, DU, DV, h + 12); dbox(c, o, U, V, DU, DV, 0, h, WALL);
+      for (let z = 3; z < h; z += 3) { const p = fpt(o, 'L', FV + .003, U, z), q = fpt(o, 'L', FV + .003, RU, z); c.strokeStyle = 'rgba(90,40,30,.16)'; c.lineWidth = .5; c.beginPath(); c.moveTo(p[0], p[1]); c.lineTo(q[0], q[1]); c.stroke(); }
+      for (let j = 0; j < rows; j++) for (const [a0, a1] of [[.34, .56], [.64, .8], [1.2, 1.36], [1.44, 1.66]]) {
+        if (j === 0 && a0 > .6 && a0 < 1.3) continue; const z0 = 5 + j * rh + 1.5, z1 = 5 + (j + 1) * rh - 2;
+        poly(c, fquad(o, 'L', FV + .004, a0 - .05, a0, z0, z1), SH, null); poly(c, fquad(o, 'L', FV + .004, a1, a1 + .05, z0, z1), SH, null);
+        dwin(c, o, 'L', FV, a0, a1, z0, z1, { seed: s0 + j * 7 + a0 * 10, frame: TRIM, transom: true });
+      }
+      poly(c, fquad(o, 'L', FV + .004, .84, 1.16, 0, 17), TRIM, EDGE, .9); poly(c, fquad(o, 'L', FV + .006, .9, 1.1, 0, 14.5), '#27405e', null);
+      poly(c, [IP(o, .8, FV + .02, 17), IP(o, 1.2, FV + .02, 17), IP(o, 1, FV + .02, 22)], TRIM, EDGE, .9);
+      dwinGrid(c, o, 'R', RU, V + .1, FV - .1, 5, h - 2, 3, rows, { seed: s0 + 50, frame: TRIM, padA: .26, padZ: .2 });
+      dbox(c, o, U - .04, V - .04, DU + .08, DV + .08, h, 2, TRIM, { hl: false, noAO: true });
+      gableU(c, o, U, V, DU, DV, h + 2, 14, ROOF, WALL, .06);
+      dchimney(c, o, .34, .72, h + 6, 15, '#a85a48'); dchimney(c, o, 1.5, .72, h + 6, 15, '#a85a48');
+      dbox(c, o, .82, FV, .36, .12, 0, 1.6, '#e2d8c4', { hl: false, noAO: true });
+      dbush(c, o, .3, 1.72, null); dbush(c, o, .62, 1.72, null); dbush(c, o, 1.38, 1.72, null); dbush(c, o, 1.7, 1.72, null);
+    } else { // victorian: lavender boards, steep teal roof, a corner turret, a bay window and a little spindle porch
+      const h = lv === 1 ? 30 : 44, WALL = '#cbb7e6', ROOF = '#4f8f8a', TRIM = '#fff4fb', PLUM = '#7d4f86';
+      dshadow(c, o, U, V, DU, DV, h + 22); dbox(c, o, U, V, DU - .2, DV, 0, h, WALL);
+      dwinGrid(c, o, 'R', RU - .2, V + .1, FV - .34, 6, h - 3, 2, lv, { seed: s0 + 9, frame: TRIM, padA: .26, padZ: .2 });
+      gableV(c, o, U, V, DU - .2, DV, h, 24, ROOF, WALL, .08);
+      { const g = [IP(o, U + .5, FV + .003, h + 1), IP(o, RU - .7, FV + .003, h + 1), IP(o, U + (DU - .2) / 2, FV + .003, h + 9)]; poly(c, g, PLUM, null); }
+      dwin(c, o, 'L', FV, .76, .94, h + 10, h + 17, { seed: s0 + 40, frame: TRIM, sill: false, mullion: false });
+      dbox(c, o, .32, FV, .5, .14, 0, 20, shade(WALL, .08), { noAO: true }); dwinGrid(c, o, 'L', FV + .14, .34, .8, 6, 18, 2, 1, { seed: s0, frame: TRIM, padA: .14, transom: true });
+      poly(c, [IP(o, .3, FV, 20), IP(o, .84, FV, 20), IP(o, .84, FV + .16, 17.5), IP(o, .3, FV + .16, 17.5)], ROOF, EDGE, .8);
+      if (lv > 1) dwinGrid(c, o, 'L', FV, .3, 1.3, 26, h - 3, 3, 1, { seed: s0 + 20, frame: TRIM, padA: .24, boxes: ['#f6a5c0', '#fff'] });
+      poly(c, fquad(o, 'L', FV + .004, .94, 1.18, 2.2, 18), TRIM, EDGE, .9); poly(c, fquad(o, 'L', FV + .006, .97, 1.15, 2.2, 16.5), PLUM, null);
+      dporch(c, o, .88, 1.3, FV, .26, 21, 3.5, ROOF, TRIM, '#e3d3ec');
+      cyl(c, o, 1.56, 1.3, .2, 0, h + 8, shade(WALL, .1));
+      for (let j = 0; j < lv + 1; j++) { const [x, y] = IP(o, 1.56, 1.3, 9 + j * 14); c.fillStyle = '#fffaf2'; c.fillRect(x - 3.6, y - 7, 7.2, 8); c.strokeStyle = EDGE; c.lineWidth = .7; c.strokeRect(x - 3.6, y - 7, 7.2, 8); c.fillStyle = winCol(s0 + j); c.fillRect(x - 2.5, y - 6, 5, 6); }
+      cone(c, o, 1.56, 1.3, .25, h + 8, 22, ROOF);
+      { const [x, y] = IP(o, 1.56, 1.3, h + 30); c.fillStyle = '#f7d36b'; ell(c, x, y - 1, 1.5, 1.5); c.fill(); }
+      dchimney(c, o, .5, .4, h + 8, 18, '#a8798f');
+      dbush(c, o, .18, 1.88, '#f6a5c0'); dbush(c, o, 1.84, 1.9, '#d8c9f5');
+    }
+  }
+  Object.assign(DT_ART, {
+    // Poke's Diner: cream walls with a red belt and checker strip, one long window, a striped awning and a sign on the roof
+    diner(c, b, o) {
+      const lv = L(b), s0 = b.x * 11 + b.y * 5, RED = '#e2574c', CREAM = '#fdf1dd', TEAL = '#7fd0c4', h = 17 + lv * 3;
+      dshadow(c, o, .08, .14, .84, .7, h + 10);
+      poly(c, [IP(o, .06, .84), IP(o, .94, .84), IP(o, .94, .98), IP(o, .06, .98)], '#e6dccf', 'rgba(120,100,90,.3)', .6);
+      dbox(c, o, .08, .14, .84, .7, 0, h, CREAM);
+      poly(c, fquad(o, 'L', .843, .08, .92, 0, 4.5), RED, null); poly(c, fquad(o, 'R', .923, .14, .84, 0, 4.5), shade(RED, -.14), null);
+      for (let i = 0; i < 12; i += 2) poly(c, fquad(o, 'L', .845, .08 + i * .07, .15 + i * .07, 4.5, 6), '#2b2422', null);
+      dwinGrid(c, o, 'L', .84, .1, .62, 7, h - 2, 3, 1, { seed: s0, frame: '#dfe5ea', warm: '#ffe6a3', litP: 1, padA: .07, padZ: .04 });
+      poly(c, fquad(o, 'L', .844, .68, .86, 0, h - 3), RED, EDGE, .9); poly(c, fquad(o, 'L', .846, .72, .82, 6, h - 5), lit() ? '#ffe6a3' : '#bfe6ee', null);
+      dwinGrid(c, o, 'R', .92, .2, .8, 7, h - 2, 2, 1, { seed: s0 + 9, frame: '#dfe5ea', warm: '#ffe6a3', litP: 1, padA: .1, padZ: .04 });
+      dawning(c, o, 'L', .84, .08, .92, h + .5, .13, 3, RED, '#fffaf2', 8);
+      dbox(c, o, .05, .11, .9, .76, h, 2, '#d9dee6', { hl: false, noAO: true });
+      dbox(c, o, .08, .14, .84, .7, h + 2, 2.6, TEAL, { hl: false, noAO: true });
+      const sh = 8 + lv * 1.5; dbox(c, o, .16, .7, .68, .05, h + 4.6, sh, '#2b2f45', { hl: false, noAO: true });
+      dtext(c, o, 'L', .752, .5, h + 4.6 + sh / 2, 'DINER', lit() ? '#ffd0ea' : '#ff9cc2', 6 + lv * .5);
+      { const [x, y] = IP(o, .5, .4, h + 4.6); c.fillStyle = '#e0a45a'; c.beginPath(); c.ellipse(x, y - 5.5, 6.5, 4.2, 0, Math.PI, 0); c.closePath(); c.fill(); c.strokeStyle = EDGE; c.lineWidth = .8; c.stroke(); c.fillStyle = '#6fae4e'; c.fillRect(x - 6.8, y - 5.6, 13.6, 1.4); c.fillStyle = '#7a4a32'; c.fillRect(x - 6.3, y - 4.3, 12.6, 2); c.fillStyle = '#f2c14e'; c.fillRect(x - 6.6, y - 2.4, 13.2, 1); c.fillStyle = '#e0a45a'; c.beginPath(); c.ellipse(x, y - 1.4, 6.5, 2.2, 0, 0, Math.PI); c.closePath(); c.fill(); c.stroke(); }
+      dtable(c, o, .2, .93, 0, null, null); dpot(c, o, .93, .95, 0, '#fff1a8');
+    },
+    // General Store: wooden boards, a tall false front with the sign, a green porch awning, crates and a barrel outside
+    store(c, b, o) {
+      const lv = L(b), s0 = b.x * 5 + b.y * 9, h = 20 + lv * 5, WOOD = '#e3c08f', TRIM = '#7a5236', GREEN = '#4f8a64';
+      dshadow(c, o, .1, .12, .8, .74, h + 12);
+      poly(c, [IP(o, .06, .84), IP(o, .94, .84), IP(o, .94, .99), IP(o, .06, .99)], '#c9a67a', 'rgba(90,60,40,.4)', .6);
+      dbox(c, o, .1, .12, .8, .66, 0, h, WOOD);
+      dwinGrid(c, o, 'R', .9, .18, .74, 5, h - 2, 2, lv >= 2 ? 2 : 1, { seed: s0 + 20, frame: '#fffaf2', padA: .22, padZ: .16 });
+      gableV(c, o, .1, .12, .8, .66, h, 9, '#8a5a44', WOOD, .04);
+      dbox(c, o, .08, .78, .84, .06, 0, h + 9, shade(WOOD, .08), { noAO: true });
+      for (let z = 4; z < h + 8; z += 4) { const p = fpt(o, 'L', .843, .08, z), q = fpt(o, 'L', .843, .92, z); c.strokeStyle = 'rgba(122,82,54,.22)'; c.lineWidth = .6; c.beginPath(); c.moveTo(p[0], p[1]); c.lineTo(q[0], q[1]); c.stroke(); }
+      dbox(c, o, .06, .77, .88, .08, h + 9, 2, TRIM, { hl: false, noAO: true });
+      dsign(c, o, 'L', .84, .14, .86, h + 1.5, h + 7.5, '#fff6e2', TRIM, 'STORE', 4.6, TRIM);
+      poly(c, fquad(o, 'L', .844, .41, .59, 0, 13.5), '#fffaf2', EDGE, .9); poly(c, fquad(o, 'L', .846, .44, .56, 0, 12.5), GREEN, null); poly(c, fquad(o, 'L', .848, .46, .54, 6, 11), lit() ? '#ffe6a3' : '#cfeaf0', null);
+      dwin(c, o, 'L', .84, .14, .37, 4, 13.5, { seed: s0, frame: '#fffaf2', transom: true, warm: '#ffe2a0', litP: 1 }); dwin(c, o, 'L', .84, .63, .86, 4, 13.5, { seed: s0 + 1, frame: '#fffaf2', transom: true, warm: '#ffe2a0', litP: 1 });
+      if (lv >= 2) dwinGrid(c, o, 'L', .84, .14, .86, 18, h, 3, 1, { seed: s0 + 5, frame: '#fffaf2', padA: .22, padZ: .12 });
+      dawning(c, o, 'L', .84, .1, .9, 17, .15, 3, GREEN, '#fff6e2', 8);
+      dcrate(c, o, .13, .87, 0, ['#e0483f', '#f2b134', '#6fae4e'], s0); dcrate(c, o, .68, .87, 0, ['#ff9a4d', '#6fae4e', '#f6a5c0'], s0 + 3);
+      cyl(c, o, .36, .93, .045, 0, 7, '#a8744a');
+    },
+    // Wheek Library: pale stone on a plinth, four columns under a pediment, a green roof and flower pots by the steps
+    library(c, b, o) {
+      const lv = L(b), s0 = b.x * 13 + b.y * 3, ST = '#efe6d2', h = 22 + lv * 4, GRN = '#6fa596';
+      dshadow(c, o, .08, .1, .84, .82, h + 12);
+      dbox(c, o, .06, .1, .88, .86, 0, 3, '#e2d8c4', { hl: false });
+      dbox(c, o, .12, .14, .76, .62, 3, h - 3, ST);
+      dwinGrid(c, o, 'R', .88, .18, .72, 7, h - 2, 3, 1, { seed: s0, frame: '#fffaf2', transom: true, padA: .22, padZ: .04 });
+      gableV(c, o, .12, .14, .76, .76, h + 1, 8 + lv, GRN, ST, .03);
+      poly(c, fquad(o, 'L', .764, .42, .58, 3, 17), '#fffaf2', EDGE, .8); poly(c, fquad(o, 'L', .766, .45, .55, 3, 16), '#5a4634', null);
+      dwin(c, o, 'L', .76, .18, .36, 7, 18, { seed: s0 + 3, frame: '#fffaf2', transom: true }); dwin(c, o, 'L', .76, .64, .82, 7, 18, { seed: s0 + 4, frame: '#fffaf2', transom: true });
+      for (const cu of [.17, .39, .61, .83]) cyl(c, o, cu, .87, .034, 3, h - 6, '#fbf6ec');
+      dbox(c, o, .1, .78, .8, .14, h - 3, 4, '#e6dcc6', { hl: false, noAO: true });
+      dtext(c, o, 'L', .922, .5, h - 1, 'LIBRARY', '#6a5a48', 3.6);
+      poly(c, [IP(o, .1, .92, h + 1), IP(o, .9, .92, h + 1), IP(o, .5, .92, h + 9 + lv)], ST, EDGE, .9);
+      onWall(c, o, 'L', .922, .5, h + 4.2, cc => { cc.fillStyle = '#c9483f'; cc.fillRect(-3.2, -1.6, 3, 3.2); cc.fillStyle = '#4f8a64'; cc.fillRect(.2, -1.6, 3, 3.2); cc.strokeStyle = '#fffaf2'; cc.lineWidth = .5; cc.strokeRect(-3.2, -1.6, 6.4, 3.2); });
+      dpot(c, o, .1, .97, 0, '#f6a5c0'); dpot(c, o, .9, .97, 0, '#f6a5c0');
+    },
+    // Piglet Schoolhouse: red brick with white trim, a front bay with the door and a pediment, a bell cupola and a flag
+    school(c, b, o) {
+      const lv = L(b), s0 = b.x * 9 + b.y, BR = '#c96a55', TR = '#fff6e8', SL = '#5a5f72', h = 32 + (lv - 1) * 8, floors = lv >= 2 ? 3 : 2;
+      poly(c, [IP(o, 0, 0), IP(o, 2, 0), IP(o, 2, 2), IP(o, 0, 2)], '#a8cb82', EDGE);
+      poly(c, [IP(o, .82, 1.64), IP(o, 1.18, 1.64), IP(o, 1.18, 2), IP(o, .82, 2)], '#e2d3bd', null);
+      dshadow(c, o, .14, .3, 1.72, 1.24, h + 20);
+      dbox(c, o, .14, .3, 1.72, 1.2, 0, h, BR);
+      dwinGrid(c, o, 'L', 1.5, .2, .78, 5, h - 3, 3, floors, { seed: s0, frame: TR, padA: .2, padZ: .2 });
+      dwinGrid(c, o, 'L', 1.5, 1.22, 1.8, 5, h - 3, 3, floors, { seed: s0 + 30, frame: TR, padA: .2, padZ: .2 });
+      dwinGrid(c, o, 'R', 1.86, .36, 1.44, 5, h - 3, 5, floors, { seed: s0 + 60, frame: TR, padA: .2, padZ: .2 });
+      dbox(c, o, .1, .26, 1.8, 1.28, h, 2.5, TR, { hl: false, noAO: true });
+      gableU(c, o, .14, .3, 1.72, 1.2, h + 2.5, 11, SL, BR, .05);
+      dbox(c, o, .88, .78, .24, .24, h + 9, 8, TR, { noAO: true });
+      { const [x, y] = IP(o, 1, 1.02, h + 12.5); c.fillStyle = '#e6c46a'; c.beginPath(); c.moveTo(x - 2.4, y + 2); c.quadraticCurveTo(x - 2, y - 3, x, y - 3.4); c.quadraticCurveTo(x + 2, y - 3, x + 2.4, y + 2); c.closePath(); c.fill(); c.strokeStyle = EDGE; c.lineWidth = .6; c.stroke(); }
+      pyramid(c, o, .86, .76, .28, .28, h + 17, 10, SL, .02);
+      dbox(c, o, .78, 1.5, .44, .14, 0, h + 3, shade(BR, .08));
+      darch(c, o, 'L', 1.644, .88, 1.12, 0, 15, '#3f6a8a', TR, 1.4);
+      dsign(c, o, 'L', 1.64, .82, 1.18, 17, 21.5, TR, '#7a3b2e', 'SCHOOL', 3.4);
+      onWall(c, o, 'L', 1.644, 1, h - 3.5, cc => { cc.fillStyle = '#fffaf2'; cc.beginPath(); cc.arc(0, 0, 3.4, 0, Math.PI * 2); cc.fill(); cc.strokeStyle = '#5b3b2a'; cc.lineWidth = .7; cc.stroke(); cc.beginPath(); cc.moveTo(0, 0); cc.lineTo(0, -2.4); cc.moveTo(0, 0); cc.lineTo(1.7, .6); cc.stroke(); });
+      poly(c, [IP(o, .74, 1.64, h + 3), IP(o, 1.26, 1.64, h + 3), IP(o, 1, 1.64, h + 11)], TR, EDGE, .9);
+      { const [x, y] = IP(o, .34, 1.84, 0); c.strokeStyle = '#8a8f9c'; c.lineWidth = 1.1; c.beginPath(); c.moveTo(x, y); c.lineTo(x, y - 34); c.stroke(); const w = Math.sin((G.time || 0) * 4 + x) * 1; c.fillStyle = '#e2574c'; c.beginPath(); c.moveTo(x, y - 34); c.lineTo(x + 10, y - 32 + w); c.lineTo(x + 10, y - 26 + w); c.lineTo(x, y - 27); c.closePath(); c.fill(); c.strokeStyle = EDGE; c.lineWidth = .6; c.stroke(); }
+      dbush(c, o, .5, 1.72, '#fff1a8'); dbush(c, o, 1.5, 1.72, '#fff1a8'); dbush(c, o, 1.76, 1.72, null);
+    },
+    // Little Chapel: white boards, a blue-grey roof, stained glass down the side, and a bell tower with a tall spire
+    church(c, b, o) {
+      const s0 = b.x * 3 + b.y * 7, W = '#fbf7ef', ROOF = '#5d6f8c', hN = 32, GL = ['#7fb6e0', '#e58fb0', '#f2c14e', '#8fcf9a'];
+      poly(c, [IP(o, 0, 0), IP(o, 2, 0), IP(o, 2, 2), IP(o, 0, 2)], '#a8cb82', EDGE);
+      poly(c, [IP(o, .84, 1.78), IP(o, 1.16, 1.78), IP(o, 1.16, 2), IP(o, .84, 2)], '#e2d3bd', null);
+      dshadow(c, o, .3, .16, 1.4, 1.5, 70);
+      dbox(c, o, .3, .16, 1.4, 1.3, 0, hN, W);
+      for (let z = 4; z < hN; z += 4) { const p = fpt(o, 'R', 1.703, .16, z), q = fpt(o, 'R', 1.703, 1.46, z); c.strokeStyle = 'rgba(120,110,90,.14)'; c.lineWidth = .5; c.beginPath(); c.moveTo(p[0], p[1]); c.lineTo(q[0], q[1]); c.stroke(); }
+      for (let i = 0; i < 4; i++) { const a0 = .26 + i * .3; darch(c, o, 'R', 1.704, a0, a0 + .18, 7, 26, lit() ? '#ffd98a' : GL[i % 4], '#fffaf2', 1.2); const p = fpt(o, 'R', 1.706, a0 + .09, 8), q = fpt(o, 'R', 1.706, a0 + .09, 25); c.strokeStyle = 'rgba(255,255,255,.7)'; c.lineWidth = .7; c.beginPath(); c.moveTo(p[0], p[1]); c.lineTo(q[0], q[1]); c.stroke(); if (!lit()) { const m = fpt(o, 'R', 1.706, a0 + .09, 19); c.fillStyle = GL[(i + 2) % 4]; ell(c, m[0], m[1], 1.6, 2.2); c.fill(); } }
+      for (const [a0, a1] of [[.4, .62], [1.38, 1.6]]) darch(c, o, 'L', 1.464, a0, a1, 7, 25, lit() ? '#ffd98a' : GL[a0 < 1 ? 0 : 1], '#fffaf2', 1.2);
+      gableV(c, o, .3, .16, 1.4, 1.3, hN, 20, ROOF, W, .07);
+      dbox(c, o, .78, 1.4, .44, .38, 0, 56, W);
+      darch(c, o, 'L', 1.784, .88, 1.12, 0, 16, '#8a5a3a', '#fffaf2', 1.4);
+      { const p = fpt(o, 'L', 1.786, 1, 0), q = fpt(o, 'L', 1.786, 1, 14); c.strokeStyle = '#5b3b2a'; c.lineWidth = .7; c.beginPath(); c.moveTo(p[0], p[1]); c.lineTo(q[0], q[1]); c.stroke(); }
+      onWall(c, o, 'L', 1.784, 1, 27, cc => { cc.fillStyle = '#fffaf2'; cc.beginPath(); cc.arc(0, 0, 5, 0, Math.PI * 2); cc.fill(); cc.strokeStyle = '#5b3b2a'; cc.lineWidth = .7; cc.stroke(); for (let i = 0; i < 6; i++) { cc.fillStyle = lit() ? '#ffd98a' : GL[i % 4]; cc.beginPath(); cc.moveTo(0, 0); cc.arc(0, 0, 3.9, i * Math.PI / 3 + .08, (i + 1) * Math.PI / 3 - .08); cc.closePath(); cc.fill(); } });
+      poly(c, fquad(o, 'L', 1.784, .9, 1.1, 40, 51), '#6b5a55', EDGE, .8); poly(c, fquad(o, 'R', 1.224, 1.5, 1.7, 40, 51), '#5a4b47', EDGE, .8);
+      for (let z = 42; z < 51; z += 2.4) { const p = fpt(o, 'L', 1.786, .91, z), q = fpt(o, 'L', 1.786, 1.09, z); c.strokeStyle = 'rgba(255,255,255,.35)'; c.lineWidth = .6; c.beginPath(); c.moveTo(p[0], p[1]); c.lineTo(q[0], q[1]); c.stroke(); }
+      dbox(c, o, .74, 1.36, .52, .46, 56, 2.5, '#e9e1d3', { hl: false, noAO: true });
+      pyramid(c, o, .8, 1.42, .4, .34, 58.5, 30, ROOF, .02);
+      { const [x, y] = IP(o, 1, 1.59, 88.5); c.strokeStyle = '#c9a23a'; c.lineWidth = 1.5; c.beginPath(); c.moveTo(x, y + 1); c.lineTo(x, y - 9); c.moveTo(x - 3, y - 5.5); c.lineTo(x + 3, y - 5.5); c.stroke(); }
+      dbox(c, o, .82, 1.78, .36, .1, 0, 1.6, '#e2d8c4', { hl: false, noAO: true });
+      dbush(c, o, .5, 1.72, '#fff'); dbush(c, o, 1.5, 1.72, '#fff'); dbush(c, o, .28, 1.88, '#f6a5c0'); dbush(c, o, 1.74, 1.88, '#f6a5c0');
+    },
+    // Town Hall: cream stone with flower boxes, a red roof, and a clock tower over the columned front doors
+    townhall(c, b, o) {
+      const s0 = b.x * 17 + b.y * 5, ST = '#f3e7cf', ROOF = '#a8574c', BAND = '#e2d3b4', h = 34, tz = h + 26;
+      poly(c, [IP(o, 0, 0), IP(o, 2, 0), IP(o, 2, 2), IP(o, 0, 2)], '#e9e1d6', 'rgba(120,100,90,.35)');
+      dshadow(c, o, .16, .2, 1.68, 1.5, 84);
+      dbox(c, o, .16, .2, 1.68, 1.26, 0, h, ST);
+      dwinGrid(c, o, 'L', 1.46, .2, .74, 4, h - 2, 2, 2, { seed: s0, frame: '#fffaf2', padA: .22, padZ: .2, boxes: ['#f48fb1', '#fff1a8'], boxRow: 0 });
+      dwinGrid(c, o, 'L', 1.46, 1.26, 1.8, 4, h - 2, 2, 2, { seed: s0 + 20, frame: '#fffaf2', padA: .22, padZ: .2, boxes: ['#f48fb1', '#fff1a8'], boxRow: 0 });
+      dwinGrid(c, o, 'R', 1.84, .26, 1.4, 4, h - 2, 4, 2, { seed: s0 + 40, frame: '#fffaf2', padA: .24, padZ: .2 });
+      dbox(c, o, .12, .16, 1.76, 1.34, h, 3, BAND, { hl: false, noAO: true });
+      gableU(c, o, .16, .2, 1.68, 1.26, h + 3, 11, ROOF, ST, .04);
+      dbox(c, o, .76, 1.36, .48, .3, 0, tz, ST);
+      darch(c, o, 'L', 1.664, .88, 1.12, 0, 16, '#6a4a3a', '#fffaf2', 1.4);
+      dsign(c, o, 'L', 1.66, .79, 1.21, 21.5, 26, '#fffaf2', '#7a4a3a', 'TOWN HALL', 3.1);
+      for (const cu of [.8, 1.2]) cyl(c, o, cu, 1.75, .032, 1.6, 17, '#fbf6ec');
+      dbox(c, o, .74, 1.66, .52, .14, 18.6, 2.4, BAND, { hl: false, noAO: true });
+      const clock = cc => { cc.fillStyle = '#fffaf2'; cc.beginPath(); cc.arc(0, 0, 5.4, 0, Math.PI * 2); cc.fill(); cc.strokeStyle = '#7a4a3a'; cc.lineWidth = 1; cc.stroke(); const hr = (typeof hourNow === 'function' ? hourNow() : 3) % 12, ah = hr / 12 * Math.PI * 2 - Math.PI / 2, am = (hr % 1) * Math.PI * 2 - Math.PI / 2; cc.strokeStyle = '#3b2a1a'; cc.lineWidth = .9; cc.beginPath(); cc.moveTo(0, 0); cc.lineTo(Math.cos(ah) * 2.6, Math.sin(ah) * 2.6); cc.moveTo(0, 0); cc.lineTo(Math.cos(am) * 4, Math.sin(am) * 4); cc.stroke(); };
+      onWall(c, o, 'L', 1.664, 1, h + 14, clock);
+      dbox(c, o, .72, 1.32, .56, .38, tz, 2.5, BAND, { hl: false, noAO: true });
+      pyramid(c, o, .76, 1.36, .48, .3, tz + 2.5, 20, ROOF, .03);
+      { const [x, y] = IP(o, 1, 1.51, tz + 22.5); c.strokeStyle = '#8a8f9c'; c.lineWidth = 1; c.beginPath(); c.moveTo(x, y); c.lineTo(x, y - 13); c.stroke(); const w = Math.sin((G.time || 0) * 4 + x) * 1; c.fillStyle = '#f2b134'; c.beginPath(); c.moveTo(x, y - 13); c.lineTo(x + 8, y - 11.5 + w); c.lineTo(x, y - 8); c.closePath(); c.fill(); c.strokeStyle = EDGE; c.lineWidth = .5; c.stroke(); }
+      dbox(c, o, .7, 1.66, .6, .22, 0, 1.6, '#e2d8c4', { hl: false, noAO: true });
+      dpot(c, o, .56, 1.8, 0, '#f6a5c0'); dpot(c, o, 1.44, 1.8, 0, '#f6a5c0');
+    }
+  });
+
+  // ---- more Home Town buildings: police, fire station, post office and the outlet shops ----
+  // an outlet storefront (1x1): big display window, a door, a striped awning and a sign board on the roof
+  function outletArt(c, b, o, S) {
+    const lv = L(b), s0 = b.x * 7 + b.y * 3, h = 20 + lv * 4;
+    dshadow(c, o, .08, .12, .84, .74, h + 10);
+    poly(c, [IP(o, .06, .84), IP(o, .94, .84), IP(o, .94, .99), IP(o, .06, .99)], '#e6dccf', 'rgba(120,100,90,.3)', .6);
+    dbox(c, o, .08, .12, .84, .72, 0, h, S.wall);
+    poly(c, fquad(o, 'L', .843, .12, .63, 3, 15.5), '#fffaf2', EDGE, .9); poly(c, fquad(o, 'L', .845, .14, .61, 4, 14.5), lit() ? '#ffe9b0' : '#d6eef2', null);
+    onWall(c, o, 'L', .847, .375, 4.4, S.disp);
+    poly(c, fquad(o, 'L', .843, .69, .88, 0, 15.5), '#fffaf2', EDGE, .9); poly(c, fquad(o, 'L', .845, .715, .855, 0, 14.5), S.trim, null); poly(c, fquad(o, 'L', .847, .74, .83, 6, 13), lit() ? '#ffe9b0' : '#d6eef2', null);
+    if (lv >= 2) dwinGrid(c, o, 'L', .84, .12, .88, 20, h - 1, 3, 1, { seed: s0, frame: '#fffaf2', padA: .2, padZ: .1 });
+    dwinGrid(c, o, 'R', .92, .2, .76, 5, h - 2, 2, lv >= 2 ? 2 : 1, { seed: s0 + 9, frame: '#fffaf2', padA: .22, padZ: .16 });
+    dawning(c, o, 'L', .84, .08, .92, 19, .14, 3, S.aw, '#fffaf2', 8);
+    dbox(c, o, .05, .09, .9, .78, h, 2.2, shade(S.wall, -.14), { hl: false, noAO: true });
+    dbox(c, o, .12, .72, .76, .05, h + 2.2, 8, S.trim, { hl: false, noAO: true });
+    dtext(c, o, 'L', .772, .5, h + 6.2, S.sign, '#fffaf2', S.fs || 5.2);
+    dpot(c, o, .08, .95, 0, S.bloom || '#f6a5c0'); dpot(c, o, .93, .95, 0, S.bloom || '#f6a5c0');
+  }
+  Object.assign(DT_ART, {
+    furniture(c, b, o) {
+      outletArt(c, b, o, { wall: '#f1d9b8', trim: '#8a5a3a', aw: '#c9783f', sign: 'SOFAS', bloom: '#fff1a8', disp: cc => {
+        cc.fillStyle = '#e58fb0'; cc.fillRect(-6.5, -6.6, 8.5, 3); cc.fillRect(-7, -4, 9.5, 3.4); cc.fillStyle = '#c96f93'; cc.fillRect(-7.4, -5, 1.6, 4.4); cc.fillRect(1.6, -5, 1.6, 4.4);
+        cc.strokeStyle = '#5b3b2a'; cc.lineWidth = .7; cc.beginPath(); cc.moveTo(5.2, 0); cc.lineTo(5.2, -6); cc.stroke(); cc.fillStyle = '#f7d36b'; cc.beginPath(); cc.moveTo(3.4, -6); cc.lineTo(7, -6); cc.lineTo(6.2, -9); cc.lineTo(4.2, -9); cc.closePath(); cc.fill(); } });
+    },
+    clothes(c, b, o) {
+      outletArt(c, b, o, { wall: '#f6d5e0', trim: '#b0527f', aw: '#e58fb0', sign: 'STYLE', disp: cc => {
+        cc.fillStyle = '#7fb6e0'; cc.beginPath(); cc.moveTo(-6.4, 0); cc.lineTo(-1.6, 0); cc.lineTo(-3, -4.4); cc.lineTo(-2.4, -6.6); cc.lineTo(-5.6, -6.6); cc.lineTo(-5, -4.4); cc.closePath(); cc.fill();
+        cc.fillStyle = '#f0c8a8'; cc.beginPath(); cc.arc(-4, -8, 1.2, 0, Math.PI * 2); cc.fill();
+        cc.fillStyle = '#f2c14e'; cc.fillRect(1.6, -6.4, 4.4, 4.6); cc.fillRect(.4, -6.4, 1.6, 2.2); cc.fillRect(5.6, -6.4, 1.6, 2.2);
+        cc.strokeStyle = '#5b3b2a'; cc.lineWidth = .6; cc.beginPath(); cc.moveTo(3.8, -6.4); cc.lineTo(3.8, -8.6); cc.stroke(); cc.fillStyle = '#8a5a3a'; cc.fillRect(1.4, -1.4, 5, 1.4); } });
+    },
+    // Post Office: tan brick, a blue awning and door, POST on the gable, a blue mailbox and a flag outside
+    post(c, b, o) {
+      const lv = L(b), s0 = b.x * 3 + b.y * 13, WALL = '#d9c3a0', BLUE = '#3f6fb5', TR = '#fffaf2', h = 19 + lv * 4;
+      dshadow(c, o, .1, .12, .8, .74, h + 12);
+      poly(c, [IP(o, .06, .84), IP(o, .94, .84), IP(o, .94, .99), IP(o, .06, .99)], '#e6dccf', 'rgba(120,100,90,.3)', .6);
+      dbox(c, o, .1, .12, .8, .72, 0, h, WALL);
+      for (let z = 3; z < h; z += 3) { const p = fpt(o, 'L', .843, .1, z), q = fpt(o, 'L', .843, .9, z); c.strokeStyle = 'rgba(120,90,60,.16)'; c.lineWidth = .5; c.beginPath(); c.moveTo(p[0], p[1]); c.lineTo(q[0], q[1]); c.stroke(); }
+      poly(c, fquad(o, 'L', .844, .4, .6, 0, 14.5), TR, EDGE, .9); poly(c, fquad(o, 'L', .846, .43, .57, 0, 13.5), BLUE, null); poly(c, fquad(o, 'L', .848, .46, .54, 6.5, 12), lit() ? '#ffe9b0' : '#d6eef2', null);
+      dwin(c, o, 'L', .84, .14, .35, 5, 14, { seed: s0, frame: TR, transom: true }); dwin(c, o, 'L', .84, .65, .86, 5, 14, { seed: s0 + 1, frame: TR, transom: true });
+      if (lv >= 2) dwinGrid(c, o, 'L', .84, .14, .86, 19, h - 1, 3, 1, { seed: s0 + 5, frame: TR, padA: .22, padZ: .1 });
+      dwinGrid(c, o, 'R', .9, .2, .76, 5, h - 2, 2, lv >= 2 ? 2 : 1, { seed: s0 + 20, frame: TR, padA: .22, padZ: .16 });
+      dawning(c, o, 'L', .84, .1, .9, 17.5, .13, 3, BLUE, '#fffaf2', 8);
+      dbox(c, o, .07, .09, .86, .78, h, 2.2, TR, { hl: false, noAO: true });
+      gableV(c, o, .1, .12, .8, .72, h + 2.2, 10, '#7a8aa6', WALL, .03);
+      dtext(c, o, 'L', .845, .5, h + 5, 'POST', BLUE, 3.6);
+      cyl(c, o, .2, .93, .045, 0, 8, BLUE); { const [x, y] = IP(o, .2, .93, 8); c.fillStyle = shade(BLUE, .2); ell(c, x, y, 3, 1.6); c.fill(); c.fillStyle = '#fffaf2'; c.fillRect(x - 1.8, y + 2.2, 3.6, .9); }
+      { const [x, y] = IP(o, .86, .94, 0); c.strokeStyle = '#8a8f9c'; c.lineWidth = 1; c.beginPath(); c.moveTo(x, y); c.lineTo(x, y - 26); c.stroke(); const w = Math.sin((G.time || 0) * 4 + x); c.fillStyle = BLUE; c.beginPath(); c.moveTo(x, y - 26); c.lineTo(x + 8, y - 24.5 + w); c.lineTo(x + 8, y - 19.5 + w); c.lineTo(x, y - 20.5); c.closePath(); c.fill(); c.strokeStyle = EDGE; c.lineWidth = .5; c.stroke(); }
+    },
+    // Pig Police Station: blue brick, a navy parapet, the front doors under a POLICE sign with blue lamps, a garage bay and a gold star
+    police(c, b, o) {
+      const lv = L(b), s0 = b.x * 5 + b.y * 11, WALL = '#8fa6c9', TR = '#f4f7fb', NAVY = '#2f4470', h = 30 + (lv - 1) * 8, floors = lv >= 2 ? 3 : 2;
+      poly(c, [IP(o, 0, 0), IP(o, 2, 0), IP(o, 2, 2), IP(o, 0, 2)], '#dfe3ea', 'rgba(110,115,135,.4)');
+      dshadow(c, o, .14, .24, 1.72, 1.3, h + 16);
+      dbox(c, o, .14, .24, 1.72, 1.26, 0, h, WALL);
+      dwinGrid(c, o, 'L', 1.5, .2, .74, 5, h - 3, 2, floors, { seed: s0, frame: TR, padA: .22, padZ: .2 });
+      poly(c, fquad(o, 'L', 1.504, 1.26, 1.8, 0, 15), TR, EDGE, .9); poly(c, fquad(o, 'L', 1.506, 1.29, 1.77, 0, 13.6), '#cfd6e2', null);
+      for (let z = 3.4; z < 13; z += 3.4) { const p = fpt(o, 'L', 1.508, 1.29, z), q = fpt(o, 'L', 1.508, 1.77, z); c.strokeStyle = 'rgba(70,80,110,.35)'; c.lineWidth = .6; c.beginPath(); c.moveTo(p[0], p[1]); c.lineTo(q[0], q[1]); c.stroke(); }
+      dwinGrid(c, o, 'L', 1.5, 1.26, 1.8, 18, h - 3, 2, floors - 1, { seed: s0 + 20, frame: TR, padA: .22, padZ: .2 });
+      dwinGrid(c, o, 'R', 1.86, .3, 1.44, 5, h - 3, 4, floors, { seed: s0 + 40, frame: TR, padA: .22, padZ: .2 });
+      onWall(c, o, 'L', 1.504, 1, h - 5.5, cc => { cc.fillStyle = '#f2c14e'; cc.strokeStyle = '#7a5a12'; cc.lineWidth = .6; cc.beginPath(); for (let i = 0; i < 10; i++) { const r = i % 2 ? 2 : 4.6, a = -Math.PI / 2 + i * Math.PI / 5; cc.lineTo(Math.cos(a) * r, Math.sin(a) * r); } cc.closePath(); cc.fill(); cc.stroke(); });
+      dbox(c, o, .1, .2, 1.8, 1.34, h, 3, NAVY, { hl: false, noAO: true });
+      dbox(c, o, 1.3, .5, .2, .2, h + 3, 4, '#aab3c4', { hl: false, noAO: true }); { const [x, y] = IP(o, .5, .6, h + 3); c.strokeStyle = '#6b7388'; c.lineWidth = 1; c.beginPath(); c.moveTo(x, y); c.lineTo(x, y - 16); c.stroke(); c.fillStyle = '#e2574c'; ell(c, x, y - 16, 1.4, 1.4); c.fill(); }
+      dbox(c, o, .78, 1.5, .44, .12, 0, 20, shade(WALL, .12));
+      poly(c, fquad(o, 'L', 1.624, .87, 1.13, 0, 14), TR, EDGE, .9); poly(c, fquad(o, 'L', 1.626, .9, 1.1, 0, 13), NAVY, null); poly(c, fquad(o, 'L', 1.628, .92, .99, 4, 11.5), lit() ? '#ffe9b0' : '#cfe6f2', null); poly(c, fquad(o, 'L', 1.628, 1.01, 1.08, 4, 11.5), lit() ? '#ffe9b0' : '#cfe6f2', null);
+      dsign(c, o, 'L', 1.622, .8, 1.2, 14.8, 19.2, NAVY, TR, 'POLICE', 3.3, TR);
+      for (const a of [.82, 1.18]) { const [x, y] = fpt(o, 'L', 1.63, a, 10); if (lit()) { c.fillStyle = 'rgba(90,170,255,.35)'; ell(c, x, y, 5, 5); c.fill(); } c.fillStyle = '#4aa3ff'; ell(c, x, y, 1.8, 2.2); c.fill(); c.strokeStyle = EDGE; c.lineWidth = .5; c.stroke(); }
+      { const [x, y] = IP(o, .3, 1.84, 0); c.strokeStyle = '#8a8f9c'; c.lineWidth = 1.1; c.beginPath(); c.moveTo(x, y); c.lineTo(x, y - 32); c.stroke(); const w = Math.sin((G.time || 0) * 4 + x); c.fillStyle = NAVY; c.beginPath(); c.moveTo(x, y - 32); c.lineTo(x + 10, y - 30 + w); c.lineTo(x + 10, y - 24 + w); c.lineTo(x, y - 25); c.closePath(); c.fill(); c.strokeStyle = EDGE; c.lineWidth = .6; c.stroke(); }
+      dbush(c, o, .5, 1.74, null); dbush(c, o, .66, 1.86, null);
+    },
+    // Pig Fire Station: red brick, two arched truck bays (one with the engine nosing out), a FIRE sign and a hose tower
+    fire(c, b, o) {
+      const lv = L(b), s0 = b.x * 13 + b.y * 7, RED = '#c9483f', TR = '#fff6e8', GOLD = '#f2c14e', h = 30 + (lv - 1) * 8;
+      poly(c, [IP(o, 0, 0), IP(o, 2, 0), IP(o, 2, 2), IP(o, 0, 2)], '#e4dfd8', 'rgba(120,100,90,.4)');
+      dshadow(c, o, .14, .24, 1.72, 1.3, h + 26);
+      dbox(c, o, .2, .3, .38, .38, 0, h + 24, shade(RED, .06));
+      poly(c, fquad(o, 'L', .684, .26, .52, h + 12, h + 20), '#5a4b47', EDGE, .8); poly(c, fquad(o, 'R', .584, .36, .62, h + 12, h + 20), '#4a3d3a', EDGE, .8);
+      dbox(c, o, .16, .26, .46, .46, h + 24, 2.2, TR, { hl: false, noAO: true }); pyramid(c, o, .2, .3, .38, .38, h + 26.2, 12, '#5a5f72', .02);
+      dbox(c, o, .14, .24, 1.72, 1.26, 0, h, RED);
+      for (let z = 3; z < h; z += 3) { const p = fpt(o, 'L', 1.503, .14, z), q = fpt(o, 'L', 1.503, 1.86, z); c.strokeStyle = 'rgba(90,30,25,.16)'; c.lineWidth = .5; c.beginPath(); c.moveTo(p[0], p[1]); c.lineTo(q[0], q[1]); c.stroke(); }
+      darch(c, o, 'L', 1.504, .24, .92, 0, 20, '#3a3f52', TR, 1.6); darch(c, o, 'L', 1.504, 1.08, 1.76, 0, 20, '#eef0f3', TR, 1.6);
+      for (let z = 3.6; z < 15; z += 3.6) { const p = fpt(o, 'L', 1.507, 1.1, z), q = fpt(o, 'L', 1.507, 1.74, z); c.strokeStyle = 'rgba(70,80,110,.3)'; c.lineWidth = .6; c.beginPath(); c.moveTo(p[0], p[1]); c.lineTo(q[0], q[1]); c.stroke(); }
+      poly(c, fquad(o, 'L', 1.52, .34, .82, 0, 12.5), '#e2574c', EDGE, .9); poly(c, fquad(o, 'L', 1.522, .38, .78, 6.5, 11.3), lit() ? '#ffe9b0' : '#cfe6f2', null); poly(c, fquad(o, 'L', 1.522, .34, .82, 0, 2), '#d9dee6', null);
+      for (const a of [.4, .76]) { const [x, y] = fpt(o, 'L', 1.524, a, 4); c.fillStyle = '#fff1a8'; ell(c, x, y, 1.5, 1.5); c.fill(); } { const [x, y] = fpt(o, 'L', 1.524, .58, 13.4); c.fillStyle = lit() ? '#ff6b5e' : '#e2574c'; c.fillRect(x - 3, y - 1.2, 6, 2.4); }
+      dwinGrid(c, o, 'L', 1.5, .2, .72, 23, h - 2, 2, 1, { seed: s0, frame: TR, padA: .22, padZ: .06 }); dwinGrid(c, o, 'L', 1.5, 1.28, 1.8, 23, h - 2, 2, 1, { seed: s0 + 9, frame: TR, padA: .22, padZ: .06 });
+      dsign(c, o, 'L', 1.502, .78, 1.22, 22, 27.5, TR, RED, 'FIRE', 4.4, GOLD);
+      if (lv >= 2) dwinGrid(c, o, 'L', 1.5, .2, 1.8, 31, h - 2, 5, lv - 1, { seed: s0 + 30, frame: TR, padA: .22, padZ: .16 });
+      dwinGrid(c, o, 'R', 1.86, .3, 1.44, 5, h - 3, 4, lv >= 2 ? 3 : 2, { seed: s0 + 40, frame: TR, padA: .22, padZ: .2 });
+      dbox(c, o, .1, .2, 1.8, 1.34, h, 3, TR, { hl: false, noAO: true }); poly(c, fquad(o, 'L', 1.542, .1, 1.9, h + .8, h + 2.2), GOLD, null);
+      poly(c, [IP(o, .17, .27, h + 3), IP(o, 1.83, .27, h + 3), IP(o, 1.83, 1.47, h + 3), IP(o, .17, 1.47, h + 3)], '#8a8fa0', 'rgba(60,60,80,.4)', .6);
+      { const [x, y] = IP(o, 1.5, .7, h + 3); c.fillStyle = '#d9dee6'; c.fillRect(x - 1, y - 9, 2, 9); c.fillStyle = lit() ? '#ff6b5e' : '#e2574c'; ell(c, x, y - 10, 2.6, 2.2); c.fill(); c.strokeStyle = EDGE; c.lineWidth = .5; c.stroke(); }
+      cyl(c, o, 1.88, 1.86, .035, 0, 6, '#e2574c'); { const [x, y] = IP(o, 1.88, 1.86, 6); c.fillStyle = '#e2574c'; ell(c, x, y - .6, 2.6, 2); c.fill(); c.strokeStyle = EDGE; c.lineWidth = .5; c.stroke(); }
+    }
+  });
+
   // stand-in for a building from a newer Pig City: a crate with a question mark
   function drawMystery(c, o) {
     dshadow(c, o, .2, .2, .6, .6, 30);
@@ -4785,7 +5576,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   function isoBuilding(c, b, o) {
     const lv = L(b), n = sz(b.type), t = G.time || 0;
     c.save(); c.lineJoin = 'round';
-    const art = spriteArt(b); // painted sprites from assets/sprites/manifest.js win over the vector art, homes included
+    const art = b.type === 'hutch' ? null : spriteArt(b);
     if (b.plain) {
       const wall = ['#e8c4a2', '#b7d5c6', '#d6c7e8', '#edc3c7'][b.v || 0];
       const end = n - .1, floors = (b.type === 'office' ? 4 : 2) + (b.v || 0) % 2 + lv - 1;
@@ -4811,6 +5602,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
         break;
       }
       case 'hutch': {
+        if (lv < 3 && houseStyle(b)) { houseArt(c, o, b, lv); break; }
         const wall = ['#f5dcc3', '#e7b0b8', '#b7cfc5'][lv - 1];
         const roof = ['#8d79af', '#906b81', '#618b87'][lv - 1];
         const height = [34, 59, 87][lv - 1];
@@ -5728,7 +6520,6 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   }
   function houseTick(dt) {
     if (!isHouse()) return;
-    if (isDoll()) return dollTick(dt);
     const pl = planOf(insideB), H = ensureHouse(insideB), dk = darkness();
     const beds = H.items.filter(i => i.k === 'bed' || i.k === 'hidey' || i.k === 'couch');
     const spots = []; for (const b of beds) { const n = b.k === 'hidey' ? 1 : (F[b.k].w || 1); for (let i = 0; i < n; i++) spots.push(b.r ? [b.x + .55, b.y + i + .5] : [b.x + i + .5, b.y + .55]); }
@@ -5849,7 +6640,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     if (view === 'inside') $('buildTitle').textContent = houseRoom ? `Decorate the ${houseRoom} 🛋️` : `Decorate ${insideName(insideB)} ${isWork(insideB) ? '🪴' : '🛋️'}`;
     $('roomBack').hidden = overview;
     $('roomBack').textContent = isHome(insideB) ? '← Whole home' : '← Building overview';
-    $('zWalls').hidden = !isHouse() || isDoll();
+    $('zWalls').hidden = !isHouse();
   }
   function houseCamRoom() {
     const r = curRoom(); if (!r) return;
@@ -5961,7 +6752,6 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     return (dotPat = c.createPattern(cv, 'repeat'));
   }
   function drawHouse(c) {
-    if (isDoll()) return drawDollhouse(c);
     const b = insideB, pl = planOf(b), H = ensureHouse(b), o = { x: 0, y: 0 }, t = G.time || 0, dk = darkness(), RM = curRoom();
     spriteBudget = 12;
     c.setTransform(dprNow, 0, 0, dprNow, 0, 0);
@@ -6029,7 +6819,6 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     c.globalAlpha = 1;
   }
   function houseClick(sp) {
-    if (isDoll()) return dollClick(sp);
     const b = insideB, H = ensureHouse(b), pl = planOf(b), s = scrToIso(sp.x, sp.y), wpt = isoToWorld(s), tx = Math.floor(wpt.x / T), ty = Math.floor(wpt.y / T), o = { x: 0, y: 0 };
     const pop = (u, v, txt, col) => { const [px, py] = IP(o, u, v, 30); popup(px, py, txt, col, 'inside'); };
     const RM = curRoom();
@@ -6067,120 +6856,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   }
   function turnPlacing() { placeRot ^= 1; sfx('tap'); syncTools(); }
   document.addEventListener('click', e => { if (e.target && e.target.id === 'turnBtn') { e.stopPropagation(); turnPlacing(); } });
-  function houseCamHome() { if (isHome(insideB) && L(insideB) === 3) return dollCam(); const pl = planOf(insideB), p = { x: (pl.W - pl.H) / 2 * HW, y: (pl.W + pl.H) / 2 * HH - 20 }; cams.inside.x = p.x; cams.inside.y = p.y; cams.inside.z = Math.max(.6, Math.min(1.5, Math.min(vw / ((pl.W + pl.H) * HW + 60), vh / ((pl.W + pl.H) * HH + 120)))); }
-  // ---------- the Cavy Apartments dollhouse ----------
-  // A fully upgraded pig home is the painted Pig City Apts building on the map. Going inside shows the painting's cutaway
-  // side as a dollhouse: your pigs live in it, wander the rooms, ride the elevator between floors and sleep in the beds
-  // at night. Tapping a room still opens the normal room decorator (the furniture you place lives there); ← Whole home
-  // comes back to the dollhouse.
-  const DOLL = { src: 'assets/sprites/buildings/cavy-apartments.webp', night: 'assets/sprites/buildings/cavy-apartments-night.webp', k: 2, cx: 0, cy: 330, elev: 752 };
-  // the rooms of the cutaway, in picture pixels (912 wide): x0..x1, y0..y1 is the room, fy is where pigs' feet go;
-  // `name` links a hotspot to a room of the level-3 floor plan (tap to decorate), the rest are places pigs just like to be
-  const DOLL_ROOMS = [
-    { name: 'Bedroom', x0: 332, x1: 508, y0: 212, y1: 342, fy: 330, bed: [405, 318] },
-    { name: 'Bathroom', x0: 510, x1: 598, y0: 212, y1: 342, fy: 330 },
-    { name: 'Kitchen', x0: 600, x1: 845, y0: 212, y1: 342, fy: 330 },
-    { name: 'Media Room', x0: 332, x1: 508, y0: 370, y1: 500, fy: 488, bed: [352, 478] },
-    { name: null, label: 'Bathroom', x0: 510, x1: 598, y0: 370, y1: 500, fy: 488 },
-    { name: 'Dining Room', x0: 600, x1: 845, y0: 370, y1: 500, fy: 488 },
-    { name: null, label: 'Bedroom', x0: 332, x1: 508, y0: 516, y1: 642, fy: 630, bed: [392, 618] },
-    { name: null, label: 'Bathroom', x0: 510, x1: 598, y0: 516, y1: 642, fy: 630 },
-    { name: 'Living Room', x0: 600, x1: 845, y0: 516, y1: 642, fy: 630, bed: [690, 624] },
-    { name: null, label: 'Lobby', x0: 345, x1: 760, y0: 655, y1: 815, fy: 795 },
-    { name: 'Playroom', label: 'Rooftop Garden', x0: 190, x1: 600, y0: 55, y1: 190, fy: 172, bed: [300, 172] } // last so the rooftop lounger is the bed nobody gets until the real beds are taken
-  ];
-  const isDoll = () => isHouse() && L(insideB) === 3 && !houseRoom;
-  const dollPigs = new Map();
-  const dollImg = () => { const im = sprLoad(darkness() > .45 ? DOLL.night : DOLL.src); return im.complete && im.naturalWidth && !im.bad ? im : null; };
-  const dollBox = () => { const im = sprLoad(DOLL.src), W = (im.naturalWidth || 912) / DOLL.k, H = (im.naturalHeight || 955) / DOLL.k; return { W, H, ox: DOLL.cx - W / 2, oy: DOLL.cy - H / 2 }; };
-  const dollRoomAt = (x, y) => DOLL_ROOMS.find(r => x >= r.x0 && x <= r.x1 && y >= r.y0 && y <= r.y1) || null;
-  function dollPt(sp) { const s = scrToIso(sp.x, sp.y), B2 = dollBox(); return { x: (s.x - B2.ox) * DOLL.k, y: (s.y - B2.oy) * DOLL.k }; }
-  function dollHoverRoom() { if (!mapPointer) return null; const r = canvas.getBoundingClientRect(), p = dollPt({ x: mapPointer.clientX - r.left, y: mapPointer.clientY - r.top }); return dollRoomAt(p.x, p.y); }
-  function dollCam() { const { W, H } = dollBox(); cams.inside.x = DOLL.cx; cams.inside.y = DOLL.cy; cams.inside.z = Math.max(.5, Math.min(3, Math.min(vw / (W + 40), vh / (H + 40)))); }
-  // a walk from one spot to another: along the floor, and by the elevator when the floors differ
-  function dollPath(from, to) {
-    const r0 = dollRoomAt(from.x, from.y), r1 = dollRoomAt(to[0], to[1]), f0 = r0 ? r0.fy : from.y, f1 = r1 ? r1.fy : to[1];
-    if (Math.abs(f0 - f1) < 2) return [to];
-    return [[DOLL.elev, f0], [DOLL.elev, f1], to];
-  }
-  function dollTick(dt) {
-    const dk = darkness(), beds = DOLL_ROOMS.filter(r => r.bed).map(r => r.bed), res = houseResidents();
-    for (const id of [...dollPigs.keys()]) if (!res.some(p => p.id === id)) dollPigs.delete(id);
-    res.forEach((p, idx) => {
-      let s = dollPigs.get(p.id);
-      if (!s) { s = { x: 560 + (idx % 3) * 50, y: 795, path: [], wait: .5 + Math.random() * 2, face: 1, lift: false }; dollPigs.set(p.id, s); }
-      const sleepy = dk > .6 || p.nap > 0, bed = beds[idx % beds.length];
-      if (sleepy && !s.sleep) { s.sleep = true; s.path = dollPath(s, [bed[0] + (idx >= beds.length ? 26 : 0), bed[1]]); }
-      if (!sleepy && s.sleep) { s.sleep = false; s.path = []; s.wait = .5; }
-      if (s.path.length) {
-        const [tx, ty] = s.path[0], dx = tx - s.x, dy = ty - s.y, d = Math.hypot(dx, dy), sp = (Math.abs(dy) > Math.abs(dx) ? 90 : 55) * dt;
-        s.lift = Math.abs(dy) > Math.abs(dx);
-        if (Math.abs(dx) > .5) s.face = dx > 0 ? 1 : -1;
-        if (d <= sp) { s.x = tx; s.y = ty; s.path.shift(); } else { s.x += dx / d * sp; s.y += dy / d * sp; }
-        s.moving = true; return;
-      }
-      s.moving = false; s.lift = false;
-      if (s.sleep) return;
-      s.wait -= dt;
-      if (s.wait <= 0) {
-        s.wait = 3 + Math.random() * 5;
-        const r = pick(DOLL_ROOMS), x = r.x0 + 18 + Math.random() * (r.x1 - r.x0 - 36);
-        s.path = dollPath(s, [x, r.fy]);
-      }
-    });
-  }
-  function drawDollhouse(c) {
-    const b = insideB, dk = darkness(), t = G.time || 0, k = DOLL.k, { W, H, ox, oy } = dollBox();
-    c.setTransform(dprNow, 0, 0, dprNow, 0, 0);
-    { const g = c.createLinearGradient(0, 0, 0, vh); g.addColorStop(0, dk > .5 ? '#2b3566' : '#cfe8f7'); g.addColorStop(1, dk > .5 ? '#4a3f6b' : '#fbe3ea'); c.fillStyle = g; c.fillRect(0, 0, vw, vh); }
-    setCamTransform(c);
-    const im = dollImg();
-    if (!im) { c.font = 'bold 14px Nunito, sans-serif'; c.textAlign = 'center'; c.fillStyle = INK; c.fillText('Opening the door…', DOLL.cx, DOLL.cy); return; }
-    c.fillStyle = 'rgba(0,0,0,.14)'; ell(c, DOLL.cx, oy + H - 6, W * .46, 14); c.fill();
-    c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high'; c.drawImage(im, ox, oy, W, H);
-    if (window.__dollRects) for (const r of DOLL_ROOMS) { c.strokeStyle = r.name ? '#e0483f' : '#5aa9e0'; c.lineWidth = 1; c.strokeRect(ox + r.x0 / k, oy + r.y0 / k, (r.x1 - r.x0) / k, (r.y1 - r.y0) / k); c.fillStyle = '#2f3440'; c.fillRect(ox + (r.x0 + 8) / k, oy + r.fy / k - 1, (r.x1 - r.x0 - 16) / k, 1.5); if (r.bed) { c.fillStyle = '#f48fb1'; c.fillRect(ox + r.bed[0] / k - 3, oy + r.bed[1] / k - 3, 6, 6); } }
-    // the room under the pointer
-    const hr = dollHoverRoom();
-    if (hr && !tool) {
-      const x = ox + hr.x0 / k, y = oy + hr.y0 / k, w = (hr.x1 - hr.x0) / k, h = (hr.y1 - hr.y0) / k;
-      c.fillStyle = 'rgba(255,255,255,.16)'; rr(c, x, y, w, h, 5); c.fill(); c.strokeStyle = 'rgba(255,255,255,.9)'; c.lineWidth = 1.6; c.stroke();
-      const txt = hr.name ? `${hr.name} · tap to decorate` : hr.label; c.font = 'bold 10px Nunito, sans-serif'; const tw = c.measureText(txt).width + 14;
-      c.fillStyle = 'rgba(255,255,255,.92)'; rr(c, x + w / 2 - tw / 2, y - 18, tw, 16, 8); c.fill(); c.strokeStyle = '#5b3b2a'; c.lineWidth = 1.2; c.stroke(); c.fillStyle = INK; c.textAlign = 'center'; c.fillText(txt, x + w / 2, y - 6.5);
-    }
-    // the pigs who live here, back to front
-    const res = houseResidents().filter(p => dollPigs.has(p.id)).sort((a, b2) => dollPigs.get(a.id).y - dollPigs.get(b2.id).y);
-    for (const p of res) {
-      const s = dollPigs.get(p.id), px = ox + s.x / k, py = oy + s.y / k, sc = (p.age < 90 ? .2 : .27), bob = s.moving && !s.lift ? Math.abs(Math.sin(t * 10 + p.id)) * 1.2 : 0;
-      c.save(); c.translate(px, py - bob);
-      if (s.lift) { c.globalAlpha = .55; } // riding the elevator: behind the kitchen wall
-      c.fillStyle = 'rgba(0,0,0,.16)'; ell(c, 0, 1 + bob, 11, 2.8); c.fill();
-      if (p.id === selected) { c.strokeStyle = '#fff'; c.lineWidth = 2; ell(c, 0, 1 + bob, 14, 4.5); c.stroke(); }
-      c.translate(0, -22 * sc); c.scale(s.face * sc, sc); drawPig(c, p.skin, { sleep: s.sleep && !s.path.length }); c.restore();
-      c.textAlign = 'center';
-      if (s.sleep && !s.path.length) { c.font = '9px Chewy, sans-serif'; c.fillStyle = '#1f2f5c'; const k2 = (t * .8 + p.id) % 1; c.globalAlpha = 1 - k2; c.fillText('z', px + 7 + k2 * 4, py - 14 - k2 * 8); c.fillText('Z', px + 11 + k2 * 3, py - 20 - k2 * 6); c.globalAlpha = 1; }
-      else if (p.id === selected || !s.moving) { c.font = 'bold 7px Nunito, sans-serif'; c.lineWidth = 2.5; c.strokeStyle = 'rgba(255,255,255,.85)'; c.strokeText(p.name, px, py - 16); c.fillStyle = INK; c.fillText(p.name, px, py - 16); }
-    }
-    // popups + confetti, same as the house
-    c.textAlign = 'center'; c.font = '13px Chewy, "Comic Sans MS", sans-serif';
-    for (const q of popups) { if (q.map !== 'inside' && q.map !== 'any') continue; const P = q.map === 'inside' ? { x: q.x, y: q.y } : iso(q.x, q.y); c.globalAlpha = Math.min(1, q.life / .4); c.lineWidth = 3.5; c.strokeStyle = '#fff'; c.strokeText(q.text, P.x, P.y); c.fillStyle = q.color; c.fillText(q.text, P.x, P.y); }
-    c.globalAlpha = 1; c.setTransform(dprNow, 0, 0, dprNow, 0, 0);
-    const away = houseResidents(true).filter(p => !houseResidents().includes(p));
-    c.font = 'bold 12px Nunito, sans-serif'; c.textAlign = 'left';
-    const lines = [away.length ? 'Out right now: ' + away.map(p => p.name + (p.trip || pigMap(p) === 'city' ? ' 🚗' : p.state ? ' 🏥' : '')).join(', ') : '', 'Tap a room to step inside and decorate it · tap a pig to check on it'].filter(Boolean);
-    lines.forEach((txt, i) => { const w = c.measureText(txt).width; const y = vh - 14 - (lines.length - 1 - i) * 24; c.fillStyle = 'rgba(255,255,255,.88)'; rr(c, 10, y - 15, w + 16, 22, 11); c.fill(); c.fillStyle = INK; c.fillText(txt, 18, y); });
-    for (const q of confetti) { c.globalAlpha = Math.min(1, q.life / .5); c.save(); c.translate(q.x, q.y); c.rotate(q.r); c.fillStyle = q.c; c.fillRect(-3, -1.5, 6, 3); c.restore(); }
-    c.globalAlpha = 1;
-  }
-  function dollClick(sp) {
-    const p = dollPt(sp), k = DOLL.k, { ox, oy } = dollBox(), s = scrToIso(sp.x, sp.y);
-    let best = null, bd = 16;
-    for (const q of houseResidents()) { const st = dollPigs.get(q.id); if (!st) continue; const d = Math.hypot(ox + st.x / k - s.x, oy + st.y / k - 8 - s.y); if (d < bd) { bd = d; best = q; } }
-    if (best) { selected = best.id; best.hop = .4; const st = dollPigs.get(best.id); popup(ox + st.x / k, oy + st.y / k - 22, '♥', '#e07a9a', 'inside'); renderPig(true); listSig = ''; sfx('wheek'); return; }
-    const r = dollRoomAt(p.x, p.y);
-    if (tool || cat === 'style') { toast(r && r.name ? `Tap the ${r.name} to step inside, then place it there.` : 'Step into a room first: tap one of the rooms to decorate it.'); if (r && r.name) enterRoom(r.name); return; }
-    if (r && r.name) enterRoom(r.name);
-    else if (r) toast(`${r.label}: the neighbors' place. Your rooms are the ones with names.`);
-  }
+  function houseCamHome() { const pl = planOf(insideB), p = { x: (pl.W - pl.H) / 2 * HW, y: (pl.W + pl.H) / 2 * HH - 20 }; cams.inside.x = p.x; cams.inside.y = p.y; cams.inside.z = Math.max(.6, Math.min(1.5, Math.min(vw / ((pl.W + pl.H) * HW + 60), vh / ((pl.W + pl.H) * HH + 120)))); }
 
   // ================= URBAN PLANNING =================
   const ZONES = {
@@ -6370,10 +7046,14 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     const q4 = (x0, y0, x1, y1) => [IP(O, x0, y0), IP(O, x1, y0), IP(O, x1, y1), IP(O, x0, y1)];
     for (const k of P) {
       const [x, y] = k.split(',').map(Number);
-      if (!city) { // Home Town: warm brick paths
-        poly(c, q4(x, y, x + 1, y + 1), (x + y) % 2 ? '#d0a882' : '#c99f78', 'rgba(110,70,40,.35)');
-        c.strokeStyle = 'rgba(110,70,40,.3)'; c.lineWidth = .8;
-        for (const f of [.33, .66]) { const a = IP(O, x, y + f), b2 = IP(O, x + 1, y + f); c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(b2[0], b2[1]); c.stroke(); }
+      if (!city) { // Home Town: pale stone sidewalk slabs, with a light kerb where they meet a street
+        poly(c, q4(x, y, x + 1, y + 1), (x + y) % 2 ? '#ebe6dc' : '#e5e0d5', null);
+        seg(IP(O, x, y + .5), IP(O, x + 1, y + .5), 'rgba(125,115,100,.22)', .6); seg(IP(O, x + .5, y), IP(O, x + .5, y + 1), 'rgba(125,115,100,.22)', .6);
+        seg(IP(O, x, y), IP(O, x + 1, y), 'rgba(125,115,100,.16)', .5); seg(IP(O, x, y), IP(O, x, y + 1), 'rgba(125,115,100,.16)', .5);
+        if (hsh(x, y, 5) < .1) { const [px, py] = IP(O, x + .3 + hsh(y, x) * .4, y + .3 + hsh(x, y) * .4); c.fillStyle = 'rgba(150,185,120,.55)'; ell(c, px, py, 1.5, .8); c.fill(); }
+        const edge = (a, b2) => { seg(a, b2, '#faf7f0', 2); seg([a[0], a[1] + 1.4], [b2[0], b2[1] + 1.4], 'rgba(110,105,95,.4)', .9); };
+        if (has(x, y + 1)) edge(IP(O, x, y + 1), IP(O, x + 1, y + 1)); if (has(x + 1, y)) edge(IP(O, x + 1, y), IP(O, x + 1, y + 1));
+        if (has(x, y - 1)) seg(IP(O, x, y), IP(O, x + 1, y), '#faf7f0', 2); if (has(x - 1, y)) seg(IP(O, x, y), IP(O, x, y + 1), '#faf7f0', 2);
         continue;
       }
       // Job City: pale square pavers with a raised kerb wherever the sidewalk meets a road
@@ -6617,7 +7297,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     layStreets(m, h, L.roads.map(([x, y]) => (x + ox) + ',' + (y + oy)), L.paths.map(([x, y]) => (x + ox) + ',' + (y + oy)), L.xw.map(([x, y]) => (x + ox) + ',' + (y + oy)), [...L.covered].map(k => { const [x, y] = k.split(',').map(Number); return (x + ox) + ',' + (y + oy); }));
     for (const it of L.items) {
       const b = { type: it.type, x: ox + it.x, y: oy + it.y, t: Math.random() * 3, did: id };
-      if (it.v !== undefined) b.v = it.v; if (m === 'city') b.map = 'city'; if (it.type === 'hutch') b.room = { wall: 0, floor: 0, items: [] };
+      if (it.v !== undefined) b.v = it.v; if (m === 'city') b.map = 'city'; if (it.type === 'hutch') { b.room = { wall: 0, floor: 0, items: [] }; if (b.v === undefined) b.v = Math.floor(Math.random() * HOUSE_STYLES.length); }
       listOf(m).push(b);
     }
     G.hoods[m].push(h);
@@ -6718,7 +7398,19 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
       props: ['table', 'planter', 'lantern', 'bench', 'blossom', 'mailbox', 'bikerack', 'busstop'] },
     meadow: { map: 'home', name: 'Hay Meadow', ic: '🌾', zone: 'farm', kind: 'cozy', crowd: 3, props: ['hedge', 'flowers', 'tree'] },
     green: { map: 'home', name: 'Village Green', ic: '🌸', zone: 'park', kind: 'cozy', crowd: 5, park: true, centre: 'pond',
-      props: ['tree', 'flowers', 'hedge', 'lantern', 'blossom', 'flowers'] }
+      props: ['tree', 'flowers', 'hedge', 'lantern', 'blossom', 'flowers'] },
+    // Home Town blocks (see townPlan): a town center of shops, streets of mixed houses, and a village green
+    tmain: { name: 'Town Center', ic: '🏪', map: 'home', zone: 'com', kind: 'cozy', crowd: 6,
+      corner2: ['hutch'], front: ['diner', 'store', 'cafe', 'salon', 'toys', 'library'],
+      back2: ['hutch'], back: ['tree', 'hedge', 'flowers'], props: ['lantern', 'bench', 'planter', 'blossom', 'mailbox', 'bikerack', 'table', 'coffeecart', 'busstop', 'statue'] },
+    thomes: { name: 'Home Street', ic: '🏡', map: 'home', zone: 'res', kind: 'cozy', crowd: 4, props: ['tree', 'tree', 'hedge', 'flowers', 'mailbox', 'lantern', 'bench', 'tunnel', 'table', 'parkedcar', 'planter', 'pond', 'blossom', 'bikerack', 'flowers', 'hedge'] },
+    tgreen: { name: 'Village Green', ic: '🌳', map: 'home', zone: 'park', kind: 'cozy', crowd: 5, green: true, props: ['tree', 'tree', 'flowers', 'hedge', 'blossom'] },
+    tcivic: { name: 'Civic Square', ic: '🚓', map: 'home', zone: 'com', kind: 'cozy', crowd: 5, props: ['tree', 'bench', 'lantern', 'hedge', 'flowers', 'planter', 'bikerack', 'parkedcar', 'mailbox'] },
+    toutlet: { name: 'Piggy Outlets', ic: '🛍️', map: 'home', zone: 'com', kind: 'cozy', crowd: 8,
+      corner2: ['statue'], front: ['furniture', 'clothes', 'toys', 'store', 'salon', 'cafe', 'diner'],
+      back2: [], back: ['parkedcar', 'parkedcar', 'tree', 'planter'], props: ['bench', 'planter', 'lantern', 'table', 'coffeecart', 'bikerack', 'blossom'] },
+    tfarm: { name: 'Farm Lane', ic: '🌾', map: 'home', zone: 'res', kind: 'cozy', crowd: 3, props: ['tree', 'hedge', 'flowers', 'tree', 'hedge'] },
+    tplay: { name: 'Play Park', ic: '🛝', map: 'home', zone: 'park', kind: 'cozy', crowd: 6, green: true, props: ['tree', 'blossom', 'flowers', 'hedge', 'bench'] }
   };
   // Cottages are real homes (4 pigs each), so the Home Town generator builds a limited number of them.
   const HOME_COTTAGE_MAX = 18; let homeCottages = 0;
@@ -6809,7 +7501,11 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     const h = { id, name: districtName(m, { name: K.name }), x: bk.x, y: bk.y, w: bk.w, h: bk.h, zone: K.zone, preset: 'gen_' + bk.kind, rot: 0, roads: [], paths: [], xw: [], spots: [], conns: [] };
     const taken = new Set(), items = [];
     const okTile = (x, y) => inInner(x, y) && !taken.has(x + ',' + y) && !occ.has(x + ',' + y) && isLand(m, x, y) && !isRoad(m, x, y) && !isPath(m, x, y);
-    const put = (type, x, y) => { if (!B[type]) return false; const n = sz(type); for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) if (!okTile(x + i, y + j)) return false; for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) taken.add((x + i) + ',' + (y + j)); items.push({ type, x, y }); return true; };
+    const put = (type, x, y, v) => { if (!B[type]) return false; const n = sz(type); for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) if (!okTile(x + i, y + j)) return false; for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) taken.add((x + i) + ',' + (y + j)); items.push({ type, x, y, v }); return true; };
+    // put a building wherever it fits in this block: street side first, then the far side, then the middle
+    const tryAny = t => { const n = sz(t); for (const y of [iy + ih - n, iy, iy + ((ih - n) >> 1)]) for (let x = ix; x + n <= ix + iw; x++) if (put(t, x, y)) return true; return false; };
+    // Home Town: once the civic square has had its turn, any block may take a public building that is still missing
+    if (m === 'home' && landmarks.any && bk.kind !== 'tcivic') { const t = [...landmarks].find(q => (q === 'police' || q === 'fire' || q === 'post') && tryAny(q)); if (t) landmarks.delete(t); }
     if (iw >= 1 && ih >= 1) {
       if (bk.kind === 'waterfront') {
         for (let x = ix; x < ix + iw; x++) {
@@ -6841,6 +7537,39 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
           if ((y - iy) % 2 === 0) put((x - ix) % 4 === 3 ? 'garden' : 'hay', x, y);
           else if ((x - ix) % 3 === 0) put(pickR(K.props), x, y);
         }
+      } else if (bk.kind === 'thomes') {
+        // houses on a 3-tile pitch, each in a different look, with yards, trees and mailboxes in the gaps
+        let hs = Math.floor(R() * HOUSE_STYLES.length); const step = 1 + Math.floor(R() * 3); // neighbours never share a look
+        for (let y = iy; y + 1 < iy + ih; y += 3) for (let x = ix; x + 1 < ix + iw; x += 3) { put('hutch', x, y, hs % HOUSE_STYLES.length); hs += step; }
+        if (R() < .5) for (let y = iy; y < iy + ih; y++) for (let x = ix; x < ix + iw; x++) if (okTile(x, y) && R() < .12) { put('garden', x, y); y = 1e9; break; } // now and then a kitchen garden
+        for (let y = iy; y < iy + ih; y++) for (let x = ix; x < ix + iw; x++) if (okTile(x, y) && R() < .6) put(pickR(K.props), x, y);
+      } else if (bk.kind === 'tcivic') {
+        // the public buildings side by side: police, fire station, post office, and the school or town hall if still missing
+        let n = 0; for (const t of ['police', 'fire', 'post', 'school', 'townhall']) { if (n >= 4 || !landmarks.has(t)) continue; if (tryAny(t)) { landmarks.delete(t); n++; } }
+        if (!n) put('library', ix, iy + ih - 1);
+        for (let y = iy; y < iy + ih; y++) for (let x = ix; x < ix + iw; x++) if (okTile(x, y) && R() < .55) put(pickR(K.props), x, y);
+      } else if (bk.kind === 'tfarm') {
+        // a farm: the farmhouse by the road, a water tower and a hay mill, then a few fields with hedgerows between them
+        put('hutch', ix, iy + ih - 2, 2); put('water', ix + 2, iy + ih - 1); put('haymill', ix + 3, iy + ih - 1);
+        let hay = 0, veg = 0;
+        for (let y = iy; y < iy + ih; y++) for (let x = ix; x < ix + iw; x++) { if (!okTile(x, y)) continue;
+          const row = (y - iy) % 2 === 0, top = y - iy < ih / 2;
+          if (row && top && hay < 4 && (x - ix) % 2 === 0) { if (put('hay', x, y)) hay++; }
+          else if (row && !top && veg < 3 && (x - ix) % 2 === 1) { if (put('garden', x, y)) veg++; }
+          else if (R() < .45) put(pickR(K.props), x, y); }
+      } else if (bk.kind === 'tplay') {
+        // a playground: two play parks, a fleece tunnel, a pond and a statue, with benches and trees round the edge
+        const cx = ix + (iw >> 1), cy = iy + (ih >> 1);
+        put('park', cx - 1, cy - 1); put('park', cx + 1, cy + 1); put('tunnel', cx + 1, cy - 1); put('pond', cx - 1, cy + 1);
+        if (iw >= 5 && ih >= 5) { put('statue', cx - 2, cy - 2); put('table', cx + 2, cy + 2); put('coffeecart', cx + 2, cy - 2); }
+        for (let y = iy; y < iy + ih; y++) for (let x = ix; x < ix + iw; x++) if (okTile(x, y) && x !== cx && y !== cy && (x === ix || y === iy || x === ix + iw - 1 || y === iy + ih - 1) && R() < .75) put(pickR(K.props), x, y);
+      } else if (K.green) {
+        // a village green: the chapel (or the school) at the top, a pond and a play park, benches, trees round the edge
+        const cx = ix + (iw >> 1), cy = iy + (ih >> 1);
+        const tryPut = t => { const xs = [ix + ((iw - 2) >> 1)]; for (let x = ix; x + 1 < ix + iw; x++) xs.push(x); for (const y of [iy, iy + ih - 2]) for (const x of xs) if (put(t, x, y)) return true; return false; };
+        const lm = iw >= 3 && ih >= 3 && [...landmarks].find(t => (t === 'church' || t === 'school') && tryPut(t)); if (lm) landmarks.delete(lm);
+        if (iw >= 3 && ih >= 3) { put('pond', cx + 1, cy + 1); put('park', cx - 1, cy + 1); put('bench', cx + 1, cy - 1); put('bench', cx - 1, cy - 1); }
+        for (let y = iy; y < iy + ih; y++) for (let x = ix; x < ix + iw; x++) if (okTile(x, y) && x !== cx && y !== cy && (x === ix || y === iy || x === ix + iw - 1 || y === iy + ih - 1) && R() < .75) put(pickR(K.props), x, y);
       } else if (K.park) {
         const cx = ix + (iw >> 1), cy = iy + (ih >> 1);
         if (iw >= 3 && ih >= 3) { put(K.centre || 'fountain', cx, cy); for (const [dx, dy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) put('bench', cx + dx, cy + dy); }
@@ -6856,11 +7585,14 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
           }
           return false;
         };
-        const landmark = [...landmarks].find(placeLandmark);
+        const landmark = (m === 'home' ? [...landmarks].filter(t => t === 'townhall') : [...landmarks]).find(placeLandmark);
         if (landmark) landmarks.delete(landmark);
         else if (iw >= 3 && ih >= 3 && sides.s && sides.e) put(pickR(K.corner2), ix + iw - 2, iy + ih - 2);
-        if (sides.s) for (let x = ix; x < ix + iw; x++) { const y = iy + ih - 1; if (!okTile(x, y)) continue; put((x - ix) % 3 === 2 ? pickR(K.props) : pickR(K.front), x, y); }
-        if (sides.e) for (let y = iy; y < iy + ih; y++) { const x = ix + iw - 1; if (!okTile(x, y)) continue; put((y - iy) % 3 === 2 ? pickR(K.props) : pickR(K.front), x, y); }
+        let fi = Math.floor(R() * K.front.length); const frontPick = () => m === 'home' ? K.front[fi++ % K.front.length] : pickR(K.front);
+        if (sides.s) for (let x = ix; x < ix + iw; x++) { const y = iy + ih - 1; if (!okTile(x, y)) continue; put((x - ix) % 3 === 2 ? pickR(K.props) : frontPick(), x, y); }
+        if (sides.e) for (let y = iy; y < iy + ih; y++) { const x = ix + iw - 1; if (!okTile(x, y)) continue; put((y - iy) % 3 === 2 ? pickR(K.props) : frontPick(), x, y); }
+        if (m === 'home' && sides.n && ih >= 4) for (let x = ix; x < ix + iw; x++) { if (!okTile(x, iy)) continue; put((x - ix) % 3 === 1 ? pickR(K.props) : frontPick(), x, iy); }
+        if (m === 'home' && sides.w && iw >= 4 && bk.kind === 'toutlet') for (let y = iy; y < iy + ih; y++) { if (!okTile(ix, y)) continue; put((y - iy) % 3 === 1 ? pickR(K.props) : frontPick(), ix, y); }
         for (let y = iy; y < iy + ih - 1; y++) for (let x = ix; x < ix + iw - 1; x++) if (R() < .75) put(pickR(K.back2), x, y);
         for (let y = iy; y < iy + ih; y++) for (let x = ix; x < ix + iw; x++) if (okTile(x, y) && R() < .85) put(R() < .5 ? pickR(K.back) : pickR(K.props), x, y);
       }
@@ -6870,16 +7602,15 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     const paths = [];
     for (let x = bk.x; x < bk.x + bk.w; x++) for (let y = bk.y; y < bk.y + bk.h; y++) {
       const edge = (sides.n && y === bk.y) || (sides.s && y === bk.y + bk.h - 1) || (sides.w && x === bk.x) || (sides.e && x === bk.x + bk.w - 1);
-      const ring = K.park && inInner(x, y) && (x === ix + (iw >> 1) || y === iy + (ih >> 1));
+      const ring = (K.park || K.green) && inInner(x, y) && (x === ix + (iw >> 1) || y === iy + (ih >> 1));
       const promenade = bk.kind === 'waterfront' && y === ROWS - 1;
       const homeWalk = bk.kind === 'homes' && y === iy + (ih >> 1) && ih > 1;
       if ((edge || ring || promenade || homeWalk) && !taken.has(x + ',' + y)) paths.push(x + ',' + y);
     }
     layStreets(m, h, [], paths, [], [...taken]);
     for (const it of items) {
-      const b = { type: it.type, x: it.x, y: it.y, t: R() * 3, did: id };
-      if (m === 'city') b.map = 'city';
-      if (b.type === 'hutch') b.room = { wall: 0, floor: 0, items: [] };
+      const b = { type: it.type, x: it.x, y: it.y, t: R() * 3, did: id }; if (m === 'city') b.map = 'city';
+      if (b.type === 'hutch') { b.room = { wall: 0, floor: 0, items: [] }; b.v = it.v !== undefined ? it.v : Math.floor(R() * HOUSE_STYLES.length); }
       if (b.type === 'parkedcar') b.v = Math.floor(R() * PARKED.length);
       if (m === 'city' && ['office', 'market', 'salon', 'toys', 'cafe'].includes(b.type)) b.plain = true;
       if (b.plain || b.type === 'townhouse') b.v = (b.x + b.y * 3) % 4;
@@ -6893,14 +7624,63 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
       if (P && P.acts && front) h.spots.push({ k: P.acts[0], x: front[0], y: front[1] });
       if (it.type === 'bench') h.spots.push({ k: 'sit', x: it.x + .5, y: it.y + .55 });
       if (it.type === 'busstop') h.spots.push({ k: 'wait', x: it.x + .5, y: it.y + 1.1 });
-      if (it.type === 'fountain' || it.type === 'pond') h.spots.push({ k: 'photo', x: it.x + .5, y: it.y + 1.2 });
-      if (it.type === 'park' || it.type === 'tunnel') h.spots.push({ k: 'play', x: it.x + .5, y: it.y + 1.05 });
+      if (it.type === 'fountain') h.spots.push({ k: 'photo', x: it.x + .5, y: it.y + 1.2 });
+      if (it.type === 'church' || it.type === 'townhall') h.spots.push({ k: 'photo', x: it.x + 1, y: it.y + 2.25 });
+      if (it.type === 'park' || it.type === 'tunnel') h.spots.push({ k: 'play', x: it.x + .5, y: it.y + .95 });
+      if (it.type === 'statue') h.spots.push({ k: 'photo', x: it.x + .5, y: it.y + 1.15 });
+      if (it.type === 'pond') h.spots.push({ k: 'stroll', x: it.x + .5, y: it.y + 1.1 });
       if (it.type === 'coffeecart' || it.type === 'table') h.spots.push({ k: 'coffee', x: it.x + .5, y: it.y + .9 });
     }
     for (const [x, y] of [[bk.x + .5, bk.y + bk.h - .5], [bk.x + bk.w - .5, bk.y + .5], [bk.x + bk.w - .5, bk.y + bk.h - .5]]) if (isPath(m, Math.floor(x), Math.floor(y))) h.spots.push({ k: 'stroll', x, y });
     for (const k of h.paths) { const [x, y] = k.split(',').map(Number); for (const [dx, dy] of DIRS4) if (isRoad(m, x + dx, y + dy) && (xwSets[m].has((x + dx) + ',' + (y + dy)) || R() < .25)) { h.conns.push({ x, y, dx, dy, kind: 'path' }); break; } }
     G.hoods[m].push(h);
     return h;
+  }
+  // ---------- "Grow town": the same idea for Home Town ----------
+  // A street grid around the built-in main road, then every free block becomes a town center (shops with houses
+  // behind), a street of mixed houses, or a village green. The town hall, chapel and school are placed once each.
+  // Streets are only kept beside blocks that actually grew, so a town that is already built keeps its open land.
+  const TOWN_LANDMARKS = ['townhall', 'church', 'school'];
+  function townPlan() {
+    const vx = [7, 15, 23, 31], hy = [4, 20, 26];
+    const cuts = (lines, lo, hi) => { const ws = [...new Set(lines)].sort((a, b) => a - b), out = []; let s0 = lo; for (const w of ws) { if (w > s0) out.push([s0, w - 1]); s0 = w + 1; } if (s0 <= hi) out.push([s0, hi]); return out; };
+    const cols = cuts(vx, 0, COLS - 1), rows = cuts(hy.concat([HOME_ROAD]), 0, ROWS - 1), blocks = [];
+    rows.forEach(([y0, y1], ri) => cols.forEach(([x0, x1], ci) => {
+      const kind = (ri === 1 && (ci === 1 || ci === 2)) || (ri === 2 && ci === 2) ? 'tmain'
+        : (ri === 2 && ci === 3) || (ri === 0 && ci === 4) || (ri === 3 && ci === 1) || (ri === 1 && ci === 0) ? 'tgreen' : 'thomes';
+      blocks.push({ x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1, kind });
+    }));
+    return { vx, hy, blocks };
+  }
+  function growTown() {
+    const m = 'home', plan = townPlan(), occ = occMap(m), gen = genOf(m);
+    const free = (x, y) => onMain(x, y) && !occ.has(x + ',' + y) && !isPath(m, x, y) && !zoneAt(m, x, y);
+    const laid = [];
+    const lay = (x, y) => { const k = x + ',' + y; if (isRoad(m, x, y) || !free(x, y)) return; roadSets[m].add(k); G.roads[m].push(k); gen.roads.push(k); laid.push(k); };
+    for (const x of plan.vx) for (let y = 0; y < ROWS; y++) lay(x, y);
+    for (const y of plan.hy) for (let x = 0; x < COLS; x++) lay(x, y);
+    const before = G.buildings.length, grown = [];
+    const landmarks = new Set(TOWN_LANDMARKS.filter(type => !G.buildings.some(b => b.type === type)));
+    // which blocks have room, nearest the middle of town first; each gets the next kind in the sequence so that
+    // whatever land is free ends up with a mix (small slivers just alternate houses, farms and playgrounds)
+    const roomy = bk => { let open = 0; for (let i = 0; i < bk.w; i++) for (let j = 0; j < bk.h; j++) { const x = bk.x + i, y = bk.y + j; if (zoneAt(m, x, y)) return false; if (isLand(m, x, y) && !occ.has(x + ',' + y) && !isRoad(m, x, y)) open++; } return open >= bk.w * bk.h * .6; };
+    const mid = bk => Math.abs(bk.x + bk.w / 2 - COLS / 2) + Math.abs(bk.y + bk.h / 2 - HOME_ROAD) * 1.4;
+    const cand = plan.blocks.filter(roomy).sort((a, b) => mid(a) - mid(b));
+    const SEQ = ['tmain', 'tcivic', 'toutlet', 'thomes', 'tgreen', 'thomes', 'tplay', 'tmain', 'thomes', 'tfarm', 'thomes', 'tgreen', 'toutlet', 'thomes', 'tfarm', 'tplay', 'thomes', 'thomes', 'tfarm'], SMALL = ['thomes', 'tplay', 'thomes', 'tfarm'];
+    let si = 0, sj = 0; for (const bk of cand) bk.kind = Math.min(bk.w, bk.h) >= 5 ? SEQ[si++ % SEQ.length] : SMALL[sj++ % SMALL.length];
+    for (const t of ['police', 'fire', 'post']) if (!G.buildings.some(b => b.type === t)) landmarks.add(t);
+    const first = cand.filter(bk => bk.kind === 'tcivic'), rest = cand.filter(bk => bk.kind !== 'tcivic');
+    for (const bk of first) { const h = growBlock(m, bk, occ, landmarks); if (h) grown.push(h); }
+    landmarks.any = true;
+    for (const bk of rest) { const h = growBlock(m, bk, occ, landmarks); if (h) grown.push(h); }
+    const near = k => { const [x, y] = k.split(',').map(Number); return grown.some(r => x >= r.x - 1 && x <= r.x + r.w && y >= r.y - 1 && y <= r.y + r.h); };
+    const drop = new Set(laid.filter(k => !near(k)));
+    if (drop.size) { for (const k of drop) roadSets[m].delete(k); G.roads[m] = G.roads[m].filter(k => !drop.has(k)); gen.roads = gen.roads.filter(k => !drop.has(k)); }
+    for (const k of laid) { if (drop.has(k)) continue; const [x, y] = k.split(',').map(Number);
+      if (!((isRoad(m, x - 1, y) || isRoad(m, x + 1, y)) && (isRoad(m, x, y - 1) || isRoad(m, x, y + 1)))) continue;
+      for (const [dx, dy] of DIRS4) { const kk = (x + dx) + ',' + (y + dy); if (isRoad(m, x + dx, y + dy) && !xwSets[m].has(kk)) { xwSets[m].add(kk); G.xwalks[m].push(kk); gen.xw.push(kk); } } }
+    markGround(); hoodSig = ''; zoneT = 0; dPrev = null; walkCache.clear(); save();
+    return { blocks: grown.length, buildings: G.buildings.length - before, roads: laid.length - drop.size };
   }
   // take the grown city away again: every generated block, plus the streets and crossings the generator laid.
   // Anything the player made their own is protected: a generated building that was upgraded, decorated inside,
@@ -7259,7 +8039,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   // ---------- traffic: little cars on district roads that stop for red lights and for each other (never saved) ----------
   const traffic = new Map();
   const TLOOKS = [{ k: 'car', c: '#e0483f' }, { k: 'car', c: '#5aa9e0' }, { k: 'car', c: '#fbf6ee' }, { k: 'taxi', c: '#f7c948' }, { k: 'car', c: '#a98bd9' }, { k: 'van', c: '#8fd3c4' }, { k: 'bus', c: '#ff9a4d' }, { k: 'car', c: '#f4a3b8' }, { k: 'taxi', c: '#f7c948' }, { k: 'car', c: '#2b3552' }];
-  const TLEN = { car: .34, taxi: .34, van: .4, bus: .66 }, LANE = .2;
+  const TLEN = { car: .34, taxi: .34, van: .4, bus: .66, police: .46, fire: .76 }, LANE = .2;
   // Cars use the whole road network of the map you're looking at: they appear on a straight bit of road, drive on,
   // pick a way at each crossroads (mostly straight on), stop at red lights and behind other cars, and leave at a
   // dead end or after a while. Turns only go into real roads (two tiles deep), never into the other lane of a
@@ -7273,6 +8053,71 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     rc.v = roadVer; rc.list = list; return list;
   }
   const DIRS4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+  // ---------- emergency calls (never saved): now and then something happens at a building, and the staffed station's
+  // vehicle drives there with its lights going. The pig gets out, sorts it out, and the town pays a small reward. ----------
+  const calls = { home: [], city: [] }, callT = { police: 18, fire: 32 };
+  const CALLS = {
+    fire: [{ e: '🔥', s: 'Smoke at', r: 'put out the fire at', fire: true }, { e: '🍳', s: 'A burnt hay pie at', r: 'put out the kitchen fire at', fire: true }, { e: '🐱', s: 'A cat is stuck on the roof of', r: 'rescued the cat from the roof of' }],
+    police: [{ e: '🥕', s: 'A carrot thief at', r: 'chased off the carrot thief at' }, { e: '🐹', s: 'A lost piglet near', r: 'walked the lost piglet home from' }, { e: '📢', s: 'A noise complaint at', r: 'settled the noise complaint at' }, { e: '🛒', s: 'A runaway shopping cart at', r: 'caught the runaway cart at' }]
+  };
+  // shortest way along the roads from one tile to the road tile nearest a building
+  function callRoute(m, sx, sy, b) {
+    const n = sz(b.type), prev = new Map([[sx + ',' + sy, null]]), q = [[sx, sy]]; let best = null, bd = 1e9;
+    for (let i = 0; i < q.length; i++) { const [x, y] = q[i], d = Math.abs(x + .5 - (b.x + n / 2)) + Math.abs(y + .5 - (b.y + n / 2)); if (d < bd) { bd = d; best = x + ',' + y; }
+      for (const [dx, dy] of DIRS4) { const k = (x + dx) + ',' + (y + dy); if (!prev.has(k) && isRoad(m, x + dx, y + dy)) { prev.set(k, x + ',' + y); q.push([x + dx, y + dy]); } } }
+    if (!best || bd > n / 2 + 4) return null;
+    const route = []; for (let k = best; k; k = prev.get(k)) route.unshift(k); return route;
+  }
+  function spawnEmergency(m, kind, list, tiles, st) {
+    let best = null, bd = 1e9;
+    for (const [x, y] of tiles) { const ew = isRoad(m, x - 1, y) && isRoad(m, x + 1, y), ns = isRoad(m, x, y - 1) && isRoad(m, x, y + 1); if (!(ew || ns) || (ew && ns) || xwSets[m].has(x + ',' + y)) continue; const d = Math.abs(x - st.x) + Math.abs(y - st.y) + Math.random() * 2; if (d < bd) { bd = d; best = [x, y, ew]; } }
+    if (!best) return null;
+    const [x, y, ew] = best, sgn = Math.random() < .5 ? 1 : -1, car = { cx: (x + .5) * T, cy: (y + .5) * T, dx: ew ? sgn : 0, dy: ew ? 0 : sgn, look: { k: kind, c: kind === 'police' ? '#f7f8fb' : '#d8402f' }, sp: 0, max: kind === 'fire' ? 34 : 40, al: 0, tile: x + ',' + y, life: 140 + Math.random() * 60, driver: pick(workersAt(st)).id };
+    list.push(car); return car;
+  }
+  function startCall(m, kind, list, tiles) {
+    const st = listOf(m).find(b => b.type === kind && workersAt(b).length); if (!st) return;
+    const car = list.find(o => o.look.k === kind && !o.gone && !o.call) || spawnEmergency(m, kind, list, tiles, st); if (!car) return;
+    const pool = listOf(m).filter(b => b !== st && B[b.type] && !DECOR[b.type] && b.x !== undefined && onMain(b.x, b.y)); if (!pool.length) return;
+    const hx = Math.floor(car.cx / T), hy = Math.floor(car.cy / T); let b = null, route = null;
+    for (let i = 0; i < 6 && !route; i++) { b = pick(pool); route = callRoute(m, hx, hy, b); if (route && route.length < 3) route = null; }
+    if (!route) return;
+    const sc = pick(CALLS[kind]), dr = G.pigs.find(q => q.id === car.driver), call = { kind, b, sc, state: 'enroute', t: 80, car, who: dr ? dr.name : 'The crew' };
+    const [nx, ny] = route[1].split(',').map(Number);
+    car.cx = (hx + .5) * T; car.cy = (hy + .5) * T; car.dx = nx - hx; car.dy = ny - hy; car.tile = route[0]; car.route = route; car.call = call; car.gone = false; car.life = 999; car.max = kind === 'fire' ? 58 : 66;
+    calls[m].push(call); toast(`${sc.e} ${sc.s} ${lvName(b)}! ${call.who} is on the way.`); sfx('tap');
+  }
+  function endCall(m, call, ok) {
+    const car = call.car; if (car) { car.call = null; car.route = null; car.parked = false; car.life = 60 + Math.random() * 40; car.max = call.kind === 'fire' ? 34 : 40; }
+    calls[m].splice(calls[m].indexOf(call), 1);
+    if (ok) { const pay = call.kind === 'fire' ? 10 : 6; G.coins += pay; toast(`${call.kind === 'fire' ? '🚒' : '🚓'} ${call.who} ${call.sc.r} ${lvName(call.b)}. +${pay} 🪙`); sfx('goal'); for (const p of G.pigs) p.joy = Math.min(100, p.joy + 1); }
+  }
+  function callsTick(m, dt, list, tiles, night) {
+    for (const call of calls[m].slice()) {
+      if (!listOf(m).includes(call.b) || !list.includes(call.car)) { endCall(m, call, false); continue; }
+      call.t -= dt; if (call.t <= 0) endCall(m, call, call.state === 'work');
+    }
+    if (!night) for (const kind of ['police', 'fire']) { callT[kind] -= dt; if (callT[kind] > 0 || calls[m].some(q => q.kind === kind)) continue; callT[kind] = 75 + Math.random() * 75; startCall(m, kind, list, tiles); }
+  }
+  function drawCall(c, call) {
+    const b = call.b, n = sz(b.type), P = iso((b.x + n / 2) * T, (b.y + n / 2) * T), top = P.y - htOf(b) * .7, t = G.time || 0, sc = call.sc;
+    c.save();
+    if (sc.fire) { // smoke and flames; they shrink while the crew works
+      const k = call.state === 'work' ? Math.max(0, call.t / 7) : 1;
+      for (let i = 0; i < 4; i++) { const ph = (t * .6 + i * .25) % 1; c.fillStyle = `rgba(90,90,100,${.35 * (1 - ph) * (.4 + .6 * k)})`; ell(c, P.x + Math.sin(t + i * 2) * 5 + ph * 8, top - 12 - ph * 34, 5 + ph * 9, 4 + ph * 7); c.fill(); }
+      for (let i = 0; i < 3; i++) { const fx = P.x + (i - 1) * 7, fh = (11 + Math.sin(t * 9 + i * 2) * 3) * k; if (fh < 1) continue;
+        c.fillStyle = '#ff8a3d'; c.beginPath(); c.moveTo(fx - 4, top); c.quadraticCurveTo(fx - 5, top - fh * .6, fx, top - fh); c.quadraticCurveTo(fx + 5, top - fh * .6, fx + 4, top); c.closePath(); c.fill();
+        c.fillStyle = '#ffd24d'; c.beginPath(); c.moveTo(fx - 2, top); c.quadraticCurveTo(fx - 2.5, top - fh * .4, fx, top - fh * .6); c.quadraticCurveTo(fx + 2.5, top - fh * .4, fx + 2, top); c.closePath(); c.fill(); }
+    }
+    const by = top - 34 + Math.sin(t * 4) * 2; c.fillStyle = '#fffaf2'; ell(c, P.x, by, 11, 10); c.fill(); c.strokeStyle = call.kind === 'fire' ? '#d8402f' : '#2f4470'; c.lineWidth = 1.8; c.stroke();
+    c.font = '12px sans-serif'; c.textAlign = 'center'; c.fillStyle = '#000'; c.fillText(sc.e, P.x, by + 4);
+    if (call.state === 'work') { // the pig is out of the vehicle; a firefighter's hose reaches the flames
+      const cp = carPos(call.car), CP = iso(cp.x, cp.y), dir = P.x >= CP.x ? 1 : -1, px = CP.x + dir * 15, py = CP.y + 6, dr = G.pigs.find(q => q.id === call.car.driver);
+      if (sc.fire) { c.strokeStyle = 'rgba(120,200,255,.9)'; c.lineWidth = 2.2; c.setLineDash([4, 3]); c.lineDashOffset = -t * 30; c.beginPath(); c.moveTo(px + dir * 6, py - 8); c.quadraticCurveTo((px + P.x) / 2, Math.min(py, top) - 28, P.x, top - 4); c.stroke(); c.setLineDash([]); }
+      c.translate(px, py); c.fillStyle = 'rgba(0,0,0,.14)'; ell(c, 1, 8, 12, 3); c.fill(); c.scale(dir * .36, .36); drawPig(c, (dr && dr.skin) || { base: '#e9c9a0', ear: '#e0a08a' }, {}); drawUniform(c, call.kind);
+    }
+    c.restore();
+  }
   function trafficTick(dt) {
     if (view !== 'home' && view !== 'city') return;
     const m = view, hr = hourNow(), we = isWeekend(), night = hr < 6 || hr >= 22.5, tiles = roadTiles(m);
@@ -7285,19 +8130,35 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
         if (!list.some(o => Math.hypot(o.cx - cx, o.cy - cy) < T * 1.2)) list.push({ cx, cy, dx, dy, look, sp: 0, max: (look.k === 'bus' ? 26 : 34) + Math.random() * 8, al: 0, tile: x + ',' + y, life: 30 + Math.random() * 40 });
       }
     }
+    // a staffed police station sends out its patrol car and a staffed fire station its engine, driven by one of
+    // the pigs who work there (in uniform). They set off from the road nearest the station and stay out by day.
+    if (!night) for (const kind of ['police', 'fire']) {
+      if (list.some(o => o.look.k === kind && !o.gone) || Math.random() > dt * 1.2) continue;
+      const st = listOf(m).find(b => b.type === kind && workersAt(b).length); if (st) spawnEmergency(m, kind, list, tiles, st);
+    }
+    callsTick(m, dt, list, tiles, night);
     for (let i = list.length - 1; i >= 0; i--) {
       const car = list[i], len = TLEN[car.look.k] * T, ax = car.dx ? 'x' : 'y';
       car.al = car.gone ? car.al - dt * 2 : Math.min(1, car.al + dt * 2.5); if (car.gone && car.al <= 0) { list.splice(i, 1); continue; }
+      if (car.parked) { car.sp = 0; continue; }
+      const rush = !!car.route;
       let stop = false;
       const fx = car.cx + car.dx * (len / 2 + 3), fy = car.cy + car.dy * (len / 2 + 3), tx = Math.floor(fx / T), ty = Math.floor(fy / T), hx = Math.floor(car.cx / T), hy = Math.floor(car.cy / T);
       const enteringXw = xwSets[m].has(tx + ',' + ty) && !(tx === hx && ty === hy) && !xwSets[m].has(hx + ',' + hy) && !isCrossroads(m, hx, hy);
-      if (enteringXw && crossingAxis(m, tx, ty)) { const st = sigState(ax); if (st === 'r' || (st === 'y' && car.sp < 20)) stop = true; }
-      if (!car.gone) for (const o of list) if (o !== car && !o.gone && o.dx === car.dx && o.dy === car.dy) { const ahead = (o.cx - car.cx) * car.dx + (o.cy - car.cy) * car.dy, side = Math.abs((o.cx - car.cx) * car.dy - (o.cy - car.cy) * car.dx); if (side < 6 && ahead > 0 && ahead < (len + TLEN[o.look.k] * T) / 2 + 8) stop = true; }
+      if (enteringXw && crossingAxis(m, tx, ty) && !rush) { const st = sigState(ax); if (st === 'r' || (st === 'y' && car.sp < 20)) stop = true; }
+      if (!car.gone && !rush) for (const o of list) if (o !== car && !o.gone && o.dx === car.dx && o.dy === car.dy) { const ahead = (o.cx - car.cx) * car.dx + (o.cy - car.cy) * car.dy, side = Math.abs((o.cx - car.cx) * car.dy - (o.cy - car.cy) * car.dx); if (side < 6 && ahead > 0 && ahead < (len + TLEN[o.look.k] * T) / 2 + 8) stop = true; }
       car.sp = stop ? Math.max(0, car.sp - 90 * dt) : Math.min(car.max, car.sp + 30 * dt);
       const step = car.sp * dt, k = hx + ',' + hy, ccx = (hx + .5) * T, ccy = (hy + .5) * T;
       // reaching the middle of a new tile: choose where to go next
       if (k !== car.tile && (car.cx - ccx) * car.dx + (car.cy - ccy) * car.dy >= 0) {
         car.tile = k; car.life--;
+        if (car.route) { // on a call: take the next tile of the route; at the last one, pull up and get to work
+          const idx = car.route.indexOf(k), nxt = idx >= 0 ? car.route[idx + 1] : null;
+          if (idx < 0) { const r2 = car.call && callRoute(m, hx, hy, car.call.b); if (r2 && r2.length > 1) { car.route = r2; const [nx, ny] = r2[1].split(',').map(Number); car.cx = ccx; car.cy = ccy; car.dx = nx - hx; car.dy = ny - hy; } else { car.route = null; if (car.call) car.call.t = 0; } }
+          else if (!nxt) { car.cx = ccx; car.cy = ccy; car.sp = 0; car.parked = true; car.route = null; if (car.call) { car.call.state = 'work'; car.call.t = 7; } }
+          else { const [nx, ny] = nxt.split(',').map(Number); if (nx - hx !== car.dx || ny - hy !== car.dy) { car.cx = ccx; car.cy = ccy; car.dx = nx - hx; car.dy = ny - hy; } }
+          car.cx += car.dx * step; car.cy += car.dy * step; continue;
+        }
         const opts = DIRS4.filter(([dx, dy]) => !(dx === -car.dx && dy === -car.dy) && isRoad(m, hx + dx, hy + dy) && (dx === car.dx && dy === car.dy || isRoad(m, hx + 2 * dx, hy + 2 * dy)));
         if (!opts.length || car.life <= 0 || !isRoad(m, hx, hy)) car.gone = true;
         else { const straight = opts.find(([dx, dy]) => dx === car.dx && dy === car.dy), nd = straight && (Math.random() < .7 || opts.length === 1) ? straight : pick(opts);
@@ -7309,7 +8170,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   // the car's world position: its lane is to the right of the road's centre line
   const carPos = car => ({ x: car.cx - car.dy * LANE * T, y: car.cy + car.dx * LANE * T });
   function drawTCar(c, car) {
-    const p = carPos(car), P = iso(p.x, p.y), k = car.look.k, len = TLEN[k], wid = k === 'bus' ? .2 : .17, hgt = k === 'bus' ? 10 : k === 'van' ? 8 : 5;
+    const p = carPos(car), P = iso(p.x, p.y), k = car.look.k, len = TLEN[k], wid = k === 'bus' ? .2 : k === 'fire' ? .24 : k === 'police' ? .21 : .17, hgt = k === 'bus' || k === 'fire' ? 10 : k === 'van' ? 8 : k === 'police' ? 6.5 : 5;
     const alongU = !!car.dx, du = alongU ? len : wid, dv = alongU ? wid : len, o = { x: P.x, y: P.y }, col = car.look.c;
     c.save(); c.globalAlpha = car.al; c.lineJoin = 'round';
     poly(c, [IP(o, -du / 2, -dv / 2), IP(o, du / 2 + .06, -dv / 2), IP(o, du / 2 + .06, dv / 2 + .03), IP(o, -du / 2, dv / 2 + .03)], 'rgba(30,30,60,.2)', null);
@@ -7318,6 +8179,30 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     if (k === 'bus') { // window band + route sign
       for (const face of ['L', 'R']) { const K = face === 'L' ? dv / 2 : du / 2, a0 = face === 'L' ? -du / 2 + .04 : -dv / 2 + .04, a1 = face === 'L' ? du / 2 - .04 : dv / 2 - .04; poly(c, fquad(o, face, K + .002, a0, a1, 6, 10), lit() ? '#ffe6a3' : '#cfe9ff', null); }
       const [x, y] = IP(o, 0, 0, hgt + 1.2); c.fillStyle = '#fffaf2'; c.font = '800 3px Nunito, sans-serif'; c.textAlign = 'center'; c.fillText('🥕', x, y + 1);
+    } else if (k === 'police' || k === 'fire') {
+      // side stripe, a cab at the front with a flashing light bar, a ladder on the engine, and the pig at the wheel
+      const pol = k === 'police', fwd = car.dx + car.dy, cl = pol ? len * .5 : .26, a0 = len / 2 - cl - .03;
+      for (const face of ['L', 'R']) { const K = face === 'L' ? dv / 2 : du / 2, e = (face === 'L' ? du : dv) / 2 - .02; poly(c, fquad(o, face, K + .003, -e, e, 3, 5.4), pol ? '#2f4470' : '#f7d36b', null); }
+      const along = fwd > 0 ? a0 : -(a0 + cl), cu = alongU ? along : -du / 2 + .02, cv = alongU ? -dv / 2 + .02 : along, cdu = alongU ? cl : du - .04, cdv = alongU ? dv - .04 : cl;
+      if (!pol) { // ladder along the back of the engine
+        const zt = 1.2 + hgt + 1;
+        const A = t2 => alongU ? IP(o, t2, -.05, zt) : IP(o, -.05, t2, zt), Bq = t2 => alongU ? IP(o, t2, .05, zt) : IP(o, .05, t2, zt);
+        const L0 = fwd > 0 ? -len / 2 + .04 : -a0 + .02, L1 = fwd > 0 ? a0 - .02 : len / 2 - .04;
+        c.strokeStyle = '#c9ced8'; c.lineWidth = 1.3; c.beginPath(); let q = A(L0); c.moveTo(q[0], q[1]); q = A(L1); c.lineTo(q[0], q[1]); q = Bq(L0); c.moveTo(q[0], q[1]); q = Bq(L1); c.lineTo(q[0], q[1]);
+        for (let t2 = L0 + .03; t2 < L1; t2 += .06) { const a = A(t2), b2 = Bq(t2); c.moveTo(a[0], a[1]); c.lineTo(b2[0], b2[1]); } c.stroke();
+      }
+      box(c, o, cu, cv, cdu, cdv, 1.2 + hgt, 4.4, lit() ? '#ffe6a3' : '#cfe9ff', { top: pol ? '#2f4470' : col });
+      const rush = car.call && car.call.state !== 'done';
+      const [lx, ly] = IP(o, cu + cdu / 2 - (alongU ? fwd * cl * .28 : 0), cv + cdv / 2 - (alongU ? 0 : fwd * cl * .28), 1.2 + hgt + 4.4), fl = Math.floor((G.time || 0) * (rush ? 12 : 5)) % 2, c1 = '#ff4d4d', c2 = pol ? '#4aa3ff' : '#ffd24d';
+      if (lit() || rush) { c.fillStyle = fl ? 'rgba(255,80,80,.3)' : pol ? 'rgba(80,160,255,.3)' : 'rgba(255,210,80,.3)'; ell(c, lx, ly - 1, rush ? 12 : 8, rush ? 8 : 6); c.fill(); }
+      c.fillStyle = fl ? c1 : c2; c.fillRect(lx - 4, ly - 3, 4, 3); c.fillStyle = fl ? c2 : c1; c.fillRect(lx, ly - 3, 4, 3); c.strokeStyle = EDGE; c.lineWidth = .6; c.strokeRect(lx - 4, ly - 3, 8, 3);
+      if (car.parked) { c.restore(); return; } // the driver is out on the call
+      const dr = G.pigs.find(q => q.id === car.driver), sk = (dr && dr.skin) || { base: '#e9c9a0' }, sx = car.dx - car.dy >= 0 ? 1 : -1;
+      const [hx, hy] = IP(o, cu + cdu / 2 + (alongU ? fwd * cl * .2 : 0), cv + cdv / 2 + (alongU ? 0 : fwd * cl * .2), 1.2 + hgt + 4.4);
+      c.fillStyle = sk.head || sk.base || '#e9c9a0'; ell(c, hx, hy - 3.6, 4.3, 3.8); c.fill(); c.strokeStyle = INK; c.lineWidth = .8; c.stroke();
+      c.fillStyle = sk.ear || '#e0a08a'; ell(c, hx - sx * 2.8, hy - 6.4, 1.6, 1.2); c.fill(); c.fillStyle = '#0b0809'; ell(c, hx + sx * 2, hy - 4, .8, .8); c.fill(); c.fillStyle = sk.nose || '#e07a7a'; ell(c, hx + sx * 4, hy - 2.8, .8, .7); c.fill();
+      c.fillStyle = pol ? '#2f4470' : '#d8402f'; c.beginPath(); c.ellipse(hx, hy - 6, 4.4, 3.2, 0, Math.PI, 0); c.closePath(); c.fill(); c.strokeStyle = INK; c.lineWidth = .7; c.stroke();
+      c.fillRect(hx + (sx > 0 ? 0 : -5.8), hy - 6.8, 5.8, 1.4); c.fillStyle = '#f2c14e'; ell(c, hx + sx * .8, hy - 7.6, 1.1, 1.1); c.fill();
     } else {
       const cu = alongU ? -du * .08 - du * .5 * .5 : -du / 2 + .02, cv = alongU ? -dv / 2 + .02 : -dv * .08 - dv * .25, cdu = alongU ? du * .52 : du - .04, cdv = alongU ? dv - .04 : dv * .52;
       box(c, o, cu + (car.dx < 0 ? du * .16 : 0), cv + (car.dy < 0 ? dv * .16 : 0), cdu, cdv, 1.2 + hgt, k === 'van' ? 3 : 3.6, lit() ? '#ffe6a3' : '#cfe9ff', { top: col });
@@ -7352,6 +8237,8 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     cafe: ['table', 'planter', 'trash', '@lamp'], sushi: ['table', 'planter', '@lamp'], salon: ['planter', 'hedge'], toys: ['planter', 'bench'],
     office: ['bench', 'planter', 'trash', '@tree'], pcse: ['planter', 'bench', '@lamp'], bbb: ['planter', 'planter', '@lamp'], finoffice: ['planter', 'trash'],
     market: ['trash', '@lamp'], dealer: ['parkedcar', '@lamp'], factory: ['trash'], squealtopia: ['bench', 'trash', '@lamp'],
+    police: ['parkedcar', 'hedge', '@lamp'], fire: ['hedge', '@lamp'], post: ['mailbox', 'bench'], furniture: ['planter', 'bench'], clothes: ['planter', 'bench'],
+    diner: ['table', 'planter', '@lamp'], store: ['planter', 'trash'], library: ['bench', 'planter'], school: ['bench', '@tree'], church: ['bench', 'hedge', '@tree'], townhall: ['bench', 'planter', '@lamp'],
     hutch: ['hedge', 'mailbox', '@tree'], hospital: ['bench', 'hedge'], vet: ['hedge'], haymill: ['trash'], roller: ['bench', 'trash', '@lamp']
   };
   function autoDetail(nb) {
@@ -7375,32 +8262,30 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   function syncDetailBtn() { const on = G.autoDetail !== false; $('detailBtn').textContent = on ? '✨ Auto-details: on' : '✨ Auto-details: off'; $('detailBtn').setAttribute('aria-pressed', on ? 'true' : 'false'); }
   $('detailBtn').addEventListener('click', () => { G.autoDetail = G.autoDetail === false; syncDetailBtn(); sfx('tap'); save(); toast(G.autoDetail ? '✨ Auto-details on: new shops, offices and homes come with a few matching props (you pay for each one).' : '✨ Auto-details off: buildings go down on their own.'); });
   syncDetailBtn();
-  // one button for both maps: "Grow city" in Job City, "Grow town" in Home Town
   const growMap = () => view === 'city' ? 'city' : 'home';
   function syncGrowBtn() {
     const m = growMap(), city = m === 'city', g = grownBlocks(m).length > 0;
-    $('growBtn').textContent = g ? (city ? '🧹 Clear grown city' : '🧹 Clear grown town') : city ? '🏙️ Grow city' : '🏡 Grow town';
-    $('growBtn').title = g ? 'Remove the generated blocks and streets (buildings you made your own stay)' : city ? 'Fill the empty land of Job City with streets and city blocks' : 'Fill the empty land of Home Town with lanes, cottages, a Main Street, hay meadows and village greens';
+    $('growBtn').textContent = g ? (city ? '🧹 Clear grown city' : '🧹 Clear grown town') : city ? '🏙️ Grow city' : '🏘️ Grow town';
+    $('growBtn').title = g ? 'Remove the generated blocks and streets (buildings you made your own stay)' : city ? 'Fill the empty land of Job City with streets and city blocks' : 'Fill the empty land of Home Town with streets, mixed houses, shops, a town hall, a chapel and a village green';
   }
   $('growBtn').addEventListener('click', async () => {
-    const m = growMap(), city = m === 'city', place = city ? 'city' : 'town';
+    const m = growMap(), city = m === 'city', what = city ? 'city' : 'town';
     if (grownBlocks(m).length) {
       const S = grownSummary(m), gone = S.members - S.keep.length;
-      const kept = [S.up && `${S.up} upgraded`, S.deco && `${S.deco} decorated inside`, S.pigs && `${S.pigs} pig job${S.pigs > 1 ? 's' : ''}`, S.beds && `${S.beds} cottage${S.beds > 1 ? 's' : ''} your pigs need to sleep in`].filter(Boolean).join(', ');
-      const msg = `Clear the grown ${place}? ${S.blocks} generated blocks go away: ${gone} buildings, their sidewalks and the generated streets.`
-        + (S.keep.length ? ` ${S.keep.length} of its buildings are yours now (${kept}). Those STAY as normal buildings, with their sidewalks and the streets beside them.` : '')
+      const kept = [S.up && `${S.up} upgraded`, S.deco && `${S.deco} decorated inside`, S.pigs && `${S.pigs} pig job${S.pigs > 1 ? 's' : ''}`].filter(Boolean).join(', ');
+      const msg = `Clear the grown ${what}? ${S.blocks} generated blocks go away: ${gone} buildings, their sidewalks and the generated streets.`
+        + (S.keep.length ? ` ${S.keep.length} of its buildings STAY as normal buildings, with their sidewalks and the streets beside them` + (kept ? ` (${kept})` : '') + (city ? '.' : ', including any homes your pigs still need the room in.') : '')
         + (S.own ? ` ${S.own} thing${S.own > 1 ? 's' : ''} you built inside the blocks also stay.` : '') + ' Everything else you built is not touched.';
       if (!(await askYes(msg, S.keep.length ? 'Clear the rest' : 'Clear it'))) return;
-      clearGrownCity(m); syncGrowBtn(); toast(S.keep.length ? `🧹 Grown ${place} cleared. Kept ${S.keep.length} buildings that are yours now.` : `🧹 The grown ${place} was cleared.`); sfx('tap'); return;
+      clearGrownCity(m); syncGrowBtn(); toast(S.keep.length ? `🧹 Grown ${what} cleared. Kept ${S.keep.length} buildings.` : `🧹 The grown ${what} was cleared.`); sfx('tap'); return;
     }
-    const question = city ? 'Grow a whole city on the empty land of Job City? Streets, sidewalks and city blocks fill every free spot. Nothing you built is touched, and the same button clears it again. (A copy of your town is kept first.)'
-      : 'Grow a whole town on the empty land of Home Town? Lanes, brick sidewalks, cottages with yards, a Main Street, hay meadows and village greens fill every free spot. Nothing you built is touched, and the same button clears it again. (A copy of your town is kept first.)';
-    if (!(await askYes(question, 'Grow it'))) return;
+    if (!(await askYes(city ? 'Grow a whole city on the empty land of Job City? Streets, sidewalks and city blocks fill every free spot. Nothing you built is touched, and the same button clears it again. (A copy of your town is kept first.)'
+      : 'Grow a small town on the empty land of Home Town? New streets, houses in five different looks, a town center, outlet shops, a police station, a fire station, a post office, a school, a chapel, farms, playgrounds and village greens fill the free spots. Nothing you built is touched, and the same button clears it again. (A copy of your town is kept first.)', 'Grow it'))) return;
     try { localStorage.setItem(city ? 'pigcity-backup-before-city' : 'pigcity-backup-before-town', JSON.stringify(G)); } catch (e) {}
-    const r = growCity(m); syncGrowBtn();
-    if (!r.blocks) { toast(`There was no free land to grow on in ${city ? 'Job City' : 'Home Town'}. Blocks that are mostly built up, or inside a neighborhood you drew, are left alone.`); return; }
-    sfx('goal'); celebrate(); hudRes();
-    toast(city ? `🏙️ The city grew: ${r.blocks} blocks, ${r.buildings} buildings and ${r.roads} street tiles. Try 🚶 street view!` : `🏡 Home Town grew: ${r.blocks} blocks, ${r.buildings} buildings and ${r.roads} lane tiles. Try 🚶 street view!`);
+    const r = city ? growCity() : growTown(); syncGrowBtn();
+    if (!city && !r.blocks) { toast(`There isn't enough empty land for new ${what} blocks right now. Clear some space and try again.`); return; }
+    sfx('goal'); celebrate();
+    toast(city ? `🏙️ The city grew: ${r.blocks} blocks, ${r.buildings} buildings and ${r.roads} street tiles. Try 🚶 street view!` : `🏘️ The town grew: ${r.blocks} blocks, ${r.buildings} buildings and ${r.roads} street tiles.`);
   });
   function drawBoat(c, x, y, dir, car, skin) {
     const t = G.time || 0, bob = Math.sin(t * 3 + x * .05) * 1.2;
@@ -7523,12 +8408,15 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     c.restore();
   }
   function drawPigAt(c, p) {
-    const P = iso(p.x, p.y), baby = p.age < 90, sc = baby ? .22 + .15 * Math.min(1, p.age / 90) : .4;
+    const previous = pigPoses.get(p), alpha = simulation ? simulation.pending / simulation.step : 1;
+    const smooth = previous && !paused && previous.map === pigMap(p) && Math.hypot(previous.x - p.x, previous.y - p.y) < 100;
+    const P = smooth ? iso(previous.x + (p.x - previous.x) * alpha, previous.y + (p.y - previous.y) * alpha) : iso(p.x, p.y), baby = p.age < 90, sc = baby ? .22 + .15 * Math.min(1, p.age / 90) : .4;
     const hop = p.hop > 0 ? Math.abs(Math.sin(p.hop * 16)) * 5 : 0;
     c.save(); c.translate(P.x, P.y - hop);
     c.fillStyle = 'rgba(0,0,0,.14)'; ell(c, 1, 9 + hop, 13 * sc / .36, 3.2); c.fill();
     if (p.id === selected) { c.strokeStyle = '#fff'; c.lineWidth = 2.5; ell(c, 0, 9 + hop, 17 * sc / .36, 6); c.stroke(); c.strokeStyle = '#e9b93b'; c.lineWidth = 1.2; c.stroke(); }
     c.scale(p.face * sc, sc); drawPig(c, p.skin, { sad: p.health < 35, sleep: p.nap > 0 });
+    { const uni = !baby && uniformOf(p); if (uni) drawUniform(c, uni, !(G.party && G.party.ids.includes(p.id) || evOn('parade'))); }
     if (G.party && G.party.ids.includes(p.id) || evOn('parade')) {
       c.save(); c.translate(20, -20); c.rotate(.35); c.fillStyle = G.party && G.party.ids.includes(p.id) ? '#e07a9a' : '#7fc1ea';
       c.beginPath(); c.moveTo(-9, 0); c.lineTo(0, -26); c.lineTo(9, 0); c.closePath(); c.fill(); c.lineWidth = 2.2; c.strokeStyle = INK; c.stroke();
@@ -8458,7 +9346,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
 
   function draw() {
     const c = ctx;
-    if (view === 'dash' || view === 'pcse') return;
+    if (view === 'dash' || view === 'pcse' || view === 'bank') return;
     if (showingOverview()) { drawBuildingOverview(c); return; }
     if (isHouse()) { drawHouse(c); return; }
     if (view === 'park') { drawPark(c); return; }
@@ -8505,6 +9393,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     if (!builder) for (const h of hoodsOf(view)) { const list = crowds.get(h.id); if (list) for (const a of list) if (onS(a.x, a.y)) items.push({ d: dw(a.x, a.y), f: () => drawWalker(c, a) }); }
     if (!builder && (view === 'home' || view === 'city')) for (const a of visitors[view]) if (onS(a.x, a.y)) items.push({ d: dw(a.x, a.y), f: () => drawWalker(c, a) });
     if (!builder && (view === 'home' || view === 'city')) for (const car of traffic.get(view) || []) { const p = carPos(car); if (onS(p.x, p.y)) items.push({ d: dw(p.x, p.y), f: () => drawTCar(c, car) }); }
+    if (!builder && (view === 'home' || view === 'city')) for (const call of calls[view]) { const n = sz(call.b.type), x = (call.b.x + n) * T, y = (call.b.y + n) * T; if (onS(x, y)) items.push({ d: dw(x + T * 2, y + T * 2), f: () => drawCall(c, call) }); }
     if (view === 'home' || view === 'city') for (const sg of signalsOf(view)) for (const [ox, oy, ax] of SIG_POLES) { const wx = (sg.x + ox) * T, wy = (sg.y + oy) * T; if (onS(wx, wy)) items.push({ d: dw(wx, wy), f: () => drawSignal(c, wx, wy, ax) }); }
     if (!builder) for (const p of G.pigs) {
       if (p.trip && pigMap(p) === view) { const tr = p.trip, P = iso(tr.x, tr.y), u = tr.x / T, far = view === 'home' ? u - (COLS + GPAD + 2) : -(GPAD + 2) - u, al = Math.max(0, Math.min(1, 1 - far / 4)); if (al > 0) items.push({ d: dw(tr.x, tr.y), f: () => { c.globalAlpha = al; if (isWater(view, Math.floor(tr.x / T), Math.floor(tr.y / T))) drawBoat(c, P.x, P.y, tr.dir, p.car, p.skin); else drawCar(c, P.x, P.y, tr.dir, p.car, p.skin, true, tr.spin); c.globalAlpha = 1; } }); }
@@ -8565,24 +9454,37 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   function syncBaby() { $('babyBtn').textContent = G.babiesOff ? '🍼 New piglets: paused (tap to resume)' : '🍼 New piglets: on (tap to pause)'; $('babyBtn').setAttribute('aria-pressed', G.babiesOff ? 'true' : 'false'); }
   $('babyBtn').addEventListener('click', () => { G.babiesOff = !G.babiesOff; syncBaby(); save(); sfx('tap'); toast(G.babiesOff ? '🍼 Piglets paused. Your town stays the same size while you plan.' : '🍼 Piglets are back! Happy pigs will have babies again.'); });
   // ---------- loop ----------
-  let last = 0, uiT = 0, saveT = 0, drawErrT = -1e9;
+  simulation = new PigSimulation.Clock();
+  simulation.every('production', .5, productionTick);
+  simulation.every('enhancements', 1, dt => {
+    if (typeof GameSystemsIntegration !== 'undefined') {
+      try { GameSystemsIntegration.update(G, G.pigs, dt); } catch (e) { console.error('game systems update failed', e); }
+    }
+  });
+  for (const [name, task] of simulation.tasks) {
+    const pending = G.simulation && G.simulation[name];
+    if (Number.isFinite(pending) && pending >= 0 && pending < task.interval) task.pending = pending;
+  }
+  let last = null, uiT = 0, drawErrT = -1e9;
+  // Autosave follows real time, including paused play and minimized windows.
+  setInterval(() => save(), 5000);
   function renderBanner() {
     const el = $('banner'), ev = G.event && EVENTS.find(e => e.id === G.event.id);
     const party = G.party && G.pigs.filter(p => G.party.ids.includes(p.id)).map(p => p.name);
-    const txt = readOnly ? '🔒 This town was saved by a newer version of Pig City. Update the game to keep playing. Nothing is saved here, so your progress is safe.'
+    const txt = saveProblem ? '⚠️ ' + saveProblem : recoveredSave ? '↩ A recovery save was opened. Export town to keep a separate copy.' : readOnly ? '🔒 This town was saved by a newer version of Pig City. Update the game to keep playing. Nothing is saved here, so your progress is safe.'
       : party && party.length ? `🎂 Birthday party for ${party.join(' & ')}!` : ev ? `${ev.e} ${ev.name}: ${ev.desc}` : '';
     el.hidden = !txt; if (txt && el.textContent !== txt) el.textContent = txt;
   }
   function loop(t) {
-    const dt = Math.min(.1, (t - last) / 1000 || 0); last = t;
-    if (!paused) for (let i = 0; i < G.speed; i++) tick(dt);
+    const elapsed = last === null ? 0 : Math.max(0, (t - last) / 1000); last = t;
+    const dt = Math.min(.1, elapsed);
+    simulation.advance(elapsed, G.speed, paused || readOnly || document.hidden, tick);
     // a drawing error must never stop the simulation or autosave: log it (once a second at most) and keep going
     applyWheelZoom(); panKeys(dt); streetTick(dt); updateMapHover(); try { draw(); } catch (e) { try { if (ctx.reset) ctx.reset(); } catch (e2) {} if (t - drawErrT > 1000) { drawErrT = t; console.error('Pig City: draw failed', e); } } sweepSprites(dt);
-    uiT -= dt; if (uiT <= 0) { uiT = .25; hudRes(); hudList(); renderPig(); syncTools(); hudGoals(); renderBld(); renderStocks(); renderBanner(); renderDash(); renderHoods(); renderIsleTabs(); renderParkPanel(); }
-    saveT -= dt; if (saveT <= 0) { saveT = 5; save(); }
+    uiT -= dt; if (uiT <= 0) { uiT = .25; hudRes(); hudList(); renderPig(); syncTools(); hudGoals(); renderBld(); renderStocks(); renderBanner(); renderDash(); renderBank(); renderHoods(); renderIsleTabs(); renderParkPanel(); }
     requestAnimationFrame(loop);
   }
-  document.addEventListener('visibilitychange', () => { if (document.hidden) save(); });
+  document.addEventListener('visibilitychange', () => { last = null; simulation.reset(); if (document.hidden) save(); });
   // Types saved by a newer Pig City (a building, ride or furniture piece this version doesn't know) get a harmless
   // stand-in definition so the town still draws and runs. Their saved data is left exactly as it was.
   function registerUnknownTypes() {
@@ -8599,9 +9501,9 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   if (readOnly) $('gameplayStatus').textContent = 'Tracking is paused for this newer save.';
   // test hook: only with ?debug in the URL (used by automated screenshot tests, never in normal play)
   if (/[?&]debug\b/.test(location.search)) window.__pc = {
-    get G() { return G; }, selectPig(id) { selected = id; renderPig(); }, B, DISTRICTS, setView, cams, cam, iso, T, save, crowds, presetLayout, checkLayout, sprites, kinds, chunkBuildings, districtStep, districtNear, draw, startStreet, stopStreet, streetTick, goInside, setBuilder, growCity,
+    get G() { return G; }, lockSave() { saveLocked = true; }, pause(value = true) { paused = value; }, simulation, productionTick, useTown, get saveProblem() { return saveProblem; }, selectPig(id) { selected = id; renderPig(); }, B, DISTRICTS, setView, cams, cam, iso, T, save, crowds, presetLayout, checkLayout, sprites, kinds, chunkBuildings, districtStep, districtNear, draw, startStreet, stopStreet, streetTick, goInside, setBuilder, growCity,
     setHover(x, y) { hover = { x, y }; }, setTool(t) { tool = t; }, place(key) { placeDistrict(key); }, select(b) { selBld = b; renderBld(); },
-    doll: { pt: dollPt, roomAt: dollRoomAt, hover: dollHoverRoom, box: dollBox, is: isDoll }, hoods: m => hoodsOf(m), at: (m, x, y) => listOf(m).find(b => covers(b, x, y)), walk: (m, h) => walkGrid(m, h), DECOR, sz, toScr: (tx, ty) => { const r = canvas.getBoundingClientRect(), p = isoToScr(iso(tx * T, ty * T)); return { x: p.x + r.left, y: p.y + r.top }; }, tick: (dt, n = 1) => { for (let i = 0; i < n; i++) tick(dt); }
+    hoods: m => hoodsOf(m), at: (m, x, y) => listOf(m).find(b => covers(b, x, y)), walk: (m, h) => walkGrid(m, h), DECOR, sz, toScr: (tx, ty) => { const r = canvas.getBoundingClientRect(), p = isoToScr(iso(tx * T, ty * T)); return { x: p.x + r.left, y: p.y + r.top }; }, tick: (dt, n = 1) => { for (let i = 0; i < n; i++) simulation.advance(dt, 1, false, tick); }
   };
   let seen = false, seen2 = false, seen3 = false;
   try { seen = !!localStorage.getItem('pigcity-seen'); seen2 = !!localStorage.getItem('pigcity-seen2'); seen3 = !!localStorage.getItem('pigcity-seen3'); localStorage.setItem('pigcity-seen', '1'); localStorage.setItem('pigcity-seen2', '1'); localStorage.setItem('pigcity-seen3', '1'); } catch (e) {}
@@ -8613,11 +9515,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     if (typeof GameSystemsIntegration === 'undefined') return;
     window.toast = toast; // the add-on systems show messages with toast() (window.toast was the #toast element)
     try { GameSystemsIntegration.initialize(G); } catch (e) { console.error('game systems init failed', e); return; }
-    const originalTick = tick;
-    tick = function (dt) {
-      originalTick(dt);
-      try { GameSystemsIntegration.update(G, G.pigs, dt); } catch (e) { console.error('game systems update failed', e); }
-    };
+
   });
 
   // Preserve the original save before adding optional tracking identities.

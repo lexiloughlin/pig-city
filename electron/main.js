@@ -9,6 +9,7 @@ const { app, BrowserWindow, Menu, dialog, ipcMain, net, protocol, session, shell
 const fs = require('fs');
 const path = require('path');
 const { pathToFileURL } = require('url');
+const SavePolicy = require('../assets/js/simulation');
 const { GameplayDB } = require('./gameplay-db');
 const { allowCloudURL } = require('./network-policy');
 
@@ -36,7 +37,7 @@ function readSave() {
   for (const f of [savePath(), backupPath()]) {
     try {
       const txt = fs.readFileSync(f, 'utf8');
-      JSON.parse(txt); // make sure it's whole before handing it to the game
+      SavePolicy.decode(txt); // reject truncated and structurally invalid towns
       return txt;
     } catch (e) { /* missing or damaged: try the next one */ }
   }
@@ -45,11 +46,14 @@ function readSave() {
 
 function writeSave(txt) {
   if (typeof txt !== 'string' || txt.length > MAX_SAVE_BYTES || txt[0] !== '{') return false;
+  SavePolicy.decode(txt);
   fs.mkdirSync(saveDir(), { recursive: true });
   const now = Date.now();
   // keep a backup copy, refreshed at most every 10 minutes
   if (now - lastBackup > 10 * 60 * 1000 && fs.existsSync(savePath())) {
-    try { fs.copyFileSync(savePath(), backupPath()); lastBackup = now; } catch (e) { /* not fatal */ }
+    const previous = fs.readFileSync(savePath(), 'utf8');
+    let valid = false; try { SavePolicy.decode(previous); valid = true; } catch (e) {}
+    if (valid) { fs.copyFileSync(savePath(), backupPath()); lastBackup = now; }
   }
   const tmp = savePath() + '.tmp';
   fs.writeFileSync(tmp, txt, 'utf8'); // write then rename, so a crash never leaves half a file
@@ -91,8 +95,29 @@ app.on('will-quit',()=>{if(gameplayDB)gameplayDB.close();});
 
 ipcMain.on('save:load', (e) => { e.returnValue = fromGame(e) ? readSave() : null; });
 ipcMain.on('save:write', (e, txt) => {
-  if (!fromGame(e)) return;
-  try { writeSave(txt); } catch (err) { console.error('save failed', err); }
+  let ok = false;
+  if (fromGame(e)) { try { ok = writeSave(txt); } catch (err) { console.error('save failed', err); } }
+  e.returnValue = ok;
+});
+
+const backupNames = new Set(['pigcity-manual-backup', 'pigcity-before-simulation']);
+ipcMain.on('save:backup', (e, key, text) => {
+  if (!fromGame(e) || !backupNames.has(key) || typeof text !== 'string' || text.length > MAX_SAVE_BYTES) { e.returnValue = false; return; }
+  let ok = false;
+  try {
+    SavePolicy.decode(text); fs.mkdirSync(saveDir(), {recursive:true});
+    const target = path.join(saveDir(), key + '.json'), tmp = target + '.tmp';
+    fs.writeFileSync(tmp, text, 'utf8'); fs.renameSync(tmp, target); ok = true;
+  } catch (err) { console.error('backup failed', err); }
+  e.returnValue = ok;
+});
+ipcMain.on('save:recovery', e => {
+  if (!fromGame(e)) { e.returnValue = []; return; }
+  const texts = [];
+  for (const name of ['pigcity-manual-backup.json', 'town.backup.json', 'pigcity-before-simulation.json', 'town.before-tracking.json']) {
+    try { const text = fs.readFileSync(path.join(saveDir(), name), 'utf8'); SavePolicy.decode(text); texts.push(text); } catch (err) {}
+  }
+  e.returnValue = texts;
 });
 
 ipcMain.handle('town:export', async (e, name, txt) => {

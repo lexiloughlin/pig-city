@@ -19,7 +19,10 @@
     "verify:mas": "node scripts/verify-mas.js",
     "test:tracking": "node scripts/test-gameplay-db.cjs && node scripts/test-network-policy.cjs && node scripts/test-game-bugs.cjs",
     "test:tracking:browser": "electron scripts/test-gameplay-browser.cjs",
-    "test:tracking:desktop": "electron scripts/test-gameplay-desktop.cjs"
+    "test:tracking:desktop": "electron scripts/test-gameplay-desktop.cjs",
+    "test:simulation": "node scripts/test-simulation.cjs && node scripts/test-city-chunks.cjs && node scripts/test-game-bugs.cjs",
+    "test:simulation:browser": "electron scripts/test-simulation-browser.cjs",
+    "test:simulation:desktop": "electron scripts/test-simulation-desktop.cjs"
   },
   "devDependencies": {
     "electron": "44.9.3",

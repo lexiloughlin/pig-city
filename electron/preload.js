@@ -12,7 +12,9 @@ contextBridge.exposeInMainWorld('pigDesktop', {
   exportGameplay: (name, text) => ipcRenderer.invoke('tracking:export', String(name), String(text)),
   // the saved town as text (or null); synchronous so the game can start with it
   loadSave: () => ipcRenderer.sendSync('save:load'),
-  writeSave: (text) => ipcRenderer.send('save:write', String(text)),
+  writeSave: (text) => ipcRenderer.sendSync('save:write', String(text)),
+  backupSave: (key, text) => ipcRenderer.sendSync('save:backup', key, String(text)),
+  recoverySaves: () => ipcRenderer.sendSync('save:recovery'),
   exportTown: (name, text) => ipcRenderer.invoke('town:export', String(name), String(text)),
   importTown: () => ipcRenderer.invoke('town:import'),
   onMenu: (cb) => ipcRenderer.on('menu', (_e, action) => cb(String(action))),
