@@ -41,3 +41,6 @@ npm run dist:dev   # build Pig City Dev.dmg for your own Mac
 The App Store build, signing, and the remaining Apple account steps are in [docs/MAC_APP_STORE.md](docs/MAC_APP_STORE.md). What changed for the sandbox is in [docs/SANDBOX_AUDIT.md](docs/SANDBOX_AUDIT.md).
 
 y
+## Gameplay database
+
+The active offline database, automatic Supabase syncing, exports and query examples are described in [Gameplay tracking](docs/GAMEPLAY_TRACKING.md). Older account/database prototypes are archived under `docs/legacy/`; they are not loaded by the game.

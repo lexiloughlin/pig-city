@@ -9,6 +9,8 @@ const { app, BrowserWindow, Menu, dialog, ipcMain, net, protocol, session, shell
 const fs = require('fs');
 const path = require('path');
 const { pathToFileURL } = require('url');
+const { GameplayDB } = require('./gameplay-db');
+const { allowCloudURL } = require('./network-policy');
 
 const SCHEME = 'app';
 const HOST = 'pig-city';
@@ -60,6 +62,32 @@ const fromGame = (e) => {
   const url = (e.senderFrame && e.senderFrame.url) || '';
   return url.startsWith(ORIGIN + '/');
 };
+
+// Tracking is kept in a separate SQLite file; town saves and their backups are untouched.
+let gameplayDB = null;
+const trackingDB = () => gameplayDB || (gameplayDB = new GameplayDB(path.join(app.getPath('userData'), 'Gameplay', 'gameplay.sqlite')));
+ipcMain.on('tracking:backup-save', (e) => {
+  e.returnValue = false; if (!fromGame(e)) return;
+  try {
+    const original = readSave(), target = path.join(saveDir(), 'town.before-tracking.json');
+    if (original && !fs.existsSync(target)) { fs.mkdirSync(saveDir(), {recursive:true}); fs.writeFileSync(target, original, {flag:'wx'}); }
+    e.returnValue = true;
+  } catch (err) { console.error('Tracking backup failed:', err); }
+});
+for (const [channel, run] of Object.entries({
+  put: events => trackingDB().put(events),
+  rows: (town, user, limit) => { if (typeof town!=='string' || (user!=null && typeof user!=='string')) throw Error('Invalid town'); return trackingDB().rows(town,user,Number.isFinite(limit)?Math.max(1,Math.min(1000000000,limit)):1000000000); },
+  claim: (town,user) => { if(typeof town!=='string'||typeof user!=='string')throw Error('Invalid owner');return trackingDB().claim(town,user); },
+  ack: (ids,user) => { if(!Array.isArray(ids)||ids.length>200||typeof user!=='string')throw Error('Invalid acknowledgment');return trackingDB().ack(ids,user); },
+})) ipcMain.handle('tracking:'+channel, (e,...args) => { if(!fromGame(e))throw Error('Only Pig City can access gameplay data');return run(...args); });
+ipcMain.handle('tracking:export', async(e,name,text) => {
+  if(!fromGame(e)||typeof text!=='string'||text.length>100*1024*1024)return {error:'Invalid gameplay export'};
+  const data=JSON.parse(text);if(data.format!=='pigcity-gameplay'||!Array.isArray(data.events))return {error:'Invalid gameplay export'};
+  const r=await dialog.showSaveDialog(BrowserWindow.fromWebContents(e.sender),{title:'Export gameplay data',defaultPath:String(name).replace(/[\\/:*?"<>|]+/g,'').slice(0,100),filters:[{name:'Gameplay data',extensions:['json']}]});
+  if(r.canceled||!r.filePath)return {canceled:true};
+  fs.writeFileSync(r.filePath,text,'utf8');return {ok:true};
+});
+app.on('will-quit',()=>{if(gameplayDB)gameplayDB.close();});
 
 ipcMain.on('save:load', (e) => { e.returnValue = fromGame(e) ? readSave() : null; });
 ipcMain.on('save:write', (e, txt) => {
@@ -184,8 +212,8 @@ if (!app.requestSingleInstanceLock()) {
   app.on('second-instance', () => { if (win) { if (win.isMinimized()) win.restore(); win.focus(); } });
 
   app.whenReady().then(() => {
-    // the game never needs the internet: refuse anything that isn't our own bundled files
-    session.defaultSession.webRequest.onBeforeRequest({ urls: ['http://*/*', 'https://*/*', 'ws://*/*', 'wss://*/*'] }, (d, cb) => cb({ cancel: true }));
+    // Only the configured Supabase auth and data APIs may leave the app.
+    session.defaultSession.webRequest.onBeforeRequest({ urls: ['http://*/*', 'https://*/*', 'ws://*/*', 'wss://*/*'] }, (d, cb) => cb({ cancel: !allowCloudURL(d.url) }));
     session.defaultSession.setPermissionRequestHandler((wc, perm, cb) => cb(false));
     session.defaultSession.setPermissionCheckHandler(() => false);
     protocol.handle(SCHEME, serve);

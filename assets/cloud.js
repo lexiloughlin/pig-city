@@ -1,10 +1,10 @@
-// Pig City cloud saves (web version). Signed-in players get their town saved to Supabase every
-// 30 seconds and can pick it up in any browser. Signed out, the game saves on the device as before.
-// The Mac app blocks all network access, so this does nothing there (see docs/SANDBOX_AUDIT.md).
+// One signed-in cloud session for browser and Mac saves plus offline gameplay sync.
+// Signed out or offline, the town and gameplay database stay on the device.
 (() => {
   'use strict';
   const T = window.pigTown;
-  if (!T || window.pigDesktop) return;
+  if (!T) return;
+  const desktop = !!window.pigDesktop;
   const SUPABASE_URL = 'https://mrbmybiwxayhhneixdgc.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_ftYMUq_X7eiDnKXDb3ac6Q_uZ7Mgbi8'; // publishable: safe in the page, row-level security guards the data
   const LINK_KEY = 'pigcity-cloud'; // which cloud town this browser plays, and the version it last saved
@@ -43,9 +43,18 @@
   async function signIn() {
     const email = await T.askText('Your email for cloud saves. We will send you a sign-in link.', '', 80);
     if (!email || !email.trim()) return;
-    const { error } = await sb.auth.signInWithOtp({ email: email.trim(), options: { emailRedirectTo: location.origin + location.pathname } });
+    const { error } = await sb.auth.signInWithOtp({ email: email.trim(), options: { emailRedirectTo: desktop ? 'https://lexiloughlin.github.io/pig-city/' : location.origin + location.pathname } });
     if (error) return T.tellBox('Could not send the sign-in link: ' + error.message);
-    T.tellBox(`Check ${email.trim()} for a sign-in link and open it in this browser. Your town keeps saving here meanwhile.`);
+    if (desktop) {
+      const input = await T.askText('Check your email. Copy the Pig City sign-in link without opening it, then paste it here. If your email shows a code instead, enter that code.', '', 4096);
+      if (!input || !input.trim()) return;
+      try {
+        const params = PigCloudAuth.verificationInput(email.trim(), input, SUPABASE_URL);
+        const { error: verifyError } = await sb.auth.verifyOtp(params);
+        if (verifyError) throw verifyError;
+        T.toast('Signed in. Your town and gameplay history will sync automatically.');
+      } catch (e) { await T.tellBox('Could not sign in: ' + e.message); }
+    } else T.tellBox(`Check ${email.trim()} for a sign-in link and open it in this browser. Your town keeps saving here meanwhile.`);
   }
   async function menu() {
     if (!user) return signIn();
@@ -61,7 +70,7 @@
       const { data: towns, error } = await sb.from('towns').select('id, name, version, updated_at, pig_count, building_count').order('updated_at', { ascending: false });
       if (error) throw error;
       const mine = link && link.user === user.id && towns.find(t => t.id === link.town);
-      if (mine) { if (mine.version !== link.version) await conflict(mine); else render(); return; }
+      if (mine) { if (mine.version !== link.version) await conflict(mine); else { render(); if (T.tracking) T.tracking.sync(); } return; }
       if (towns.length) {
         const t = towns[0];
         if (await T.askYes(`You have a town in the cloud: ${t.name}, with ${t.pig_count} pigs and ${t.building_count} buildings, saved ${ago(t.updated_at)}. Play it here? Cancel keeps this browser's town and saves it to the cloud as a new town.`, 'Play cloud town')) return pull(t.id);
@@ -72,13 +81,14 @@
   async function create() {
     if (locked()) return;
     const text = T.text(), s = T.summary();
-    const { data, error } = await sb.from('towns').insert({ player_id: user.id, name: s.name, state: JSON.parse(text), pig_count: s.pigs, building_count: s.buildings, coins: s.coins, device: 'web' }).select('id, version').single();
+    const { data, error } = await sb.from('towns').insert({ player_id: user.id, name: s.name, state: JSON.parse(text), pig_count: s.pigs, building_count: s.buildings, coins: s.coins, device: desktop ? 'mac' : 'web' }).select('id, version').single();
     if (error) {
       if (/town_limit/.test(error.message)) return T.tellBox('You already have 10 towns in the cloud, the most you can keep.');
       throw error;
     }
     setLink({ user: user.id, town: data.id, version: data.version });
     lastSent = text; savedAt = Date.now(); status = ''; render();
+    if (T.tracking) T.tracking.sync();
     T.toast('☁️ Your town is saved in the cloud!');
   }
   async function pull(id) {
@@ -87,6 +97,7 @@
     if (!T.valid(data.state)) return T.tellBox("That cloud town couldn't be loaded.");
     if (T.tooNew && T.tooNew(data.state)) return T.tellBox('That cloud town was saved by a newer version of Pig City. Update the game to play it. The town on this device was not changed.');
     try { localStorage.setItem('pigcity-before-cloud', T.text()); } catch (e) {} // this browser's old town, just in case
+    if (T.tracking) await T.tracking.prepareCloudState(data.state, id);
     leaving = true;
     setLink({ user: user.id, town: id, version: data.version });
     T.use(JSON.stringify(data.state));
@@ -114,7 +125,7 @@
     try {
       const { data, error } = await sb.rpc('save_town', {
         p_town_id: link.town, p_expected_version: link.version, p_state: JSON.parse(text),
-        p_name: s.name, p_pig_count: s.pigs, p_building_count: s.buildings, p_coins: s.coins, p_device: 'web',
+        p_name: s.name, p_pig_count: s.pigs, p_building_count: s.buildings, p_coins: s.coins, p_device: desktop ? 'mac' : 'web',
       });
       if (error) {
         busy = false;
@@ -124,7 +135,7 @@
       }
       setLink(Object.assign({}, link, { version: data }));
       lastSent = text; savedAt = Date.now(); status = '';
-      render();
+      render(); if (T.tracking) T.tracking.sync();
     } catch (e) { fail(e); } finally { busy = false; }
   }
 
@@ -132,7 +143,8 @@
   const lib = document.createElement('script');
   lib.src = 'assets/vendor/supabase-2.118.0.js';
   lib.onload = () => {
-    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: !desktop } });
+    if (T.tracking) T.tracking.connect(() => ({ client: sb, userId: user && user.id, canSync: !!linked() && !locked() && !leaving }));
     $('cloudBox').hidden = false;
     $('cloudBtn').addEventListener('click', menu);
     render();

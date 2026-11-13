@@ -4,6 +4,12 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('pigDesktop', {
   isApp: true,
+  backupBeforeTracking: () => ipcRenderer.sendSync('tracking:backup-save'),
+  gameplayPut: events => ipcRenderer.invoke('tracking:put', events),
+  gameplayRows: (town, user, limit) => ipcRenderer.invoke('tracking:rows', town, user, limit),
+  gameplayClaim: (town, user) => ipcRenderer.invoke('tracking:claim', town, user),
+  gameplayAck: (ids, user) => ipcRenderer.invoke('tracking:ack', ids, user),
+  exportGameplay: (name, text) => ipcRenderer.invoke('tracking:export', String(name), String(text)),
   // the saved town as text (or null); synchronous so the game can start with it
   loadSave: () => ipcRenderer.sendSync('save:load'),
   writeSave: (text) => ipcRenderer.send('save:write', String(text)),

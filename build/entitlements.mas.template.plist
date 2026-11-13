@@ -14,6 +14,9 @@
   <!-- Export Town / Import Town: only files the player picks in the save/open panel -->
   <key>com.apple.security.files.user-selected.read-write</key>
   <true/>
-  <!-- deliberately NOT requested: network, camera, microphone, location, contacts, downloads folder -->
+  <!-- Signed-in cloud saves and gameplay sync; local recording works offline. -->
+  <key>com.apple.security.network.client</key>
+  <true/>
+  <!-- Not requested: network server, camera, microphone, location, contacts, downloads folder. -->
 </dict>
 </plist>

@@ -252,7 +252,8 @@ const AccountSystem = {
 
     // Get current game state from window.pigTown (main game object)
     const T = window.pigTown;
-    if (!T || !T.text) return;
+    if (!T || !T.text || (T.readOnly && T.readOnly())) return;
+    const state = JSON.parse(T.text());
 
     const townData = {
       player_id: this.user.id,
@@ -260,10 +261,10 @@ const AccountSystem = {
       last_played: new Date().toISOString(),
       platform: this.getPlatform(),
       app_version: '1.0.0',
-      state: JSON.parse(T.text()),
-      pig_count: (T.pigs || []).length,
-      coin_total: T.coins || 0,
-      building_count: (T.buildings || []).length
+      state,
+      pig_count: (state.pigs || []).length,
+      coin_total: state.coins || 0,
+      building_count: (state.buildings || []).length
     };
 
     if (this.isDesktop) {

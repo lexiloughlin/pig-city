@@ -1,0 +1,10 @@
+const assert=require('node:assert/strict');
+const {allowCloudURL,CLOUD_ORIGIN}=require('../electron/network-policy');
+const {verificationInput}=require('../assets/js/cloud-auth');
+for(const path of ['/auth/v1/otp','/auth/v1/verify','/rest/v1/rpc/ingest_gameplay','/rest/v1/towns'])assert.equal(allowCloudURL(CLOUD_ORIGIN+path),true);
+for(const url of ['https://example.com/','http://mrbmybiwxayhhneixdgc.supabase.co/rest/v1/towns',CLOUD_ORIGIN+'.evil.test/rest/v1/towns',CLOUD_ORIGIN+':444/rest/v1/towns',CLOUD_ORIGIN+'/storage/v1/file','wss://mrbmybiwxayhhneixdgc.supabase.co/realtime/v1', 'https://mrbmybiwxayhhneixdgc.supabase.co@example.com/rest/v1/towns','https://user:password@mrbmybiwxayhhneixdgc.supabase.co/rest/v1/towns','not a URL'])assert.equal(allowCloudURL(url),false,url);
+assert.deepEqual(verificationInput('test@example.invalid','123456',CLOUD_ORIGIN),{email:'test@example.invalid',token:'123456',type:'email'});
+assert.deepEqual(verificationInput('test@example.invalid',CLOUD_ORIGIN+'/auth/v1/verify?token=example&type=magiclink',CLOUD_ORIGIN),{token_hash:'example',type:'magiclink'});
+assert.throws(()=>verificationInput('a@b.invalid','https://evil.test/auth/v1/verify?token=example&type=email',CLOUD_ORIGIN));
+assert.throws(()=>verificationInput('a@b.invalid',CLOUD_ORIGIN+'/auth/v1/verify?token=example&type=recovery',CLOUD_ORIGIN));
+console.log('PASS Supabase-only request policy, malicious URL rejection, desktop email-code/link parsing');

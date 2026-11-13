@@ -157,6 +157,15 @@ const AccountUI = {
         return false;
       }
 
+      if (!window.pigTown.valid(save.state)) {
+        await window.pigTown.tellBox('That saved game is not a valid Pig City town. Your current town was not changed.');
+        return false;
+      }
+      if (window.pigTown.tooNew(save.state)) {
+        await window.pigTown.tellBox('That town was made with a newer version of Pig City. Update the game first. Your current town was not changed.');
+        return false;
+      }
+
       const daysOld = Math.floor((Date.now() - new Date(save.last_played)) / 86400000);
       const confirm = await window.pigTown.askYes(
         `Load ${save.pig_count} pigs, ${save.building_count} buildings from ${platform} (saved ${daysOld} days ago)?`,

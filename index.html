@@ -413,6 +413,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
         <div class="btns"><button class="btn ghost" id="helpBtn2">How to play</button><button class="btn ghost" id="resetBtn">Start a new town</button></div>
         <div class="btns" style="margin-top:8px"><button class="btn ghost" id="exportBtn" title="Save a copy of your town to a file">💾 Export town</button><button class="btn ghost" id="importBtn" title="Load a town from a file you exported">📂 Import town</button></div>
         <input type="file" id="importFile" accept=".pigcity,.json,application/json" hidden>
+        <div style="margin-top:8px"><button class="btn ghost" id="gameplayBtn">📊 Export gameplay data</button><button class="btn ghost" id="gameplayImportBtn">📥 Import gameplay data</button><input id="gameplayImport" type="file" accept=".json,application/json" hidden><div class="small" id="gameplayStatus" style="margin-top:4px">Opening gameplay history…</div></div>
         <div id="cloudBox" hidden style="margin-top:8px"><button class="btn ghost" id="cloudBtn">☁️ Cloud save</button><div class="small" id="cloudStatus" style="margin-top:4px"></div></div>
       </div>
     </div>
@@ -462,6 +463,8 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   </div>
 </div>
 <script src="assets/sprites/manifest.js"></script>
+<script src="assets/js/gameplay-store.js"></script>
+<script src="assets/js/gameplay-tracking.js"></script>
 <script>
 (() => {
   const WHITE = '#fbf6ee', INK = '#3b2a1a';
@@ -1164,12 +1167,23 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     } catch (e) {}
     G = newTown();
   }
+  var tracking = null;
+  function trackEvent(kind, pig, data = {}, building = null) {
+    if (tracking && !readOnly) { try { tracking.record(kind, pig, data, building); } catch (e) { tracking.fail(e); console.error('Gameplay tracking:', e); } }
+  }
+  function trackCheckpoint() {
+    if (tracking && !readOnly) { try { tracking.checkpoint(); } catch (e) { tracking.fail(e); console.error('Gameplay tracking:', e); } }
+  }
+  var cityChunkRevision = 0;
   function save() {
+    cityChunkRevision++;
     if (saveLocked || readOnly) return;
+    trackCheckpoint();
     G.schema = SAVE_SCHEMA;
     let txt; try { txt = JSON.stringify(G); } catch (e) { return; }
     try { localStorage.setItem('pigcity-v1', txt); } catch (e) {}
     if (desk) { try { desk.writeSave(txt); } catch (e) {} }
+    if (tracking) tracking.flush().catch(e => tracking.fail(e));
   }
   function initExtras(fresh) {
     G.prod = G.prod || {};
@@ -1190,7 +1204,6 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     for (const b of G.city) b.map = 'city';
     G.jd = G.jd || { day: dayNum(), place: {}, pig: {}, total: 0 };
     G.jobHist = G.jobHist || [];
-    for (const b of G.buildings.concat(G.city)) if (b.lvl > 2) b.lvl = 2; // level 3 was removed: old saves come back as level 2
     for (const b of G.buildings) if (b.type === 'hutch' && !b.room) b.room = { wall: 0, floor: 0, items: [] };
     for (const p of G.pigs) if (p.loc === 'city' && !G.city.length) p.loc = 'home';
     if (!G.goalsDone) { G.goalsDone = []; if (!fresh) { G.catchup = true; G.stats.built = Math.max(G.stats.built, G.buildings.length - 5); } }
@@ -1221,17 +1234,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     p.bronson = true; p.car = { m: 'sport', c: '#1d2540' }; p.joy = 100;
     const m = G.pigs.find(q => q.banker); if (m) p.friend = m.id;
     G.pigs.push(p);
-    // Track Bronson in database
-    if (window.pigDatabase && G.playerId) {
-      window.pigDatabase.addPig({
-        pig_id: p.id,
-        player_id: G.playerId,
-        game_id: G.gameId || 'main',
-        name: p.name,
-        breed: 'bronson',
-        birth_date: new Date().toISOString()
-      }).catch(err => console.error('Failed to track Bronson:', err));
-    }
+    trackCheckpoint();
     popup(x, y - 24, 'CEO in town! 💰', '#1f2f5c');
     toast('💰 Bronson moved to Pig City to run Bron Corp as CEO!');
   }
@@ -1252,6 +1255,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
         G.mkt.news = '🎢 SQUEALTOPIA HIRES LEXI LOUGHLIN as Director of Fun! New roller coaster coming soon? FUNPIG SURGES +18% on hiring news! 🚀🐷';
       }
     }
+    trackCheckpoint();
     return true;
   }
   const workSpot = (b, slot) => { const n = sz(b.type); return { x: b.x * T + 7 + (slot % 3) * (n * T - 14) / 2, y: (b.y + n) * T + 7 + Math.floor(slot / 3) * 10 }; };
@@ -1510,19 +1514,23 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     const p = G.pigs.find(q => q.id === selected); if (!p) return;
     const v = e.target.value;
     p.job = null; p.working = false;
-    if (!v) { p.noJob = true; toast(`${p.name} is taking some time off to relax. 🌸`); }
+    if (!v) { p.noJob = true; trackEvent('job_left', p); toast(`${p.name} is taking some time off to relax. 🌸`); }
     else { const [m, xy] = v.split(':'), [x, y] = xy.split(',').map(Number); const b = listFor(m).find(q => q.x === x && q.y === y); if (b) hire(p, b); }
     jobSig = ''; listSig = ''; e.target.blur(); renderPig(); save();
   });
 
   $('petBtn').addEventListener('click', () => {
     const p = G.pigs.find(q => q.id === selected); if (!p || p.petCd > 0) return;
+    const before = p.joy;
     p.joy = Math.min(100, p.joy + 20); p.petCd = 4; p.hop = .6; p.nap = 0; G.stats.pets++; popup(p.x, p.y - 22, '♥', '#e07a9a'); sfx('wheek'); renderPig();
+    trackEvent('care', p, { action: 'pet', happiness_before: before, happiness_after: p.joy });
   });
   $('treatBtn').addEventListener('click', () => {
     const p = G.pigs.find(q => q.id === selected); if (!p || G.veg < 1) return;
+    const before = p.joy;
     const boost = has(p, 'foodie') ? 40 : 25;
     G.veg--; G.stats.treats++; p.joy = Math.min(100, p.joy + boost); p.food = Math.min(100, p.food + 15); p.hop = .6; p.nap = 0;
+    trackEvent('care', p, { action: 'treat', happiness_before: before, happiness_after: p.joy });
     popup(p.x, p.y - 22, `Wheek! ${FOODS[p.fav][0]}`, '#5f8f2e'); sfx('wheek'); renderPig(); hudRes();
   });
   $('carBtn').addEventListener('click', () => {
@@ -1965,6 +1973,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     text: () => JSON.stringify(G),
     summary: () => ({ name: (G.townName || 'Pig City').slice(0, 40), pigs: G.pigs.length, buildings: G.buildings.length, coins: Math.round(G.coins) }),
     valid: validTown, use: useTown, toast, ask, askText, askYes, tellBox,
+    get tracking() { return tracking; },
     readOnly: () => readOnly, tooNew: st => schemaOf(st) > SAVE_SCHEMA,
   };
   $('importBtn').addEventListener('click', async () => {
@@ -1998,10 +2007,10 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   }
   function renderBldCanvas(b) {
     const c = $('bcanvas').getContext('2d'); c.setTransform(2, 0, 0, 2, 0, 0); c.clearRect(0, 0, 220, 110);
-    const l = L(b), n = sz(b.type), lift = Math.max(...[l, Math.min(2, l + 1)].map(lv => htOf({ type: b.type, lvl: lv })));
+    const l = L(b), n = sz(b.type), lift = Math.max(...[l, Math.min(3, l + 1)].map(lv => htOf({ type: b.type, lvl: lv })));
     const k = Math.min(n > 1 ? .62 : 1.05, 90 / (lift + 2 * n * HH));
     const one = (lv, cx) => { c.save(); c.translate(cx, 104); c.scale(k, k); c.translate(0, -2 * n * HH); isoBuilding(c, { ...b, x: 0, y: 0, lvl: lv }, { x: 0, y: 0 }); c.restore(); };
-    if (l < 2 && !DECOR[b.type]) { one(l, 55); one(l + 1, 165); c.font = '24px Chewy, sans-serif'; c.textAlign = 'center'; c.fillStyle = '#c9a23a'; c.fillText('➜', 110, 72); }
+    if (l < 3 && !DECOR[b.type]) { one(l, 55); one(l + 1, 165); c.font = '24px Chewy, sans-serif'; c.textAlign = 'center'; c.fillStyle = '#c9a23a'; c.fillText('➜', 110, 72); }
     else one(l, 110);
   }
   // Squealtopia pieces (rides, food stands, park decor) use the same slide-out panel as town buildings
@@ -2909,7 +2918,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     $('buildTitle').textContent = v === 'park' ? `Build ${PARK_NAME} 🎢` : v === 'city' ? 'Build downtown 🏙️' : v === 'inside' ? `Decorate ${insideName(insideB)} ${isWork(insideB) ? '🪴' : '🛋️'}` : 'Build';
     drawTabs(); drawTools(); renderBld(); renderCozy();
     $('buildBar').hidden = !(v === 'home' || v === 'city'); $('growBtn').hidden = !(v === 'city' || v === 'home'); syncGrowBtn();
-    $('zoombar').hidden = false; roomLabels(); $('zWalls').hidden = !isHouse(); $('zStreet').hidden = v !== 'home' && v !== 'city'; $('zMap').hidden = v === 'inside' || v === 'park'; hoodSig = ''; parkPanelSig = ''; pSel = null; renderParkPanel();
+    $('zoombar').hidden = false; roomLabels(); $('zWalls').hidden = !isHouse() || isDoll(); $('zStreet').hidden = v !== 'home' && v !== 'city'; $('zMap').hidden = v === 'inside' || v === 'park'; hoodSig = ''; parkPanelSig = ''; pSel = null; renderParkPanel();
     if (map) { resize(); if ((v === 'home' || v === 'city' || v === 'park') && !cams[v].init) { camHome(v); cams[v].init = true; } if (isHouse()) houseCamHome(); }
     if (v === 'park' && !G.parkSeen) { G.parkSeen = true; ensurePark(); setTimeout(() => toast(`🎢 Welcome to ${PARK_NAME}! Build rides next to the paths, hire Ride Operators, and set your ticket price. Tourists start coming once you have rides.`), 200); }
     if (v === 'city' && G.cityNew) { G.cityNew = false; setTimeout(() => toast('🏙️ Welcome to Job City! Pigs with jobs here drive in around 8am and home after 5pm.'), 200); }
@@ -3231,6 +3240,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     G.weather = { k, t: 45 + Math.random() * 50 };
   }
   function newDay() {
+    trackCheckpoint();
     const d = dayNum(), yd = yearDay(d);
     pickFriends();
     if (G.jd.day !== d) { G.jobHist.push({ d: G.jd.day, v: Math.round(G.jd.total) }); if (G.jobHist.length > 20) G.jobHist.shift(); G.jd = { day: d, place: {}, pig: {}, total: 0 }; }
@@ -3320,6 +3330,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   }
   const cozyOf = b => { const its = b && (isHome(b) && b.house ? b.house.items : b.room ? b.room.items : null); return its ? its.reduce((s, it) => s + (F[it.k] ? F[it.k].cozy : 0), 0) : 0; };
   function logPay(p, b, pay) {
+    trackEvent('wage_paid', p, { amount: pay }, b);
     const J = G.jd; J.total += pay; J.pig[p.id] = (J.pig[p.id] || 0) + pay;
     const k = (b.map === 'city' ? '🏙️ ' : b.map === 'park' ? '🎢 ' : '🏡 ') + JOBS[b.type].place; J.place[k] = (J.place[k] || 0) + pay;
   }
@@ -3406,16 +3417,20 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
       if (p.nap > 0) { p.nap -= dt; p.joy += .3 * dt; }
       else if (!p.job && Math.random() < dt * (has(p, 'sleepy') ? .03 : .004) * (1 + dark * 4)) { p.nap = 8 + Math.random() * 10; }
       if (has(p, 'zoomies') && p.joy > 70 && Math.random() < dt * .08) { p.hop = .6; }
+      const foodBefore = p.food, waterBefore = p.water, joyBefore = p.joy;
       if (p.food < 70) {
         if (G.veg >= 1 && (p.joy < 50 || G.hay < 1)) { G.veg--; p.food += 25; p.joy += 10; p.hop = .3; }
         else if (G.hay >= 1) { G.hay--; p.food += 30; }
       }
       if (p.water < 70 && G.water >= 1) { G.water--; p.water += 35; }
+      if (p.food > foodBefore) trackEvent('care', p, { action: 'feed', source: 'automatic', food_before: foodBefore, food_after: p.food, happiness_before: joyBefore, happiness_after: p.joy });
+      if (p.water > waterBefore) trackEvent('care', p, { action: 'water', source: 'automatic', water_before: waterBefore, water_after: p.water });
       for (const k of ['food', 'water', 'joy']) p[k] = Math.max(0, Math.min(100, p[k]));
       const bad = p.food < 12 || p.water < 12 || p.joy < 8;
       p.health += (bad ? -1.6 : .5 + vets * 1.5) * dt;
       p.health = Math.max(0, Math.min(100, p.health));
       if (p.health <= 0) {
+        trackEvent('pig_relocated', p, { reason: 'grandmas_farm' });
         G.pigs.splice(i, 1);
         toast(`${p.name} moved to Grandma's farm to get better 🥲 Keep the food and water up!`);
         if (selected === p.id) selected = null;
@@ -3526,6 +3541,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
       if (st.act > 0) {
         st.act -= dt;
         if (st.act <= 0 && pig) {
+          const before = { happiness: pig.joy, food: pig.food, water: pig.water };
           pig.joy = Math.min(100, pig.joy + 25); pig.hop = .5; pig.sitCd = G.time + 8;
           let what = '♥';
           if (pig.food < 65) {
@@ -3533,6 +3549,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
             else if (G.hay >= 1) { G.hay--; pig.food = Math.min(100, pig.food + 30); what = '♥ 🌾'; }
           }
           if (pig.water < 65 && G.water >= 1) { G.water--; pig.water = Math.min(100, pig.water + 35); what += ' 💧'; }
+          trackEvent('care', pig, { action: 'sitter_care', source: 'sitter', before, after: { happiness: pig.joy, food: pig.food, water: pig.water } });
           popup(pig.x, pig.y - 22, what, '#e07a9a');
           st.target = null;
         }
@@ -3607,19 +3624,8 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
         baby.food = baby.water = 90; baby.joy = 90; baby.bday = yearDay(dayNum()); baby.friend = a.id;
         baby.trait = Math.random() < .5 ? pick([a.trait, b.trait]) : pick(TRAIT_KEYS);
         G.pigs.push(baby); G.born++; sfx('baby');
-        // Track new baby in database
-        if (window.pigDatabase && G.playerId) {
-          window.pigDatabase.addPig({
-            pig_id: baby.id,
-            player_id: G.playerId,
-            game_id: G.gameId || 'main',
-            name: baby.name,
-            breed: 'mixed',
-            birth_date: new Date().toISOString(),
-            parent_1_id: a.id,
-            parent_2_id: b.id
-          }).catch(err => console.error('Failed to track baby:', err));
-        }
+        trackCheckpoint();
+        trackEvent('birth', baby, { parent_ids: [a.trackingId, b.trackingId] });
         popup(baby.x, baby.y - 24, 'New baby! 🍼', '#e07a9a');
         toast(`${a.name} and ${b.name} had a baby: ${name}! 🍼`);
         const t = townTitle(G.pigs.length);
@@ -3914,7 +3920,6 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   function drawBuilding(c, b) {
     const x = b.x * T, y = b.y * T, cx = x + T / 2;
     c.save(); c.lineJoin = 'round'; c.lineWidth = 2; c.strokeStyle = INK;
-    if (L(b) === 3 && MODERN[b.type]) { MODERN[b.type](c, x, y, b); c.restore(); return; }
     switch (b.type) {
       case 'hutch': drawCastle(c, x, y, L(b) === 2); break;
       case 'hospital': drawHospital(c, x, y, b); break;
@@ -5268,6 +5273,40 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   // what part of the iso world is on screen right now (with a margin)
   function viewRect(m = 0) { const cm = cam(), hw = vw / 2 / cm.z + m, hh = vh / 2 / cm.z + m; return { x0: cm.x - hw, x1: cm.x + hw, y0: cm.y - hh, y1: cm.y + hh }; }
   function bOnScreen(b, R) { const n = sz(b.type), o = iso(b.x * T, b.y * T); return o.x + n * HW + 40 > R.x0 && o.x - n * HW - 40 < R.x1 && o.y + 2 * n * HH + 30 > R.y0 && o.y - htOf(b) - 120 < R.y1; }
+  // Spatial chunks are runtime indexes only; saved building objects remain authoritative.
+  // Bounds include the entire artwork, so tall buildings do not disappear at chunk edges.
+  const cityChunks = new WeakMap(), districtCadence = new WeakMap();
+  function chunkBuildings(list, R) {
+    let cache = cityChunks.get(list);
+    if (!cache || cache.revision !== cityChunkRevision || cache.road !== roadVer || cache.length !== list.length) {
+      const chunks = new Map();
+      for (const b of list) {
+        const key = Math.floor(b.x / 8) + ',' + Math.floor(b.y / 8);
+        let ch = chunks.get(key);
+        if (!ch) chunks.set(key, ch = { buildings: [], x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity });
+        const n = sz(b.type), o = iso(b.x * T, b.y * T);
+        ch.buildings.push(b);
+        ch.x0 = Math.min(ch.x0, o.x - n * HW - 40); ch.x1 = Math.max(ch.x1, o.x + n * HW + 40);
+        ch.y0 = Math.min(ch.y0, o.y - htOf(b) - 120); ch.y1 = Math.max(ch.y1, o.y + 2 * n * HH + 30);
+      }
+      cache = { chunks, revision: cityChunkRevision, road: roadVer, length: list.length }; cityChunks.set(list, cache);
+    }
+    const result = [];
+    for (const ch of cache.chunks.values()) if (ch.x1 > R.x0 && ch.x0 < R.x1 && ch.y1 > R.y0 && ch.y0 < R.y1) result.push(...ch.buildings);
+    return result;
+  }
+  function districtNear(m, h) {
+    if (view !== m) return false;
+    const R = viewRect(240), corners = [[h.x, h.y], [h.x + h.w, h.y], [h.x, h.y + h.h], [h.x + h.w, h.y + h.h]].map(([x, y]) => iso(x * T, y * T));
+    return Math.max(...corners.map(p => p.x)) > R.x0 && Math.min(...corners.map(p => p.x)) < R.x1 && Math.max(...corners.map(p => p.y)) > R.y0 && Math.min(...corners.map(p => p.y)) < R.y1;
+  }
+  // Accumulate game time, including accelerated time; never discard distant time.
+  // A quarter-second coarse step keeps shops active without per-frame crowd path work.
+  function districtStep(m, h, dt) {
+    const elapsed = (districtCadence.get(h) || 0) + dt;
+    if (!districtNear(m, h) && elapsed < .25) { districtCadence.set(h, elapsed); return 0; }
+    districtCadence.set(h, 0); return elapsed;
+  }
   function camHome(v) { if (v === 'park') { const c0 = cams.park, p = iso((PCOLS / 2 + 4) * T, (PROWS / 2) * T); c0.x = p.x; c0.y = p.y - 40; c0.z = Math.max(.45, Math.min(.85, vw / 1300)); return; } const c0 = cams[v], p = iso(9 * T, 6.5 * T); c0.x = p.x; c0.y = p.y; c0.z = Math.max(.5, Math.min(1, vw / 980)); }
   function mapFitZoom(bounds) {
     return Math.min(vw / (bounds.x1 - bounds.x0), vh / (bounds.y1 - bounds.y0));
@@ -5689,6 +5728,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   }
   function houseTick(dt) {
     if (!isHouse()) return;
+    if (isDoll()) return dollTick(dt);
     const pl = planOf(insideB), H = ensureHouse(insideB), dk = darkness();
     const beds = H.items.filter(i => i.k === 'bed' || i.k === 'hidey' || i.k === 'couch');
     const spots = []; for (const b of beds) { const n = b.k === 'hidey' ? 1 : (F[b.k].w || 1); for (let i = 0; i < n; i++) spots.push(b.r ? [b.x + .55, b.y + i + .5] : [b.x + i + .5, b.y + .55]); }
@@ -5809,7 +5849,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     if (view === 'inside') $('buildTitle').textContent = houseRoom ? `Decorate the ${houseRoom} 🛋️` : `Decorate ${insideName(insideB)} ${isWork(insideB) ? '🪴' : '🛋️'}`;
     $('roomBack').hidden = overview;
     $('roomBack').textContent = isHome(insideB) ? '← Whole home' : '← Building overview';
-    $('zWalls').hidden = !isHouse();
+    $('zWalls').hidden = !isHouse() || isDoll();
   }
   function houseCamRoom() {
     const r = curRoom(); if (!r) return;
@@ -5921,6 +5961,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     return (dotPat = c.createPattern(cv, 'repeat'));
   }
   function drawHouse(c) {
+    if (isDoll()) return drawDollhouse(c);
     const b = insideB, pl = planOf(b), H = ensureHouse(b), o = { x: 0, y: 0 }, t = G.time || 0, dk = darkness(), RM = curRoom();
     spriteBudget = 12;
     c.setTransform(dprNow, 0, 0, dprNow, 0, 0);
@@ -5988,6 +6029,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     c.globalAlpha = 1;
   }
   function houseClick(sp) {
+    if (isDoll()) return dollClick(sp);
     const b = insideB, H = ensureHouse(b), pl = planOf(b), s = scrToIso(sp.x, sp.y), wpt = isoToWorld(s), tx = Math.floor(wpt.x / T), ty = Math.floor(wpt.y / T), o = { x: 0, y: 0 };
     const pop = (u, v, txt, col) => { const [px, py] = IP(o, u, v, 30); popup(px, py, txt, col, 'inside'); };
     const RM = curRoom();
@@ -6025,7 +6067,121 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   }
   function turnPlacing() { placeRot ^= 1; sfx('tap'); syncTools(); }
   document.addEventListener('click', e => { if (e.target && e.target.id === 'turnBtn') { e.stopPropagation(); turnPlacing(); } });
-  function houseCamHome() { const pl = planOf(insideB), p = { x: (pl.W - pl.H) / 2 * HW, y: (pl.W + pl.H) / 2 * HH - 20 }; cams.inside.x = p.x; cams.inside.y = p.y; cams.inside.z = Math.max(.6, Math.min(1.5, Math.min(vw / ((pl.W + pl.H) * HW + 60), vh / ((pl.W + pl.H) * HH + 120)))); }
+  function houseCamHome() { if (isHome(insideB) && L(insideB) === 3) return dollCam(); const pl = planOf(insideB), p = { x: (pl.W - pl.H) / 2 * HW, y: (pl.W + pl.H) / 2 * HH - 20 }; cams.inside.x = p.x; cams.inside.y = p.y; cams.inside.z = Math.max(.6, Math.min(1.5, Math.min(vw / ((pl.W + pl.H) * HW + 60), vh / ((pl.W + pl.H) * HH + 120)))); }
+  // ---------- the Cavy Apartments dollhouse ----------
+  // A fully upgraded pig home is the painted Pig City Apts building on the map. Going inside shows the painting's cutaway
+  // side as a dollhouse: your pigs live in it, wander the rooms, ride the elevator between floors and sleep in the beds
+  // at night. Tapping a room still opens the normal room decorator (the furniture you place lives there); ← Whole home
+  // comes back to the dollhouse.
+  const DOLL = { src: 'assets/sprites/buildings/cavy-apartments.webp', night: 'assets/sprites/buildings/cavy-apartments-night.webp', k: 2, cx: 0, cy: 330, elev: 752 };
+  // the rooms of the cutaway, in picture pixels (912 wide): x0..x1, y0..y1 is the room, fy is where pigs' feet go;
+  // `name` links a hotspot to a room of the level-3 floor plan (tap to decorate), the rest are places pigs just like to be
+  const DOLL_ROOMS = [
+    { name: 'Bedroom', x0: 332, x1: 508, y0: 212, y1: 342, fy: 330, bed: [405, 318] },
+    { name: 'Bathroom', x0: 510, x1: 598, y0: 212, y1: 342, fy: 330 },
+    { name: 'Kitchen', x0: 600, x1: 845, y0: 212, y1: 342, fy: 330 },
+    { name: 'Media Room', x0: 332, x1: 508, y0: 370, y1: 500, fy: 488, bed: [352, 478] },
+    { name: null, label: 'Bathroom', x0: 510, x1: 598, y0: 370, y1: 500, fy: 488 },
+    { name: 'Dining Room', x0: 600, x1: 845, y0: 370, y1: 500, fy: 488 },
+    { name: null, label: 'Bedroom', x0: 332, x1: 508, y0: 516, y1: 642, fy: 630, bed: [392, 618] },
+    { name: null, label: 'Bathroom', x0: 510, x1: 598, y0: 516, y1: 642, fy: 630 },
+    { name: 'Living Room', x0: 600, x1: 845, y0: 516, y1: 642, fy: 630, bed: [690, 624] },
+    { name: null, label: 'Lobby', x0: 345, x1: 760, y0: 655, y1: 815, fy: 795 },
+    { name: 'Playroom', label: 'Rooftop Garden', x0: 190, x1: 600, y0: 55, y1: 190, fy: 172, bed: [300, 172] } // last so the rooftop lounger is the bed nobody gets until the real beds are taken
+  ];
+  const isDoll = () => isHouse() && L(insideB) === 3 && !houseRoom;
+  const dollPigs = new Map();
+  const dollImg = () => { const im = sprLoad(darkness() > .45 ? DOLL.night : DOLL.src); return im.complete && im.naturalWidth && !im.bad ? im : null; };
+  const dollBox = () => { const im = sprLoad(DOLL.src), W = (im.naturalWidth || 912) / DOLL.k, H = (im.naturalHeight || 955) / DOLL.k; return { W, H, ox: DOLL.cx - W / 2, oy: DOLL.cy - H / 2 }; };
+  const dollRoomAt = (x, y) => DOLL_ROOMS.find(r => x >= r.x0 && x <= r.x1 && y >= r.y0 && y <= r.y1) || null;
+  function dollPt(sp) { const s = scrToIso(sp.x, sp.y), B2 = dollBox(); return { x: (s.x - B2.ox) * DOLL.k, y: (s.y - B2.oy) * DOLL.k }; }
+  function dollHoverRoom() { if (!mapPointer) return null; const r = canvas.getBoundingClientRect(), p = dollPt({ x: mapPointer.clientX - r.left, y: mapPointer.clientY - r.top }); return dollRoomAt(p.x, p.y); }
+  function dollCam() { const { W, H } = dollBox(); cams.inside.x = DOLL.cx; cams.inside.y = DOLL.cy; cams.inside.z = Math.max(.5, Math.min(3, Math.min(vw / (W + 40), vh / (H + 40)))); }
+  // a walk from one spot to another: along the floor, and by the elevator when the floors differ
+  function dollPath(from, to) {
+    const r0 = dollRoomAt(from.x, from.y), r1 = dollRoomAt(to[0], to[1]), f0 = r0 ? r0.fy : from.y, f1 = r1 ? r1.fy : to[1];
+    if (Math.abs(f0 - f1) < 2) return [to];
+    return [[DOLL.elev, f0], [DOLL.elev, f1], to];
+  }
+  function dollTick(dt) {
+    const dk = darkness(), beds = DOLL_ROOMS.filter(r => r.bed).map(r => r.bed), res = houseResidents();
+    for (const id of [...dollPigs.keys()]) if (!res.some(p => p.id === id)) dollPigs.delete(id);
+    res.forEach((p, idx) => {
+      let s = dollPigs.get(p.id);
+      if (!s) { s = { x: 560 + (idx % 3) * 50, y: 795, path: [], wait: .5 + Math.random() * 2, face: 1, lift: false }; dollPigs.set(p.id, s); }
+      const sleepy = dk > .6 || p.nap > 0, bed = beds[idx % beds.length];
+      if (sleepy && !s.sleep) { s.sleep = true; s.path = dollPath(s, [bed[0] + (idx >= beds.length ? 26 : 0), bed[1]]); }
+      if (!sleepy && s.sleep) { s.sleep = false; s.path = []; s.wait = .5; }
+      if (s.path.length) {
+        const [tx, ty] = s.path[0], dx = tx - s.x, dy = ty - s.y, d = Math.hypot(dx, dy), sp = (Math.abs(dy) > Math.abs(dx) ? 90 : 55) * dt;
+        s.lift = Math.abs(dy) > Math.abs(dx);
+        if (Math.abs(dx) > .5) s.face = dx > 0 ? 1 : -1;
+        if (d <= sp) { s.x = tx; s.y = ty; s.path.shift(); } else { s.x += dx / d * sp; s.y += dy / d * sp; }
+        s.moving = true; return;
+      }
+      s.moving = false; s.lift = false;
+      if (s.sleep) return;
+      s.wait -= dt;
+      if (s.wait <= 0) {
+        s.wait = 3 + Math.random() * 5;
+        const r = pick(DOLL_ROOMS), x = r.x0 + 18 + Math.random() * (r.x1 - r.x0 - 36);
+        s.path = dollPath(s, [x, r.fy]);
+      }
+    });
+  }
+  function drawDollhouse(c) {
+    const b = insideB, dk = darkness(), t = G.time || 0, k = DOLL.k, { W, H, ox, oy } = dollBox();
+    c.setTransform(dprNow, 0, 0, dprNow, 0, 0);
+    { const g = c.createLinearGradient(0, 0, 0, vh); g.addColorStop(0, dk > .5 ? '#2b3566' : '#cfe8f7'); g.addColorStop(1, dk > .5 ? '#4a3f6b' : '#fbe3ea'); c.fillStyle = g; c.fillRect(0, 0, vw, vh); }
+    setCamTransform(c);
+    const im = dollImg();
+    if (!im) { c.font = 'bold 14px Nunito, sans-serif'; c.textAlign = 'center'; c.fillStyle = INK; c.fillText('Opening the door…', DOLL.cx, DOLL.cy); return; }
+    c.fillStyle = 'rgba(0,0,0,.14)'; ell(c, DOLL.cx, oy + H - 6, W * .46, 14); c.fill();
+    c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high'; c.drawImage(im, ox, oy, W, H);
+    if (window.__dollRects) for (const r of DOLL_ROOMS) { c.strokeStyle = r.name ? '#e0483f' : '#5aa9e0'; c.lineWidth = 1; c.strokeRect(ox + r.x0 / k, oy + r.y0 / k, (r.x1 - r.x0) / k, (r.y1 - r.y0) / k); c.fillStyle = '#2f3440'; c.fillRect(ox + (r.x0 + 8) / k, oy + r.fy / k - 1, (r.x1 - r.x0 - 16) / k, 1.5); if (r.bed) { c.fillStyle = '#f48fb1'; c.fillRect(ox + r.bed[0] / k - 3, oy + r.bed[1] / k - 3, 6, 6); } }
+    // the room under the pointer
+    const hr = dollHoverRoom();
+    if (hr && !tool) {
+      const x = ox + hr.x0 / k, y = oy + hr.y0 / k, w = (hr.x1 - hr.x0) / k, h = (hr.y1 - hr.y0) / k;
+      c.fillStyle = 'rgba(255,255,255,.16)'; rr(c, x, y, w, h, 5); c.fill(); c.strokeStyle = 'rgba(255,255,255,.9)'; c.lineWidth = 1.6; c.stroke();
+      const txt = hr.name ? `${hr.name} · tap to decorate` : hr.label; c.font = 'bold 10px Nunito, sans-serif'; const tw = c.measureText(txt).width + 14;
+      c.fillStyle = 'rgba(255,255,255,.92)'; rr(c, x + w / 2 - tw / 2, y - 18, tw, 16, 8); c.fill(); c.strokeStyle = '#5b3b2a'; c.lineWidth = 1.2; c.stroke(); c.fillStyle = INK; c.textAlign = 'center'; c.fillText(txt, x + w / 2, y - 6.5);
+    }
+    // the pigs who live here, back to front
+    const res = houseResidents().filter(p => dollPigs.has(p.id)).sort((a, b2) => dollPigs.get(a.id).y - dollPigs.get(b2.id).y);
+    for (const p of res) {
+      const s = dollPigs.get(p.id), px = ox + s.x / k, py = oy + s.y / k, sc = (p.age < 90 ? .2 : .27), bob = s.moving && !s.lift ? Math.abs(Math.sin(t * 10 + p.id)) * 1.2 : 0;
+      c.save(); c.translate(px, py - bob);
+      if (s.lift) { c.globalAlpha = .55; } // riding the elevator: behind the kitchen wall
+      c.fillStyle = 'rgba(0,0,0,.16)'; ell(c, 0, 1 + bob, 11, 2.8); c.fill();
+      if (p.id === selected) { c.strokeStyle = '#fff'; c.lineWidth = 2; ell(c, 0, 1 + bob, 14, 4.5); c.stroke(); }
+      c.translate(0, -22 * sc); c.scale(s.face * sc, sc); drawPig(c, p.skin, { sleep: s.sleep && !s.path.length }); c.restore();
+      c.textAlign = 'center';
+      if (s.sleep && !s.path.length) { c.font = '9px Chewy, sans-serif'; c.fillStyle = '#1f2f5c'; const k2 = (t * .8 + p.id) % 1; c.globalAlpha = 1 - k2; c.fillText('z', px + 7 + k2 * 4, py - 14 - k2 * 8); c.fillText('Z', px + 11 + k2 * 3, py - 20 - k2 * 6); c.globalAlpha = 1; }
+      else if (p.id === selected || !s.moving) { c.font = 'bold 7px Nunito, sans-serif'; c.lineWidth = 2.5; c.strokeStyle = 'rgba(255,255,255,.85)'; c.strokeText(p.name, px, py - 16); c.fillStyle = INK; c.fillText(p.name, px, py - 16); }
+    }
+    // popups + confetti, same as the house
+    c.textAlign = 'center'; c.font = '13px Chewy, "Comic Sans MS", sans-serif';
+    for (const q of popups) { if (q.map !== 'inside' && q.map !== 'any') continue; const P = q.map === 'inside' ? { x: q.x, y: q.y } : iso(q.x, q.y); c.globalAlpha = Math.min(1, q.life / .4); c.lineWidth = 3.5; c.strokeStyle = '#fff'; c.strokeText(q.text, P.x, P.y); c.fillStyle = q.color; c.fillText(q.text, P.x, P.y); }
+    c.globalAlpha = 1; c.setTransform(dprNow, 0, 0, dprNow, 0, 0);
+    const away = houseResidents(true).filter(p => !houseResidents().includes(p));
+    c.font = 'bold 12px Nunito, sans-serif'; c.textAlign = 'left';
+    const lines = [away.length ? 'Out right now: ' + away.map(p => p.name + (p.trip || pigMap(p) === 'city' ? ' 🚗' : p.state ? ' 🏥' : '')).join(', ') : '', 'Tap a room to step inside and decorate it · tap a pig to check on it'].filter(Boolean);
+    lines.forEach((txt, i) => { const w = c.measureText(txt).width; const y = vh - 14 - (lines.length - 1 - i) * 24; c.fillStyle = 'rgba(255,255,255,.88)'; rr(c, 10, y - 15, w + 16, 22, 11); c.fill(); c.fillStyle = INK; c.fillText(txt, 18, y); });
+    for (const q of confetti) { c.globalAlpha = Math.min(1, q.life / .5); c.save(); c.translate(q.x, q.y); c.rotate(q.r); c.fillStyle = q.c; c.fillRect(-3, -1.5, 6, 3); c.restore(); }
+    c.globalAlpha = 1;
+  }
+  function dollClick(sp) {
+    const p = dollPt(sp), k = DOLL.k, { ox, oy } = dollBox(), s = scrToIso(sp.x, sp.y);
+    let best = null, bd = 16;
+    for (const q of houseResidents()) { const st = dollPigs.get(q.id); if (!st) continue; const d = Math.hypot(ox + st.x / k - s.x, oy + st.y / k - 8 - s.y); if (d < bd) { bd = d; best = q; } }
+    if (best) { selected = best.id; best.hop = .4; const st = dollPigs.get(best.id); popup(ox + st.x / k, oy + st.y / k - 22, '♥', '#e07a9a', 'inside'); renderPig(true); listSig = ''; sfx('wheek'); return; }
+    const r = dollRoomAt(p.x, p.y);
+    if (tool || cat === 'style') { toast(r && r.name ? `Tap the ${r.name} to step inside, then place it there.` : 'Step into a room first: tap one of the rooms to decorate it.'); if (r && r.name) enterRoom(r.name); return; }
+    if (r && r.name) enterRoom(r.name);
+    else if (r) toast(`${r.label}: the neighbors' place. Your rooms are the ones with names.`);
+  }
+
   // ================= URBAN PLANNING =================
   const ZONES = {
     res:  { e: '🏡', name: 'Residential', col: '#7fc1ea', tip: 'Pigs who live here stay happier when the neighborhood has a park or 3+ decorations.' },
@@ -6987,6 +7143,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   // one customer pays one shop (only while it has staff); x, y = where to show the coins
   function payShop(m, b, x, y) {
     const pay = Math.max(1, Math.round(PROFILE[b.type].spend * MULT[L(b) - 1])), d = dayNum();
+    trackEvent('customer_payment', null, { amount: pay }, b);
     G.coins += pay; b.rev = (b.rev || 0) + pay; b.cust = (b.cust || 0) + 1; if (!b.cd || b.cd[0] !== d) b.cd = [d, 0]; b.cd[1]++;
     G.stats.custPay = (G.stats.custPay || 0) + pay;
     if (view === m) { popup(x, y - 16, `+${pay} 🪙`, '#a77c4c', m); if (Math.random() < .3) sfx('coin'); }
@@ -7043,8 +7200,14 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     const hr = hourNow(), we = isWeekend(), rain = G.weather.k === 'rain' || G.weather.k === 'snow';
     for (const m of ['home', 'city']) for (const h of hoodsOf(m)) {
       const P = h.preset && DISTRICTS[h.preset]; if (!P || !h.spots || !h.spots.length) continue;
+      const step = districtStep(m, h, dt); if (!step) continue;
+      updateDistrict(m, h, P, step, hr, we, rain);
+    }
+    if (Math.random() < dt) for (const id of crowds.keys()) if (!hoodsOf('home').some(h => h.id === id) && !hoodsOf('city').some(h => h.id === id)) { crowds.delete(id); traffic.delete(id); walkCache.delete(id); }
+  }
+  function updateDistrict(m, h, P, dt, hr, we, rain) {
       let list = crowds.get(h.id); if (!list) crowds.set(h.id, list = []);
-      const g = walkGrid(m, h); if (!g.spots.length) continue;
+      const g = walkGrid(m, h); if (!g.spots.length) return;
       const want = Math.round((P.crowd || 4) * busyness(P.kind, hr, we) * (rain ? .5 : 1));
       if (list.length < want && Math.random() < dt * 1.1) {
         const s = walkerStart(h), look = walkerLook(P.kind);
@@ -7072,8 +7235,6 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
         if (list.length > want && Math.random() < .6) { a.leave = true; continue; }
         nextWalkerGoal(a, h, g, hr, we);
       }
-    }
-    if (Math.random() < dt) for (const id of crowds.keys()) if (!hoodsOf('home').some(h => h.id === id) && !hoodsOf('city').some(h => h.id === id)) { crowds.delete(id); traffic.delete(id); walkCache.delete(id); }
   }
   function drawWalker(c, a) {
     const P = iso(a.x, a.y), al = a.al * a.vis; if (al < .03) return;
@@ -7705,7 +7866,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
             else { // stands
               const S = STANDS[b.type], sold = staffed(b) || Math.random() < .6;
               if (sold) {
-                if (p) { if (S.food) p.food = Math.min(100, p.food + S.food); if (S.water) p.water = Math.min(100, p.water + S.water); if (S.joy) p.joy = Math.min(100, p.joy + S.joy); popup(a.x, a.y - 22, S.ic, '#c96a85', 'park'); }
+                if (p) { trackEvent('care', p, { action: 'park_snack', source: 'park', item: b.type }); if (S.food) p.food = Math.min(100, p.food + S.food); if (S.water) p.water = Math.min(100, p.water + S.water); if (S.joy) p.joy = Math.min(100, p.joy + S.joy); popup(a.x, a.y - 22, S.ic, '#c96a85', 'park'); }
                 else { a.food += S.food || 0; a.water += S.water || 0; a.joy += S.joy || 0; P.stats.snacks++; payAt(a.x, a.y - 22, S.sell * (staffed(b) ? 1 : 1), `+${S.sell} 🪙 ${S.ic}`); }
               }
               a.last = b; a.state = 'snack'; a.t = 1.5 + Math.random();
@@ -8329,11 +8490,12 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     // depth-sorted scene
     const items = [], dw = (x, y) => (x + y) / T, VR = viewRect(), onS = (x, y, m = 60) => { const P = iso(x, y); return P.x > VR.x0 - m && P.x < VR.x1 + m && P.y > VR.y0 - m && P.y < VR.y1 + m; };
     spriteBudget = 12;
+    const visibleBuildings = builder ? bl() : chunkBuildings(bl(), VR);
     const mt = builder ? moveTarget() : null;
     if (builder && moving && moving.hood) dGhost = districtMovePreview(c);
     else if (builder && moving) { const b = moving.b, n = sz(b.type); footprint(c, b.x, b.y, n, 'rgba(255,255,255,.25)', '#e9b93b', true); if (mt) { const ok = fits(b.type, mt.x, mt.y, b); footprint(c, mt.x, mt.y, n, ok ? 'rgba(156,198,90,.45)' : 'rgba(217,69,90,.35)', ok ? '#fff' : '#d9455a'); } }
     else if (builder && hover) { const hb = hoveredBuilding(); if (hb) { footprint(c, hb.x, hb.y, sz(hb.type), 'rgba(233,185,59,.35)', '#e9b93b'); const dh = hb.did && hoodsOf(view).find(h => h.id === hb.did); if (dh) outlineRect(c, dh.x, dh.y, dh.w, dh.h, 'rgba(233,185,59,.9)'); } }
-    for (const b of bl()) { if (builder && moving && moving.hood && b.did === moving.hood.id) { items.push({ d: b.x + b.y + sz(b.type) - .01, f: () => { c.globalAlpha = .35; drawSprite(c, b, iso(b.x * T, b.y * T)); c.globalAlpha = 1; } }); continue; }
+    for (const b of visibleBuildings) { if (builder && moving && moving.hood && b.did === moving.hood.id) { items.push({ d: b.x + b.y + sz(b.type) - .01, f: () => { c.globalAlpha = .35; drawSprite(c, b, iso(b.x * T, b.y * T)); c.globalAlpha = 1; } }); continue; }
       if (builder && moving && moving.b === b) { if (mt) { const g = Object.assign(Object.create(Object.getPrototypeOf(b)), b, { x: mt.x, y: mt.y }); items.push({ d: mt.x + mt.y + sz(b.type) - .01, f: () => { c.globalAlpha = .8; drawSprite(c, g, iso(mt.x * T, mt.y * T)); c.globalAlpha = 1; } }); } else items.push({ d: b.x + b.y + sz(b.type) - .01, f: () => { c.globalAlpha = .5; drawSprite(c, b, iso(b.x * T, b.y * T)); c.globalAlpha = 1; } }); continue; }
       if (!bOnScreen(b, VR)) continue; items.push({ d: b.x + b.y + sz(b.type) - .01, f: () => drawSprite(c, b, iso(b.x * T, b.y * T)) }); }
     if (hover && tool && B[tool] && !B[tool].any && !['bulldoze', 'upgrade', 'broom'].includes(tool) && fits(tool, hover.x, hover.y) && (B[tool].both || !!B[tool].city === (view === 'city'))) {
@@ -8367,7 +8529,7 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
       setCamTransform(c); c.save(); c.globalCompositeOperation = 'lighter';
       const glow = (x, y, r, a, col = '255,200,110') => glowAt(c, x, y, r, a, col);
       for (const p of G.pigs) if (p.trip && pigMap(p) === view) { const P = iso(p.trip.x, p.trip.y); glow(P.x + p.trip.dir * 16, P.y - 4, 26, .5 * dk, '255,240,170'); }
-      for (const b of bl()) {
+      for (const b of visibleBuildings) {
         if (!bOnScreen(b, VR)) continue;
         const n = sz(b.type), o = iso(b.x * T, b.y * T), [cx, cy] = IP(o, n / 2, n / 2);
         if (DT_GLOW[b.type]) for (const [gu, gv, gz, gr, gc] of DT_GLOW[b.type]) { const [gx, gy] = IP(o, gu, gv, gz === 'top' ? htOf(b) - 20 : gz); glow(gx, gy, gr, .55 * dk, gc); }
@@ -8434,11 +8596,12 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
   registerUnknownTypes();
   if (readOnly) { paused = true; setTimeout(() => tellBox('This town was saved by a newer version of Pig City. You can look around, but this version won\'t save anything, so your progress stays safe. Update Pig City to keep playing.'), 500); }
   setView('home'); syncBaby(); hudRes(); renderPig(); hudGoals(); syncSound(); syncSpeed(); initMiniGame(); initRollerGame();
+  if (readOnly) $('gameplayStatus').textContent = 'Tracking is paused for this newer save.';
   // test hook: only with ?debug in the URL (used by automated screenshot tests, never in normal play)
   if (/[?&]debug\b/.test(location.search)) window.__pc = {
-    get G() { return G; }, B, DISTRICTS, setView, cams, cam, iso, T, save, crowds, presetLayout, checkLayout, sprites, kinds,
+    get G() { return G; }, selectPig(id) { selected = id; renderPig(); }, B, DISTRICTS, setView, cams, cam, iso, T, save, crowds, presetLayout, checkLayout, sprites, kinds, chunkBuildings, districtStep, districtNear, draw, startStreet, stopStreet, streetTick, goInside, setBuilder, growCity,
     setHover(x, y) { hover = { x, y }; }, setTool(t) { tool = t; }, place(key) { placeDistrict(key); }, select(b) { selBld = b; renderBld(); },
-    hoods: m => hoodsOf(m), at: (m, x, y) => listOf(m).find(b => covers(b, x, y)), walk: (m, h) => walkGrid(m, h), DECOR, sz, toScr: (tx, ty) => { const r = canvas.getBoundingClientRect(), p = isoToScr(iso(tx * T, ty * T)); return { x: p.x + r.left, y: p.y + r.top }; }, tick: (dt, n = 1) => { for (let i = 0; i < n; i++) tick(dt); }
+    doll: { pt: dollPt, roomAt: dollRoomAt, hover: dollHoverRoom, box: dollBox, is: isDoll }, hoods: m => hoodsOf(m), at: (m, x, y) => listOf(m).find(b => covers(b, x, y)), walk: (m, h) => walkGrid(m, h), DECOR, sz, toScr: (tx, ty) => { const r = canvas.getBoundingClientRect(), p = isoToScr(iso(tx * T, ty * T)); return { x: p.x + r.left, y: p.y + r.top }; }, tick: (dt, n = 1) => { for (let i = 0; i < n; i++) tick(dt); }
   };
   let seen = false, seen2 = false, seen3 = false;
   try { seen = !!localStorage.getItem('pigcity-seen'); seen2 = !!localStorage.getItem('pigcity-seen2'); seen3 = !!localStorage.getItem('pigcity-seen3'); localStorage.setItem('pigcity-seen', '1'); localStorage.setItem('pigcity-seen2', '1'); localStorage.setItem('pigcity-seen3', '1'); } catch (e) {}
@@ -8457,16 +8620,32 @@ body.builder .stage { outline: 4px dashed #e9b93b; outline-offset: 3px; } /* out
     };
   });
 
+  // Preserve the original save before adding optional tracking identities.
+  if (!readOnly && window.GameplayTracking) {
+    try {
+      if (!G.tracking) {
+        const original = readSaveText();
+        if (original && !localStorage.getItem('pigcity-before-tracking')) localStorage.setItem('pigcity-before-tracking', original);
+        if (desk && desk.backupBeforeTracking) desk.backupBeforeTracking();
+      }
+      const store = desk && desk.gameplayPut ? {
+        put: events => desk.gameplayPut(events), rows: (town, user, limit) => desk.gameplayRows(town, user, limit),
+        claim: (town, user) => desk.gameplayClaim(town, user), ack: (ids, user) => desk.gameplayAck(ids, user),
+      } : new GameplayStore.BrowserStore();
+      tracking = new GameplayTracking.Recorder({ store, getState: () => G, isReadOnly: () => readOnly,
+        onStatus: error => { const el = $('gameplayStatus'); if (el && error) el.textContent = 'Tracking needs attention: ' + error; } });
+      trackCheckpoint(); save();
+      trackEvent('session_started', null, { platform: desk ? 'mac' : 'web' });
+    } catch (e) { console.error('Gameplay tracking initialization:', e); $('gameplayStatus').textContent = 'Tracking could not start: ' + e.message; }
+  }
   requestAnimationFrame(loop);
 })();
 </script>
-<script src="game-systems.js"></script>
-<script src="game-systems-integration.js"></script>
-<script src="account-system.js"></script>
-<script src="account-ui.js"></script>
-<script src="pig-database.js"></script>
-<script src="pig-database-integration.js"></script>
+<script src="assets/js/game-systems.js"></script>
+<script src="assets/js/game-systems-integration.js"></script>
 
+<script src="assets/js/gameplay-ui.js"></script>
+<script src="assets/js/cloud-auth.js"></script>
 <script src="assets/cloud.js"></script>
 </body>
 </html>

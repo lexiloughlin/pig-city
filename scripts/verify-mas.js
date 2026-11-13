@@ -17,7 +17,7 @@ for (const app of apps) {
   const ent = run('codesign', ['-d', '--entitlements', '-', '--xml', app]);
   say(/com\.apple\.security\.app-sandbox/.test(ent), 'app is sandboxed');
   say(/application-groups/.test(ent), 'application group entitlement is signed in');
-  say(!/network\.client/.test(ent), 'no network entitlement');
+  say(/network\.client/.test(ent), 'outbound network entitlement for Supabase sync');
   const sig = run('codesign', ['-dvv', app]);
   say(/Authority=(Apple Distribution|3rd Party Mac Developer Application)/.test(sig), 'signed with a distribution certificate');
   say(fs.existsSync(path.join(app, 'Contents', 'embedded.provisionprofile')), 'provisioning profile is embedded');

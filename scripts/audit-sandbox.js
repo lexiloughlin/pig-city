@@ -27,7 +27,7 @@ check(!/\bfetch\s*\(|XMLHttpRequest|WebSocket|EventSource|navigator\.sendBeacon/
 const csp = (html.match(/http-equiv="Content-Security-Policy"\s+content="([^"]+)"/) || [])[1] || '';
 // the web version may reach its cloud-save database and nothing else; the Mac app is blocked by the main process below
 check(/connect-src (?:'none'|https:\/\/[a-z0-9]+\.supabase\.co);/.test(csp) && /default-src 'self'/.test(csp), 'Content Security Policy allows no network access besides the cloud-save database', csp);
-check(/if \(!T \|\| window\.pigDesktop\) return;/.test(read('assets/cloud.js')), 'Cloud saves are switched off in the Mac app');
+check(/detectSessionInUrl: !desktop/.test(read('assets/cloud.js')) && /verifyOtp/.test(read('assets/cloud.js')), 'Desktop sign-in uses the shared cloud session');
 
 // 3. browser features Electron doesn't provide / that behave badly in a packaged app
 check(!/\bprompt\s*\(/.test(script), 'No window.prompt() (Electron does not support it)');
@@ -43,7 +43,7 @@ check(/desk\.exportTown/.test(script) && /desk\.importTown/.test(script), 'Expor
 const main = read('electron/main.js'), pre = read('electron/preload.js');
 check(!/autoUpdater|electron-updater|update-electron-app/.test(main + pre), 'No auto-updater (App Store handles updates)');
 check(/sandbox:\s*true/.test(main) && /contextIsolation:\s*true/.test(main) && /nodeIntegration:\s*false/.test(main), 'Renderer is sandboxed with context isolation');
-check(/onBeforeRequest/.test(main) && /cancel:\s*true/.test(main), 'Main process refuses outgoing network requests');
+check(/onBeforeRequest/.test(main) && /cancel: !allowCloudURL\(d.url\)/.test(main), 'Main process applies the Supabase-only network policy');
 check(/userData/.test(main) && !/homedir\(\)|\/Users\//.test(main), 'Save file lives in userData (inside the container when sandboxed)');
 
 // 6. dependencies
@@ -56,7 +56,7 @@ const ent = read('build/entitlements.mas.template.plist');
 check(/com\.apple\.security\.app-sandbox<\/key>\s*<true\/>/.test(ent), 'App Sandbox entitlement present');
 check(/com\.apple\.security\.application-groups/.test(ent), 'Application group entitlement present (Electron needs it)');
 check(/files\.user-selected\.read-write/.test(ent), 'User-selected file access (export/import) present');
-check(!/network\.client|network\.server|device\.|personal-information|files\.downloads|temporary-exception/.test(ent.replace(/<!--[\s\S]*?-->/g, '')), 'No extra entitlements (network, camera, mic, temporary exceptions)');
+check(/com\.apple\.security\.network\.client<\/key>\s*<true\/>/.test(ent) && !/network\.server|device\.|personal-information|files\.downloads|temporary-exception/.test(ent.replace(/<!--[\s\S]*?-->/g, '')), 'Outbound cloud access only; no server, camera, mic or temporary exceptions');
 const inh = read('build/entitlements.mas.inherit.plist');
 check(/app-sandbox/.test(inh) && /security\.inherit/.test(inh), 'Helper processes inherit the sandbox');
 const masCfg = read('build/electron-builder.mas.template.yml'), devCfg = read('build/electron-builder.dev.yml');

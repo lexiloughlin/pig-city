@@ -77,6 +77,17 @@ tokiramen: {
 
 Cars drive the whole road network of the map on screen. They turn at crossroads (mostly going straight on), stop at red lights and behind other cars, and leave at dead ends. The look of the cars is in `TLOOKS`.
 
+## Metro: underground tunnels between islands and towns
+
+Both Home Town and Job City have their own metro, in **📐 Planning**:
+
+- **🚇 Metro Station** (40 🪙) is a normal 1-tile building, type `metro`. It can go on the mainland or any island, and each station gets a station id, `b.sid`.
+- **Ⓜ️ Metro Tunnel** (3 🪙 a tile): drag from one station to another. If you let go on empty land instead, a new station opens there, so the network grows one drag at a time. Tunnels go straight under water, roads and buildings.
+- Tunnels are saved as `{ a, b }` station-id pairs in `G.metro[map]`. Each route is an L-shape worked out from where its two stations stand, so moving a station in builder mode moves its tunnels too. Bulldozing a station removes its tunnels and refunds half their cost.
+- **Underground view:** choose it with the 🗺️ map button (the last overlay), or pick either metro tool. The town dims and the lines show on top. Each connected group of stations gets its own colour, with trains running back and forth and the pigs who are riding right now.
+- **Riding:** `metroLegs()` splits a commute into drive → metro → drive whenever the metro beats driving. That always happens from an island that has no bridge. Pigs ride 2.5× faster than they drive, and `G.stats.metroRides` counts the rides.
+- The save version is now `SAVE_SCHEMA = 5`.
+
 ## Ideas this framework is ready for
 
 - **More recipes:** residential (castles with yards), a waterfront promenade, an industrial block.

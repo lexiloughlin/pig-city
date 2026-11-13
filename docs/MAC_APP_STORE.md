@@ -30,7 +30,7 @@ Both builds bundle the game (`index.html`) and every asset (`assets/fonts/…`) 
   - **Dialogs:** `prompt()` doesn't exist in Electron, so all naming and confirm boxes are now in-game dialogs.
   - **Export/import in the browser too:** the web version gets 💾 Export town / 📂 Import town as well, as a download and a file picker.
 - **Entitlements:**
-  - **`build/entitlements.mas.template.plist`:** `app-sandbox`, `application-groups` (`<TEAMID>.com.lexiloughlin.pigcity`, which Electron needs) and `files.user-selected.read-write` (export/import). That's all. No network, camera, mic or temporary exceptions.
+  - **`build/entitlements.mas.template.plist`:** `app-sandbox`, `application-groups` (`<TEAMID>.com.lexiloughlin.pigcity`, which Electron needs) and `files.user-selected.read-write` (export/import). Also `network.client` for signed-in Supabase save/history sync. No server, camera, mic or temporary exceptions.
   - **`build/entitlements.mas.inherit.plist`:** the helper processes inherit the sandbox.
   - **`build/entitlements.mas.loginhelper.plist`:** sandboxes Electron's login helper.
 - **Info.plist:** `ElectronTeamID` (filled in from your Team ID), the Games › Simulation category, `ITSAppUsesNonExemptEncryption = false` (no export-compliance paperwork), macOS 12+, and Retina support.
@@ -131,7 +131,7 @@ The result is a `.pkg` in `dist/mas/` (e.g. `Pig City-1.0.0-universal.pkg`).
 3. Fill in the store listing:
    - **Category:** Games ▸ Simulation, with Casual as an optional second category.
    - **Price:** Free, or a price tier.
-   - **App Privacy:** choose **"Data Not Collected"**. The app has no network access, analytics or accounts.
+   - **App Privacy:** review the current signed-in account and gameplay-history collection described in `GAMEPLAY_TRACKING.md` before completing App Privacy. The old “Data Not Collected” guidance predates cloud tracking.
    - **Privacy Policy URL:** `https://lexiloughlin.github.io/pig-city/privacy.html`
    - **Support URL:** e.g. `https://lexiloughlin.github.io/pig-city/` or the GitHub repo.
    - **Age rating questionnaire:** answer honestly. A cozy town builder with no violence or chat is usually 4+. Don't pick the Kids category unless you want its extra rules.

@@ -43,13 +43,15 @@ const GameSystems = {
       pig.needs[need] = Math.max(0, pig.needs[need] - decay[need] * dt);
     }
 
+    // Scale boosts by game time, preserving their previous strength at 60 updates/second.
+    const boostTicks = deltaSeconds * 60;
     // Modifiers based on activity
-    if (pig.food > 85) pig.needs.hunger = Math.min(100, pig.needs.hunger + 0.5);
-    if (pig.water > 85) pig.needs.energy = Math.min(100, pig.needs.energy + 0.2);
+    if (pig.food > 85) pig.needs.hunger = Math.min(100, pig.needs.hunger + 0.5 * boostTicks);
+    if (pig.water > 85) pig.needs.energy = Math.min(100, pig.needs.energy + 0.2 * boostTicks);
     
     // Happiness boost from being in a nice room
     if (pig.room && pig.lastRoomTime > 0) {
-      pig.needs.happiness = Math.min(100, pig.needs.happiness + 0.1);
+      pig.needs.happiness = Math.min(100, pig.needs.happiness + 0.1 * boostTicks);
     }
   },
 

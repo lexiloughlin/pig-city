@@ -7,3 +7,8 @@ build/generated/
 *.cer
 build/mas.local.json
 .env
+
+# Local gameplay databases and SQLite journals never belong in source control
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
